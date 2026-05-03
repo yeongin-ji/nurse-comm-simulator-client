@@ -12,23 +12,32 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Gauge } from "@/components/ui/gauge";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
+import { StatCard } from "@/components/ui/stat-card";
+import { Table, TableRow } from "@/components/ui/table";
 import { Toggle } from "@/components/ui/toggle";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { Nav } from "@/components/layout/nav";
+import { PageShell } from "@/components/layout/page-shell";
+import { SimNav } from "@/components/layout/sim-nav";
 
 export default function ComponentsCatalog() {
   const [tts, setTts] = useState(true);
   const [profileImage, setProfileImage] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <main className="min-h-full bg-surface px-6 py-12">
-      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-10">
+    <main className="min-h-full bg-surface">
+      <PageShell width="lg" className="flex flex-col gap-10 py-12">
         <header className="flex flex-col gap-2">
           <span className="text-label-sm uppercase text-fg-subtle">Catalog</span>
           <h1 className="text-headline-lg text-foreground">컴포넌트 카탈로그</h1>
           <p className="text-body-md text-fg-muted">
-            Stage B-1 시각 검증용. Hi-Fi Design.html과 비교하면서 토큰/상태가
-            맞는지 확인하세요.
+            Stage B-1 + B-2 시각 검증용. Hi-Fi Design.html과 비교하면서
+            토큰/상태가 맞는지 확인하세요.
           </p>
         </header>
 
@@ -165,7 +174,127 @@ export default function ComponentsCatalog() {
             <Spinner size={36} />
           </div>
         </Section>
-      </div>
+
+        <Section title="StatCard">
+          <div className="flex gap-4">
+            <StatCard label="총 세션" value="4회" />
+            <StatCard label="평균 점수" value="74점" sub="최근 30일" />
+            <StatCard label="시나리오" value="2종" />
+          </div>
+        </Section>
+
+        <Section title="Gauge">
+          <div className="flex flex-col gap-4 max-w-md">
+            <Gauge label="공감적 의사소통" value={82} />
+            <Gauge label="정보 수집" value={65} color="success" />
+            <Gauge label="환자 안전" value={42} color="warning" />
+            <Gauge label="윤리적 판단" value={18} color="danger" />
+          </div>
+        </Section>
+
+        <Section title="Table">
+          {(() => {
+            const widths = ["80px", undefined, "100px", "80px"] as const;
+            const withWidths = (contents: React.ReactNode[]) =>
+              contents.map((content, i) => ({ content, width: widths[i] }));
+            return (
+              <Table>
+                <TableRow
+                  header
+                  cells={withWidths(["회차", "수행일시", "상태", "점수"])}
+                />
+                <TableRow
+                  cells={withWidths([
+                    "1회차",
+                    "2026-04-15 14:32",
+                    <Badge key="b" variant="success">
+                      완료
+                    </Badge>,
+                    "82점",
+                  ])}
+                />
+                <TableRow
+                  cells={withWidths([
+                    "2회차",
+                    "2026-04-22 09:18",
+                    <Badge key="b" variant="success">
+                      완료
+                    </Badge>,
+                    "76점",
+                  ])}
+                />
+                <TableRow
+                  cells={withWidths([
+                    "3회차",
+                    "2026-05-01 16:05",
+                    <Badge key="b" variant="warning">
+                      진행 중
+                    </Badge>,
+                    "—",
+                  ])}
+                />
+              </Table>
+            );
+          })()}
+        </Section>
+
+        <Section title="Breadcrumb">
+          <Breadcrumb
+            items={[
+              { label: "학생 목록", href: "/students" },
+              { label: "김간호 (20210101)", href: "/students/1" },
+              { label: "세션 #5" },
+            ]}
+          />
+        </Section>
+
+        <Section title="Modal">
+          <div className="flex items-center gap-3">
+            <Button onClick={() => setModalOpen(true)}>모달 열기</Button>
+            <Modal
+              open={modalOpen}
+              onOpenChange={setModalOpen}
+              title="시간이 다 됐어요"
+              description="대화 시뮬레이션이 종료되었어요. 평가를 시작할게요."
+              footer={
+                <Button variant="primary" onClick={() => setModalOpen(false)}>
+                  평가 시작하기
+                </Button>
+              }
+            >
+              <p className="text-body-md text-fg-muted">
+                지금까지의 대화를 바탕으로 6개 항목을 평가합니다. 평가는 한
+                번만 가능해요.
+              </p>
+            </Modal>
+          </div>
+        </Section>
+
+        <Section title="Nav (학습자 / 교육자)">
+          <div className="flex flex-col gap-3">
+            <div className="rounded-md border border-border overflow-hidden">
+              <Nav role="learner" userName="김간호" />
+            </div>
+            <div className="rounded-md border border-border overflow-hidden">
+              <Nav role="educator" userName="박교수" />
+            </div>
+          </div>
+        </Section>
+
+        <Section title="SimNav">
+          <div className="flex flex-col gap-3">
+            <div className="rounded-md border border-border overflow-hidden">
+              <SimNav current={0} />
+            </div>
+            <div className="rounded-md border border-border overflow-hidden">
+              <SimNav current={1} />
+            </div>
+            <div className="rounded-md border border-border overflow-hidden">
+              <SimNav current={2} />
+            </div>
+          </div>
+        </Section>
+      </PageShell>
     </main>
   );
 }
