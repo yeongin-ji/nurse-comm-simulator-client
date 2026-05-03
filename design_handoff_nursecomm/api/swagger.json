@@ -441,7 +441,7 @@
                 "tags": [
                     "sessions"
                 ],
-                "summary": "칼라마주 루브릭 평가 실행 (AI)",
+                "summary": "루브릭 평가 실행 (AI)",
                 "parameters": [
                     {
                         "type": "integer",
