@@ -1,19 +1,52 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { extractSummaryText, pblApi, pblKeys } from "@/lib/api/pbl";
 
-type Props = { params: Promise<{ sessionId: string }> };
+export default function PblSummaryPage() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const numericSessionId = Number(sessionId);
 
-// TODO(Stage D): fetch from GET /sessions/{id}/pbl/summary
-const MOCK_SUMMARY = `환자의 호흡 상태를 안정시키기 위해 산소 포화도를 지속적으로 모니터링하고, 반좌위를 유지하도록 돕는 것이 필요해요.
+  const summaryQuery = useQuery({
+    queryKey: pblKeys.summary(numericSessionId),
+    queryFn: () => pblApi.getSummary(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
 
-환자는 현재 높은 불안감과 분노감을 보이고 있으므로, 공감적 경청과 안심 제공을 통해 심리적 안정을 도모해야 해요. 신뢰 관계가 형성되어야 이후 교육적 중재가 효과적으로 이루어질 수 있어요.
+  if (summaryQuery.isLoading) {
+    return (
+      <LoadingScreen
+        title="대화를 분석하고 있어요"
+        subtitle="의사소통 방향 요약을 정리하고 있어요"
+      />
+    );
+  }
 
-환자가 안정된 이후에는 흡입기 사용법과 증상 악화 시 대처법에 대해 교육하는 것이 좋아요.`;
+  if (summaryQuery.isError) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8">
+        <Card className="w-full max-w-[480px] flex flex-col gap-3 p-8 text-center">
+          <h1 className="text-title-lg text-foreground">
+            요약을 불러올 수 없어요
+          </h1>
+          <p className="text-body-md text-fg-muted">
+            잠시 후 다시 시도하거나 시나리오 목록으로 돌아가세요.
+          </p>
+          <Link href="/scenarios" className="self-center pt-2">
+            <Button variant="secondary">시나리오 목록으로</Button>
+          </Link>
+        </Card>
+      </main>
+    );
+  }
 
-export default async function PblSummaryPage({ params }: Props) {
-  const { sessionId } = await params;
+  const summaryText = extractSummaryText(summaryQuery.data);
 
   return (
     <main className="flex flex-1 items-center justify-center p-8">
@@ -33,7 +66,7 @@ export default async function PblSummaryPage({ params }: Props) {
           </p>
           <div className="h-px bg-border" />
           <p className="text-body-md text-foreground leading-[26px] whitespace-pre-line">
-            {MOCK_SUMMARY}
+            {summaryText || "요약 내용이 비어 있어요."}
           </p>
         </Card>
 

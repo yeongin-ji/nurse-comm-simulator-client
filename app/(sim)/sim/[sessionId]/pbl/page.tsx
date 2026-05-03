@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,14 @@ import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import { PblProgress } from "@/components/sim/pbl-progress";
+import { pblApi, pblKeys } from "@/lib/api/pbl";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
 
 const INITIAL_MESSAGES: Message[] = [
   {
     role: "ai-peer",
-    text: "안녕하세요! COPD 환자를 만나기 전에 의사소통 방향을 함께 논의해 봐요. 어떤 목표를 세우고 싶으세요?",
+    text: "안녕하세요! 가상 환자를 만나기 전에 의사소통 방향을 함께 논의해 봐요. 어떤 목표를 세우고 싶으세요?",
   },
 ];
 
@@ -25,37 +27,45 @@ const MAX_TURNS = 5;
 
 export default function PblPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId: string }>();
+  const numericSessionId = Number(sessionId);
+
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [waiting, setWaiting] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
 
   const userTurns = messages.filter((m) => m.role === "user").length;
   const exhausted = userTurns >= MAX_TURNS;
 
+  const turnMutation = useMutation({
+    mutationFn: (text: string) =>
+      pblApi.sendTurn(numericSessionId, { message: text }),
+    onSuccess: (res) => {
+      const reply = res.reply ?? "(응답을 받지 못했어요)";
+      // By the time the AI reply lands, the user message is already in `messages`,
+      // so userTurns reflects the just-completed turn — no +1 needed.
+      setMessages((prev) => [...prev, { role: "ai-peer", text: reply }]);
+      if (userTurns >= MAX_TURNS) setCompleteOpen(true);
+    },
+  });
+
+  const summaryMutation = useMutation({
+    mutationFn: () => pblApi.generateSummary(numericSessionId),
+    onSuccess: (data) => {
+      // Pre-fill the summary cache so the next page renders instantly.
+      queryClient.setQueryData(pblKeys.summary(numericSessionId), data);
+      setCompleteOpen(false);
+      router.push(`/sim/${sessionId}/summary`);
+    },
+  });
+
   const onSend = (text: string) => {
-    // TODO(Stage D): POST /sessions/{id}/pbl, then push AI response on success
-    const willExhaust = userTurns + 1 >= MAX_TURNS;
     setMessages((prev) => [...prev, { role: "user", text }]);
-    setWaiting(true);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai-peer",
-          text: "(AI 응답 placeholder) 의도가 잘 전달되었어요. 다음 단계를 함께 정리해 봐요.",
-        },
-      ]);
-      setWaiting(false);
-      if (willExhaust) setCompleteOpen(true);
-    }, 900);
+    turnMutation.mutate(text);
   };
 
-  const goSummary = () => {
-    // TODO(Stage D): POST /sessions/{id}/pbl/summary, then redirect
-    setCompleteOpen(false);
-    router.push(`/sim/${sessionId}/summary`);
-  };
+  const waiting = turnMutation.isPending;
+  const summarizing = summaryMutation.isPending;
 
   return (
     <>
@@ -66,11 +76,11 @@ export default function PblPage() {
               환자 정보
             </h2>
             <p className="text-[13px] font-medium text-foreground">
-              COPD · OOO (M/47)
+              세션 #{sessionId}
             </p>
             <div className="h-px bg-border" />
             <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-              COPD 환자인 OOO님은 호흡곤란을 호소하며 교육을 완강히 거부합니다.
+              가상 환자와의 의사소통 방향을 AI 동료와 함께 논의해요.
             </p>
           </Card>
 
@@ -107,6 +117,11 @@ export default function PblPage() {
               <ChatBubble key={i} role={m.role} text={m.text} />
             ))}
             {waiting && <TypingBubble role="ai-peer" />}
+            {turnMutation.isError && (
+              <p className="text-label-sm text-danger tracking-normal">
+                응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
+              </p>
+            )}
           </Card>
 
           <ChatInput
@@ -124,16 +139,27 @@ export default function PblPage() {
 
       <Modal
         open={completeOpen}
-        onOpenChange={setCompleteOpen}
+        onOpenChange={(next) => {
+          if (summarizing) return;
+          setCompleteOpen(next);
+        }}
         title={exhausted ? "5턴을 모두 사용했어요" : "PBL을 마칠까요?"}
         description="지금까지의 대화를 분석해 의사소통 방향 요약을 만들어요"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setCompleteOpen(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => setCompleteOpen(false)}
+              disabled={summarizing}
+            >
               {exhausted ? "잠시 더 보기" : "취소"}
             </Button>
-            <Button variant="primary" onClick={goSummary}>
-              요약 보기
+            <Button
+              variant="primary"
+              onClick={() => summaryMutation.mutate()}
+              disabled={summarizing}
+            >
+              {summarizing ? "요약 만드는 중..." : "요약 보기"}
             </Button>
           </>
         }
