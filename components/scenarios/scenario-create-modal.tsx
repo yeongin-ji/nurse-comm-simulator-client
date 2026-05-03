@@ -1,25 +1,24 @@
 "use client";
 
 import { AlertCircle } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { Spinner } from "@/components/ui/spinner";
+import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { scenariosApi } from "@/lib/api/scenarios";
 import { cn } from "@/lib/utils/cn";
 
-const CATEGORY_PATH = ["호흡기계", "폐쇄성폐질환"] as const;
-
-const DISEASES = [
-  { id: "asthma", name: "기관지 천식" },
-  { id: "copd", name: "COPD" },
-  { id: "bronchiectasis", name: "기관지 확장증" },
-] as const;
-
 const DIFFICULTIES = [
-  { value: "low", label: "하" },
-  { value: "mid", label: "중" },
-  { value: "high", label: "상" },
+  { value: "하", label: "하" },
+  { value: "중", label: "중" },
+  { value: "상", label: "상" },
 ] as const;
+
+// TODO(Stage D-3): replace with auth store user.id once /learners/me wires up.
+const MOCK_LEARNER_ID = 1;
 
 export type ScenarioCreateModalProps = {
   open: boolean;
@@ -31,106 +30,151 @@ export function ScenarioCreateModal({
   onOpenChange,
 }: ScenarioCreateModalProps) {
   const router = useRouter();
-  const [diseaseId, setDiseaseId] = useState<string>("asthma");
-  const [difficulty, setDifficulty] = useState<string>("mid");
+  const [pickedId, setPickedId] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<string>("중");
+
+  const documentsQuery = useQuery({
+    queryKey: documentKeys.list(),
+    queryFn: documentsApi.list,
+    enabled: open,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: scenariosApi.create,
+    onSuccess: (res) => {
+      onOpenChange(false);
+      const id = res.scenario?.id;
+      if (id) router.push(`/scenarios/${id}`);
+    },
+  });
+
+  const documents = documentsQuery.data ?? [];
+  // Default selection follows the first loaded document until the user picks one.
+  const documentId = pickedId ?? documents[0]?.id ?? null;
+  const breadcrumb = documents.find((d) => d.id === documentId)?.category_path;
 
   const onCreate = () => {
-    // TODO(Stage D): POST /scenarios with { diseaseId, difficulty }
-    console.log("[scenario create placeholder]", { diseaseId, difficulty });
-    onOpenChange(false);
-    router.push("/scenarios/new-mock-id");
+    if (documentId == null) return;
+    createMutation.mutate({
+      learner_id: MOCK_LEARNER_ID,
+      document_id: documentId,
+      difficulty,
+    });
   };
 
   return (
     <Modal
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(next) => {
+        if (createMutation.isPending) return;
+        onOpenChange(next);
+      }}
       title="새 시나리오 만들기"
       width={480}
       footer={
         <>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            disabled={createMutation.isPending}
+          >
             취소
           </Button>
-          <Button variant="primary" onClick={onCreate}>
-            만들기
+          <Button
+            variant="primary"
+            onClick={onCreate}
+            disabled={
+              documentId == null ||
+              documentsQuery.isLoading ||
+              createMutation.isPending
+            }
+            icon={
+              createMutation.isPending ? <Spinner size={14} /> : undefined
+            }
+          >
+            {createMutation.isPending ? "만드는 중..." : "만들기"}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-6">
         <section className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-body-md font-medium text-foreground">
-              질환 선택
-            </h3>
-            <Button variant="secondary" size="sm">
-              랜덤 선택
-            </Button>
-          </div>
-          <div className="flex items-center gap-1.5 rounded bg-surface-muted px-3 py-2 text-label-sm tracking-normal">
-            {CATEGORY_PATH.map((crumb, i) => (
-              <span key={crumb} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-fg-subtle">/</span>}
-                <span className="font-medium text-accent cursor-pointer">
-                  {crumb}
+          <h3 className="text-body-md font-medium text-foreground">질환 선택</h3>
+
+          {breadcrumb && breadcrumb.length > 0 && (
+            <div className="flex items-center gap-1.5 rounded bg-surface-muted px-3 py-2 text-label-sm tracking-normal">
+              {breadcrumb.map((crumb, i) => (
+                <span key={`${crumb}-${i}`} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-fg-subtle">/</span>}
+                  <span className="font-medium text-accent">{crumb}</span>
                 </span>
-              </span>
-            ))}
-            <span className="text-fg-subtle">/ 선택 중</span>
-          </div>
-          <div className="rounded border border-border overflow-hidden">
-            {DISEASES.map((d, i) => {
-              const selected = d.id === diseaseId;
-              return (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setDiseaseId(d.id)}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors",
-                    i < DISEASES.length - 1 && "border-b border-border",
-                    selected
-                      ? "bg-[rgba(37,99,235,0.05)]"
-                      : "bg-background hover:bg-surface"
-                  )}
-                >
-                  <span
+              ))}
+              <span className="text-fg-subtle">/ 선택 중</span>
+            </div>
+          )}
+
+          {documentsQuery.isLoading ? (
+            <div className="flex items-center gap-2 rounded border border-border px-3.5 py-3 text-body-md text-fg-muted">
+              <Spinner size={14} /> 질환 목록을 불러오고 있어요
+            </div>
+          ) : documentsQuery.isError ? (
+            <div className="rounded border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
+              질환 목록을 불러오지 못했어요. 다시 시도해 주세요.
+            </div>
+          ) : (
+            <div className="rounded border border-border overflow-hidden">
+              {documents.map((d, i) => {
+                const selected = d.id === documentId;
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => d.id != null && setPickedId(d.id)}
                     className={cn(
-                      "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center",
+                      "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors",
+                      i < documents.length - 1 && "border-b border-border",
                       selected
-                        ? "border-accent bg-accent"
-                        : "border-border bg-transparent"
+                        ? "bg-[rgba(37,99,235,0.05)]"
+                        : "bg-background hover:bg-surface"
                     )}
                   >
-                    {selected && (
-                      <svg
-                        width="8"
-                        height="8"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      >
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-body-md",
-                      selected
-                        ? "font-medium text-foreground"
-                        : "font-normal text-foreground"
-                    )}
-                  >
-                    {d.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={cn(
+                        "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center",
+                        selected
+                          ? "border-accent bg-accent"
+                          : "border-border bg-transparent"
+                      )}
+                    >
+                      {selected && (
+                        <svg
+                          width="8"
+                          height="8"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#fff"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-body-md",
+                        selected
+                          ? "font-medium text-foreground"
+                          : "font-normal text-foreground"
+                      )}
+                    >
+                      {d.disease_name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="flex flex-col gap-2">
@@ -156,6 +200,12 @@ export function ScenarioCreateModal({
             })}
           </div>
         </section>
+
+        {createMutation.isError && (
+          <div className="rounded border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
+            시나리오 생성에 실패했어요. 잠시 후 다시 시도해 주세요.
+          </div>
+        )}
 
         <div className="flex items-start gap-2 rounded bg-surface-muted px-3.5 py-2.5">
           <AlertCircle
