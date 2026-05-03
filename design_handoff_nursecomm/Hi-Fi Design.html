@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NurseComm — Hi-Fi Design (공통 화면)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="hifi/components.jsx"></script>
+  <script type="text/babel" src="hifi/screens-common.jsx"></script>
+  <script type="text/babel" src="hifi/screens-learner.jsx"></script>
+  <script type="text/babel" src="hifi/screens-simulation.jsx"></script>
+  <script type="text/babel" src="hifi/screens-educator.jsx"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #09090B; font-family: Inter, sans-serif; }
+    #root { height: 100%; }
+    input::placeholder { color: #A1A1AA; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const SW = 960;
+const SH = 640;
+
+const Frame = ({ children, w = SW, h = SH }) => (
+  <div style={{
+    width: w, height: h, background: '#FFFFFF',
+    overflow: 'hidden', fontFamily: 'Inter, sans-serif',
+    display: 'flex', flexDirection: 'column', position: 'relative',
+  }}>
+    {children}
+  </div>
+);
+
+function App() {
+  return (
+    <DesignCanvas title="NurseComm — Hi-Fi Design (공통 화면)">
+
+      {/* ── 인증 ──────────────────────────────────────────────────────── */}
+      <DCSection id="auth" title="인증">
+        <DCArtboard id="login" label="로그인" width={SW} height={SH}>
+          <Frame><HFScreenLogin /></Frame>
+        </DCArtboard>
+        <DCArtboard id="signup" label="회원가입" width={SW} height={780}>
+          <Frame h={780}><HFScreenSignup /></Frame>
+        </DCArtboard>
+        <DCArtboard id="signup-error" label="회원가입 — 유효성 오류" width={SW} height={780}>
+          <Frame h={780}><HFScreenSignupError /></Frame>
+        </DCArtboard>
+        <DCArtboard id="login-fail-learner" label="로그인 실패 — 학습자" width={SW} height={SH}>
+          <Frame><HFScreenLoginFail role="learner" /></Frame>
+        </DCArtboard>
+        <DCArtboard id="login-fail-educator" label="로그인 실패 — 교육자" width={SW} height={SH}>
+          <Frame><HFScreenLoginFail role="educator" /></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── 프로필 및 설정 ─────────────────────────────────────────────── */}
+      <DCSection id="profile" title="프로필 및 설정">
+        <DCArtboard id="profile-learner" label="프로필 — 학습자" width={SW} height={820}>
+          <Frame h={820}><HFScreenProfile role="learner" /></Frame>
+        </DCArtboard>
+        <DCArtboard id="profile-educator" label="프로필 — 교육자" width={SW} height={820}>
+          <Frame h={820}><HFScreenProfile role="educator" /></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── 로딩 상태 ──────────────────────────────────────────────────── */}
+      <DCSection id="loading" title="로딩 상태">
+        <DCArtboard id="loading-scenario" label="시나리오 생성 중" width={SW} height={SH}>
+          <Frame>
+            <HFScreenLoading
+              title="시나리오를 만들고 있어요"
+              subtitle="가상 환자의 정보와 딜레마 상황을 구성하고 있어요"
+            />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="loading-eval" label="AI 평가 중" width={SW} height={SH}>
+          <Frame>
+            <HFScreenLoading
+              title="대화를 평가하고 있어요"
+              subtitle="Kalamazoo 체크리스트 기준으로 분석 중이에요"
+            />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── 학습자 ────────────────────────────────────────────────────── */}
+      <DCSection id="learner" title="학습자 (Learner)">
+        <DCArtboard id="scenario-list" label="시나리오 목록" width={SW} height={SH}>
+          <Frame><HFScreenScenarioList /></Frame>
+        </DCArtboard>
+        <DCArtboard id="scenario-create" label="시나리오 생성 (모달)" width={SW} height={740}>
+          <Frame h={740}><HFScreenScenarioCreate /></Frame>
+        </DCArtboard>
+        <DCArtboard id="scenario-detail" label="시나리오 상세" width={SW} height={720}>
+          <Frame h={720}><HFScreenScenarioDetail /></Frame>
+        </DCArtboard>
+        <DCArtboard id="history" label="학습 이력" width={SW} height={SH}>
+          <Frame><HFScreenHistory /></Frame>
+        </DCArtboard>
+        <DCArtboard id="result" label="세션 결과 상세" width={SW} height={720}>
+          <Frame h={720}><HFScreenResult /></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── 시뮬레이션 플로우 ────────────────────────────────────────────── */}
+      <DCSection id="simulation" title="시뮬레이션 플로우 (학습자)">
+        <DCArtboard id="sim-start" label="시뮬레이션 시작 확인" width={SW} height={720}>
+          <Frame h={720}><HFScreenSimStart /></Frame>
+        </DCArtboard>
+        <DCArtboard id="pbl" label="① PBL — AI 동료 대화" width={SW} height={SH}>
+          <Frame><HFScreenPBL /></Frame>
+        </DCArtboard>
+        <DCArtboard id="pbl-waiting" label="① PBL — AI 동료 응답 대기" width={SW} height={SH}>
+          <Frame><HFScreenPBLWaiting /></Frame>
+        </DCArtboard>
+        <DCArtboard id="pbl-summary" label="① PBL 요약 확인" width={SW} height={SH}>
+          <Frame><HFScreenPBLSummary /></Frame>
+        </DCArtboard>
+        <DCArtboard id="sim-chat" label="② 대화 시뮬레이션" width={SW} height={SH}>
+          <Frame><HFScreenSimulation /></Frame>
+        </DCArtboard>
+        <DCArtboard id="sim-waiting" label="② 가상 환자 응답 대기" width={SW} height={SH}>
+          <Frame><HFScreenSimWaiting /></Frame>
+        </DCArtboard>
+        <DCArtboard id="sim-timeout" label="② 제한 시간 초과 모달" width={SW} height={SH}>
+          <Frame><HFScreenSimTimeout /></Frame>
+        </DCArtboard>
+        <DCArtboard id="debriefing" label="③ 디브리핑 (평가 결과)" width={SW} height={SH}>
+          <Frame><HFScreenDebriefing /></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── 교육자 ────────────────────────────────────────────────────── */}
+      <DCSection id="educator" title="교육자 (Educator)">
+        <DCArtboard id="student-list" label="학생 목록" width={SW} height={SH}>
+          <Frame><HFScreenStudentList /></Frame>
+        </DCArtboard>
+        <DCArtboard id="student-history" label="학생별 세션 이력" width={SW} height={SH}>
+          <Frame><HFScreenStudentHistory /></Frame>
+        </DCArtboard>
+        <DCArtboard id="session-detail" label="세션 상세 + 코멘트" width={SW} height={760}>
+          <Frame h={760}><HFScreenSessionDetail /></Frame>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

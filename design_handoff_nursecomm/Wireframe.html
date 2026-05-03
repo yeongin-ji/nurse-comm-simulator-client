@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>간호학생 의사소통 시뮬레이션 — 와이어프레임</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="wireframes/components.jsx"></script>
+  <script type="text/babel" src="wireframes/screens-learner.jsx"></script>
+  <script type="text/babel" src="wireframes/screens-simulation.jsx"></script>
+  <script type="text/babel" src="wireframes/screens-educator.jsx"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #09090B; font-family: Inter, sans-serif; }
+    #root { height: 100%; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const SCREEN_W = 900;
+const SCREEN_H = 600;
+
+// ── Flow label chip ──────────────────────────────────────────────────────────
+const FlowChip = ({ label, color = '#52525B' }) => (
+  <div style={{
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+    padding: '2px 8px', borderRadius: 9999,
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    fontSize: 11, fontWeight: 500, color: '#A1A1AA',
+    fontFamily: 'Inter, sans-serif',
+  }}>
+    <span style={{ width: 6, height: 6, borderRadius: 9999, background: color, flexShrink: 0 }} />
+    {label}
+  </div>
+);
+
+// ── Screen wrapper ───────────────────────────────────────────────────────────
+const Screen = ({ children, h = SCREEN_H }) => (
+  <div style={{
+    width: SCREEN_W, height: h,
+    background: '#FFFFFF',
+    overflow: 'hidden',
+    fontFamily: 'Inter, sans-serif',
+    display: 'flex', flexDirection: 'column',
+    position: 'relative',
+  }}>
+    {children}
+  </div>
+);
+
+// ── Main App ─────────────────────────────────────────────────────────────────
+function App() {
+  return (
+    <DesignCanvas title="간호학생 의사소통 시뮬레이션 — 와이어프레임">
+
+      {/* ── SECTION 1: 공통 ─────────────────────────────────────────────── */}
+      <DCSection id="common" title="공통">
+        <DCArtboard id="login" label="로그인" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenLogin /></Screen>
+        </DCArtboard>
+        <DCArtboard id="profile-learner" label="프로필 / 설정 — 학습자" width={SCREEN_W} height={760}>
+          <Screen h={760}><ScreenProfile role="learner" /></Screen>
+        </DCArtboard>
+        <DCArtboard id="profile-educator" label="프로필 / 설정 — 교육자" width={SCREEN_W} height={760}>
+          <Screen h={760}><ScreenProfile role="educator" /></Screen>
+        </DCArtboard>
+        <DCArtboard id="signup" label="학습자 회원가입" width={SCREEN_W} height={740}>
+          <Screen h={740}><ScreenSignup /></Screen>
+        </DCArtboard>
+        <DCArtboard id="signup-error" label="학습자 회원가입 — 유효성 오류" width={SCREEN_W} height={740}>
+          <Screen h={740}><ScreenSignupError /></Screen>
+        </DCArtboard>
+        <DCArtboard id="login-fail-learner" label="로그인 실패 — 학습자" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenLoginFailLearner /></Screen>
+        </DCArtboard>
+        <DCArtboard id="login-fail-educator" label="로그인 실패 — 교육자" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenLoginFailEducator /></Screen>
+        </DCArtboard>
+        <DCArtboard id="loading-scenario" label="로딩 — 시나리오 생성" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenLoadingScenario /></Screen>
+        </DCArtboard>
+        <DCArtboard id="loading-evaluation" label="로딩 — AI 평가 중" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenLoadingEvaluation /></Screen>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── SECTION 2: 학습자 ────────────────────────────────────────────── */}
+      <DCSection id="learner" title="학습자 (Learner)">
+        <DCArtboard id="scenario-list" label="시나리오 목록" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenScenarioList /></Screen>
+        </DCArtboard>
+        <DCArtboard id="scenario-create" label="시나리오 생성 (모달)" width={SCREEN_W} height={720}>
+          <Screen h={720}><ScreenScenarioCreate /></Screen>
+        </DCArtboard>
+        <DCArtboard id="scenario-detail" label="시나리오 상세 + 수행 이력" width={SCREEN_W} height={700}>
+          <Screen h={700}><ScreenScenarioDetail /></Screen>
+        </DCArtboard>
+        <DCArtboard id="history" label="학습 이력 전체 목록" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenHistory /></Screen>
+        </DCArtboard>
+        <DCArtboard id="result-learner" label="세션 결과 상세 (학습자)" width={SCREEN_W} height={680}>
+          <Screen h={680}><ScreenResultLearner /></Screen>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── SECTION 3: 시뮬레이션 플로우 ────────────────────────────────── */}
+      <DCSection id="simulation" title="시뮬레이션 플로우 (학습자)">
+        <DCArtboard id="sim-start" label="① 시뮬레이션 시작 확인" width={SCREEN_W} height={720}>
+          <Screen h={720}><ScreenSimStart /></Screen>
+        </DCArtboard>
+        <DCArtboard id="pbl" label="① PBL — AI 동료 대화 + 요약 확인" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenPBL /></Screen>
+        </DCArtboard>
+        <DCArtboard id="pbl-waiting" label="① PBL — AI 동료 응답 대기" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenPBLWaiting /></Screen>
+        </DCArtboard>
+        <DCArtboard id="pbl-complete" label="① PBL — 5턴 소모 완료 모달" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenPBLComplete /></Screen>
+        </DCArtboard>
+        <DCArtboard id="pbl-summary" label="① PBL 요약 확인 (PBL 단계 내)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenPBLSummary /></Screen>
+        </DCArtboard>
+        <DCArtboard id="simulation-chat" label="② 가상 환자 대화 시뮬레이션" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenSimulation /></Screen>
+        </DCArtboard>
+        <DCArtboard id="simulation-waiting" label="② 가상 환자 응답 대기" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenSimulationWaiting /></Screen>
+        </DCArtboard>
+        <DCArtboard id="simulation-timeout" label="② 제한 시간 초과 모달" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenSimulationTimeout /></Screen>
+        </DCArtboard>
+        <DCArtboard id="debriefing" label="③ 디브리핑 (AI 평가 결과)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenDebriefing /></Screen>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── SECTION 4: 교육자 ────────────────────────────────────────────── */}
+      <DCSection id="educator" title="교육자 (Educator)">
+        <DCArtboard id="edu-student-list" label="학생 목록" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenEducatorStudentList /></Screen>
+        </DCArtboard>
+        <DCArtboard id="edu-student-history" label="학생별 세션 이력" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><ScreenEducatorStudentHistory /></Screen>
+        </DCArtboard>
+        <DCArtboard id="edu-session-detail" label="세션 상세 + 코멘트 작성" width={SCREEN_W} height={720}>
+          <Screen h={720}><ScreenEducatorSessionDetail /></Screen>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
