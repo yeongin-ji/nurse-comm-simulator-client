@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ArrowRight,
+  FileText,
   Hash,
   Lock,
   LogOut,
@@ -23,11 +24,33 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Nav } from "@/components/layout/nav";
 import { PageShell } from "@/components/layout/page-shell";
 import { SimNav } from "@/components/layout/sim-nav";
+import { ChatBubble } from "@/components/chat/chat-bubble";
+import { ChatInput } from "@/components/chat/chat-input";
+import { TypingBubble } from "@/components/chat/typing-bubble";
+import { EmptyState } from "@/components/feedback/empty-state";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { PatientAvatar } from "@/components/sim/patient-avatar";
+import { PatientStatePanel } from "@/components/sim/patient-state-panel";
+import { PblProgress } from "@/components/sim/pbl-progress";
+import { ScenarioTooltip } from "@/components/sim/scenario-tooltip";
+import { Timer } from "@/components/sim/timer";
 
 export default function ComponentsCatalog() {
   const [tts, setTts] = useState(true);
   const [profileImage, setProfileImage] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [chatLog, setChatLog] = useState<{ role: "user" | "patient"; text: string }[]>(
+    [
+      { role: "patient", text: "(거칠게 숨을 몰아쉬며) 뭐가 필요해요?" },
+      {
+        role: "user",
+        text: "안녕하세요, 저는 담당 간호학생이에요. 지금 많이 힘드시죠?",
+      },
+      { role: "patient", text: "...네, 숨쉬기가 너무 힘들어요." },
+    ]
+  );
+  const [timerStart] = useState(() => Date.now() - 156_000);
+  const [shortTimerStart] = useState(() => Date.now());
 
   return (
     <main className="min-h-full bg-surface">
@@ -293,6 +316,102 @@ export default function ComponentsCatalog() {
               <SimNav current={2} />
             </div>
           </div>
+        </Section>
+
+        <Section title="PatientAvatar">
+          <div className="flex items-end gap-4">
+            <PatientAvatar name="이영수" size={32} />
+            <PatientAvatar name="김미래" size={44} />
+            <PatientAvatar name="박준호" size={64} />
+            <PatientAvatar name="OOO" size={80} />
+            <PatientAvatar name="OOO" size={28} rounded />
+          </div>
+        </Section>
+
+        <Section title="ChatBubble + TypingBubble">
+          <div className="flex flex-col gap-3 max-w-[560px]">
+            <ChatBubble role="patient" text="(거칠게 숨을 몰아쉬며) 뭐가 필요해요? 어차피 나한테 관심 없잖아요..." />
+            <ChatBubble role="user" text="안녕하세요, 저는 오늘 담당 간호학생이에요. 지금 많이 힘드시죠?" />
+            <ChatBubble role="ai-peer" text="환자가 거부 반응을 보이고 있어요. 우선 신뢰를 쌓는 데 집중해 보세요." />
+            <TypingBubble role="patient" />
+          </div>
+        </Section>
+
+        <Section title="ChatInput">
+          <div className="flex flex-col gap-3 max-w-[560px]">
+            <ChatInput
+              onSubmit={(text) =>
+                setChatLog((prev) => [...prev, { role: "user", text }])
+              }
+            />
+            <ChatInput
+              disabled
+              disabledHint="환자가 응답하고 있어요..."
+              onSubmit={() => {}}
+            />
+            <div className="flex flex-col gap-2 mt-2">
+              {chatLog.slice(-3).map((m, i) => (
+                <ChatBubble key={i} role={m.role} text={m.text} />
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        <Section title="ScenarioTooltip">
+          <div className="flex items-center gap-3">
+            <span className="text-body-md">시나리오 정보:</span>
+            <ScenarioTooltip description="COPD 환자인 OOO님 (M/47)은 호흡곤란을 호소하여 간호사가 입술 오므리기 호흡과 복식 호흡을 교육하려 합니다. 하지만 환자는 교육을 완강히 거부합니다." />
+            <span className="text-body-md text-fg-muted">i 아이콘에 호버해 보세요</span>
+          </div>
+        </Section>
+
+        <Section title="Timer">
+          <div className="flex items-center gap-6">
+            <Timer startedAt={timerStart} totalSeconds={600} />
+            <Timer startedAt={shortTimerStart} totalSeconds={5} />
+          </div>
+        </Section>
+
+        <Section title="PatientStatePanel">
+          <PatientStatePanel
+            vitalSigns={[
+              { label: "혈압", value: "138/88" },
+              { label: "맥박", value: "102 bpm" },
+              { label: "호흡", value: "24회/분" },
+              { label: "체온", value: "37.2℃" },
+            ]}
+            otherSigns="호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰."
+            psychological={[
+              { label: "불안", value: 72, tone: "danger" },
+              { label: "분노", value: 55, tone: "warning" },
+              { label: "우울", value: 20, tone: "subtle" },
+            ]}
+            onEnd={() => {}}
+          />
+        </Section>
+
+        <Section title="PblProgress">
+          <div className="max-w-[260px]">
+            <PblProgress current={2} max={5} onComplete={() => {}} />
+          </div>
+        </Section>
+
+        <Section title="LoadingScreen">
+          <div className="rounded-md border border-border bg-background min-h-[280px] flex flex-col">
+            <LoadingScreen
+              title="시나리오를 만들고 있어요"
+              subtitle="가상 환자 정보, 딜레마 케이스, 시나리오를 순서대로 만들어요"
+            />
+          </div>
+        </Section>
+
+        <Section title="EmptyState">
+          <EmptyState
+            icon={<FileText className="h-5 w-5" />}
+            title="아직 시뮬레이션을 시작하지 않았어요"
+            description="새 시나리오를 만들어 첫 시뮬레이션을 시작해 보세요."
+            action={<Button>새 시나리오 만들기</Button>}
+          />
         </Section>
       </PageShell>
     </main>
