@@ -1,47 +1,95 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
+import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
 
-type Props = { params: Promise<{ sessionId: string }> };
-
-// TODO(Stage D): fetch from GET /sessions/{id}
-const MOCK_SESSION = {
+// TODO(Stage D-3): backend doesn't expose disease/category/objectives directly.
+// These are derived from the scenario's document_id once the API exposes them.
+const PLACEHOLDER = {
   disease: "COPD",
   difficulty: "중",
   category: "호흡기계 > 폐쇄성폐질환",
   patient: { name: "OOO", age: "M/47" },
-  description:
-    'COPD 환자인 OOO님 (M/47)은 호흡곤란을 호소하여 간호사가 입술 오므리기 호흡과 복식 호흡을 교육하려 합니다. 하지만 환자는 "숨차 죽겠는데 자꾸 뭘 시키냐"며 교육을 완강히 거부합니다.',
   objectives: [
     "딜레마 상황에서 환자에게 제공할 간호에 대해 의사결정을 내릴 수 있다.",
     "의사결정을 바탕으로 환자와 효과적으로 의사소통 할 수 있다.",
   ],
 };
 
-export default async function SimStartPage({ params }: Props) {
-  const { sessionId } = await params;
+export default function SimStartPage() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const numericSessionId = Number(sessionId);
+
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  if (sessionQuery.isLoading || scenarioQuery.isLoading) {
+    return (
+      <LoadingScreen
+        title="세션 정보를 불러오고 있어요"
+        subtitle="잠시만 기다려 주세요"
+      />
+    );
+  }
+
+  if (sessionQuery.isError || scenarioQuery.isError) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8">
+        <Card className="w-full max-w-[480px] flex flex-col gap-3 p-8 text-center">
+          <h1 className="text-title-lg text-foreground">
+            세션 정보를 불러올 수 없어요
+          </h1>
+          <p className="text-body-md text-fg-muted">
+            잠시 후 다시 시도하거나 시나리오 목록으로 돌아가세요.
+          </p>
+          <Link href="/scenarios" className="self-center pt-2">
+            <Button variant="secondary">시나리오 목록으로</Button>
+          </Link>
+        </Card>
+      </main>
+    );
+  }
+
+  const scenarioText =
+    scenarioQuery.data?.scenario_text ?? "시나리오 본문이 아직 준비되지 않았어요.";
 
   return (
     <main className="flex flex-1 justify-center px-6 pt-10 pb-12">
       <Card elevated className="w-full max-w-[760px] flex flex-col gap-6 p-8">
         <header className="flex gap-6 items-start">
-          <PatientAvatar size={100} name={MOCK_SESSION.patient.name} />
+          <PatientAvatar size={100} name={PLACEHOLDER.patient.name} />
           <div className="flex-1 flex flex-col gap-2.5">
             <div className="flex flex-col gap-1">
               <h1 className="text-headline-md text-foreground">
                 시뮬레이션을 시작할게요
               </h1>
               <p className="text-body-md text-fg-muted">
-                {MOCK_SESSION.disease} · {MOCK_SESSION.patient.name} (
-                {MOCK_SESSION.patient.age})
+                {PLACEHOLDER.disease} · {PLACEHOLDER.patient.name} (
+                {PLACEHOLDER.patient.age})
               </p>
             </div>
             <div className="flex gap-1.5 flex-wrap">
-              <Badge>난이도 {MOCK_SESSION.difficulty}</Badge>
-              <Badge>{MOCK_SESSION.category}</Badge>
+              <Badge>난이도 {PLACEHOLDER.difficulty}</Badge>
+              <Badge>{PLACEHOLDER.category}</Badge>
             </div>
             <div className="flex items-center gap-1.5">
               <Settings className="h-3.5 w-3.5 text-fg-subtle" aria-hidden />
@@ -59,7 +107,7 @@ export default async function SimStartPage({ params }: Props) {
             시나리오
           </h2>
           <p className="text-body-md text-foreground leading-[24px]">
-            {MOCK_SESSION.description}
+            {scenarioText}
           </p>
         </section>
 
@@ -70,7 +118,7 @@ export default async function SimStartPage({ params }: Props) {
             학습 목표
           </h2>
           <ul className="flex flex-col gap-2.5">
-            {MOCK_SESSION.objectives.map((obj, i) => (
+            {PLACEHOLDER.objectives.map((obj, i) => (
               <li key={i} className="flex gap-2 items-start">
                 <Badge variant="accent">{i + 1}</Badge>
                 <p className="text-body-md text-fg-muted leading-[22px] pt-px">

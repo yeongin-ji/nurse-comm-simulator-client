@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableRow } from "@/components/ui/table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
+import { StartSessionButton } from "@/components/scenarios/start-session-button";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 
 type Props = { params: Promise<{ id: string }> };
@@ -46,7 +46,8 @@ const MOCK_SESSIONS = [
 
 export default async function ScenarioDetailPage({ params }: Props) {
   const { id } = await params;
-  const newSessionId = `${id}-new`;
+  // Mock numeric scenario id (real backend assigns numbers; URL is a slug for now).
+  const numericScenarioId = Number.isFinite(Number(id)) ? Number(id) : 1;
 
   return (
     <main className="flex-1 bg-background">
@@ -147,11 +148,7 @@ export default async function ScenarioDetailPage({ params }: Props) {
                   PBL: 최대 5턴 · 대화: 10분 제한
                 </span>
               </div>
-              <Link href={`/sim/${newSessionId}/start`} className="block">
-                <Button variant="primary" full>
-                  시뮬레이션 시작하기
-                </Button>
-              </Link>
+              <StartSessionButton scenarioId={numericScenarioId} />
             </Card>
           </aside>
         </div>
