@@ -34,6 +34,7 @@ export function Gauge({
           style={{ width: `${clamped}%` }}
           className={cn(
             "h-full rounded-full transition-[width] duration-300",
+            "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
             colorClass[color]
           )}
         />

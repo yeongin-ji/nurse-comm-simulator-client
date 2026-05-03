@@ -1,28 +1,14 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+"use client";
+
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Nav } from "@/components/layout/nav";
 
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("role")?.value as
-    | "learner"
-    | "educator"
-    | undefined;
-
-  // TODO(Stage D): replace with real session validation against /learners/me or similar
-  if (!role) {
-    // dev: default to learner so pages render without backend
-    if (process.env.NODE_ENV !== "production") {
-      return (
-        <>
-          <Nav role="learner" />
-          {children}
-        </>
-      );
-    }
-    redirect("/");
-  }
+// TODO(Stage D): replace with cookie/session-driven role from /learners/me.
+// Cookie/auth gating happens in proxy.ts; this layout only renders the right Nav.
+export default function AppLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const role = pathname.startsWith("/students") ? "educator" : "learner";
 
   return (
     <>

@@ -89,3 +89,9 @@ body {
     transform: rotate(360deg);
   }
 }
+
+@keyframes gauge-fill {
+  from {
+    width: 0%;
+  }
+}
