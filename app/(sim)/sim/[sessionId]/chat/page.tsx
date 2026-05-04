@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 } from "@/components/sim/patient-state-panel";
 import { ScenarioTooltip } from "@/components/sim/scenario-tooltip";
 import { Timer } from "@/components/sim/timer";
+import { projectPatientState, simulationApi } from "@/lib/api/simulation";
 
 type Message = { role: Extract<ChatRole, "user" | "patient">; text: string };
 
@@ -27,14 +29,14 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
-const MOCK_VITALS: VitalSign[] = [
+const INITIAL_VITALS: VitalSign[] = [
   { label: "혈압", value: "138/88" },
   { label: "맥박", value: "102 bpm" },
   { label: "호흡", value: "24회/분" },
   { label: "체온", value: "37.2℃" },
 ];
 
-const MOCK_PSYCH: Psychological[] = [
+const INITIAL_PSYCH: Psychological[] = [
   { label: "불안", value: 72, tone: "danger" },
   { label: "분노", value: 55, tone: "warning" },
   { label: "우울", value: 20, tone: "subtle" },
@@ -52,26 +54,35 @@ function formatTotal() {
 export default function ChatPage() {
   const router = useRouter();
   const { sessionId } = useParams<{ sessionId: string }>();
+  const numericSessionId = Number(sessionId);
+
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [waiting, setWaiting] = useState(false);
+  const [vitalSigns, setVitalSigns] = useState<VitalSign[]>(INITIAL_VITALS);
+  const [psychological, setPsychological] =
+    useState<Psychological[]>(INITIAL_PSYCH);
+
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [startedAt] = useState(() => Date.now());
 
+  const turnMutation = useMutation({
+    mutationFn: (text: string) =>
+      simulationApi.sendTurn(numericSessionId, { message: text }),
+    onSuccess: (res) => {
+      const reply = res.reply ?? "(응답을 받지 못했어요)";
+      setMessages((prev) => [...prev, { role: "patient", text: reply }]);
+      const projected = projectPatientState(res.current_state);
+      if (projected) {
+        if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
+        if (projected.psychological.length > 0)
+          setPsychological(projected.psychological);
+      }
+    },
+  });
+
   const onSend = (text: string) => {
-    // TODO(Stage D): POST /sessions/{id}/simulate
     setMessages((prev) => [...prev, { role: "user", text }]);
-    setWaiting(true);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "patient",
-          text: "(환자 응답 placeholder) ...조금 안정이 되는 것 같아요.",
-        },
-      ]);
-      setWaiting(false);
-    }, 900);
+    turnMutation.mutate(text);
   };
 
   const onTimeout = useCallback(() => {
@@ -79,19 +90,22 @@ export default function ChatPage() {
   }, []);
 
   const goEvaluate = () => {
-    // TODO(Stage D): POST /sessions/{id}/phase to EVALUATION
+    // TODO(D-6): POST /sessions/{id}/evaluate before redirect, and surface a
+    // loading screen while AI evaluation runs.
     setTimeoutOpen(false);
     setEndOpen(false);
     router.push(`/sim/${sessionId}/result`);
   };
 
+  const waiting = turnMutation.isPending;
+
   return (
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <PatientStatePanel
-          vitalSigns={MOCK_VITALS}
+          vitalSigns={vitalSigns}
           otherSigns="호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰."
-          psychological={MOCK_PSYCH}
+          psychological={psychological}
           onEnd={() => setEndOpen(true)}
         />
 
@@ -116,6 +130,11 @@ export default function ChatPage() {
               <ChatBubble key={i} role={m.role} text={m.text} />
             ))}
             {waiting && <TypingBubble role="patient" />}
+            {turnMutation.isError && (
+              <p className="text-label-sm text-danger tracking-normal">
+                응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
+              </p>
+            )}
           </Card>
 
           <ChatInput
