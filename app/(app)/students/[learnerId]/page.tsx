@@ -1,31 +1,73 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
+import {
+  formatSessionDate,
+  learnerKeys,
+  learnersApi,
+} from "@/lib/api/learners";
 
-type Props = { params: Promise<{ learnerId: string }> };
+const COLUMN_WIDTHS = [undefined, "150px", "70px", "64px", "70px", "80px"];
 
-// TODO(Stage D): fetch from GET /learners/{id} + GET /learners/{id}/sessions
-const MOCK_LEARNER = {
-  id: "20210101",
-  name: "김간호",
-  email: "kim@univ.ac.kr",
-};
+export default function StudentHistoryPage() {
+  const { learnerId } = useParams<{ learnerId: string }>();
+  const numericLearnerId = Number(learnerId);
 
-const MOCK_SESSIONS = [
-  { id: 5005, disease: "COPD", date: "2026.04.28 14:22", status: "완료", score: "82점", comments: 0 },
-  { id: 5004, disease: "COPD", date: "2026.04.20 10:05", status: "완료", score: "74점", comments: 1 },
-  { id: 5003, disease: "폐렴", date: "2026.04.15 16:30", status: "완료", score: "80점", comments: 0 },
-  { id: 5002, disease: "COPD", date: "2026.04.10 09:20", status: "완료", score: "68점", comments: 1 },
-  { id: 5001, disease: "심부전", date: "2026.04.05 11:00", status: "완료", score: "72점", comments: 0 },
-];
+  const learnerQuery = useQuery({
+    queryKey: learnerKeys.detail(numericLearnerId),
+    queryFn: () => learnersApi.detail(numericLearnerId),
+    enabled: Number.isFinite(numericLearnerId),
+  });
 
-const COLUMN_WIDTHS = [undefined, "130px", "70px", "64px", "70px", "80px"];
+  const sessionsQuery = useQuery({
+    queryKey: learnerKeys.sessions(numericLearnerId),
+    queryFn: () => learnersApi.listSessions(numericLearnerId),
+    enabled: Number.isFinite(numericLearnerId),
+  });
 
-export default async function StudentHistoryPage({ params }: Props) {
-  const { learnerId } = await params;
+  if (learnerQuery.isLoading) {
+    return <LoadingScreen title="학생 정보를 불러오고 있어요" />;
+  }
+
+  if (learnerQuery.isError || !learnerQuery.data) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8">
+        <Card className="w-full max-w-[480px] flex flex-col gap-3 p-8 text-center">
+          <h1 className="text-title-lg text-foreground">
+            학생 정보를 불러올 수 없어요
+          </h1>
+          <Link
+            href="/students"
+            className="self-center pt-2 text-[13px] text-accent hover:underline underline-offset-2"
+          >
+            학생 목록으로
+          </Link>
+        </Card>
+      </main>
+    );
+  }
+
+  const learner = learnerQuery.data;
+  const sessions = sessionsQuery.data ?? [];
+  const totalScore = sessions.reduce(
+    (acc, s) => acc + (s.total_score ?? 0),
+    0
+  );
+  const scored = sessions.filter((s) => s.total_score != null).length;
+  const avg = scored > 0 ? Math.round(totalScore / scored) : 0;
+  const myComments = sessions.reduce(
+    (acc, s) => acc + (s.comment_count ?? 0),
+    0
+  );
 
   return (
     <main className="flex-1 bg-background">
@@ -33,78 +75,98 @@ export default async function StudentHistoryPage({ params }: Props) {
         <Breadcrumb
           items={[
             { label: "학생 목록", href: "/students" },
-            { label: `${MOCK_LEARNER.name} (${MOCK_LEARNER.id})` },
+            { label: `${learner.name} (${learner.student_number})` },
           ]}
         />
 
         <header className="flex flex-col gap-1">
           <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">
-            {MOCK_LEARNER.name} 학습 이력
+            {learner.name} 학습 이력
           </h1>
           <p className="text-body-md text-fg-muted">
-            학번: {MOCK_LEARNER.id} · {MOCK_LEARNER.email}
+            학번: {learner.student_number} · {learner.email}
           </p>
         </header>
 
         <div className="flex gap-3">
-          <StatCard label="총 세션" value={`${MOCK_SESSIONS.length}회`} />
-          <StatCard label="평균 점수" value="79점" />
-          <StatCard
-            label="내 코멘트"
-            value={`${MOCK_SESSIONS.reduce((acc, s) => acc + s.comments, 0)}건`}
-          />
+          <StatCard label="총 세션" value={`${sessions.length}회`} />
+          <StatCard label="평균 점수" value={`${avg}점`} />
+          <StatCard label="내 코멘트" value={`${myComments}건`} />
         </div>
 
         <Card className="p-0 overflow-hidden">
-          <Table className="border-0 rounded-none">
-            <TableRow
-              header
-              cells={[
-                { content: "시나리오 (질환)" },
-                { content: "수행일시", width: COLUMN_WIDTHS[1] },
-                { content: "상태", width: COLUMN_WIDTHS[2] },
-                { content: "총점", width: COLUMN_WIDTHS[3] },
-                { content: "코멘트", width: COLUMN_WIDTHS[4] },
-                { content: "", width: COLUMN_WIDTHS[5] },
-              ]}
-            />
-            {MOCK_SESSIONS.map((s) => (
+          {sessionsQuery.isLoading ? (
+            <div className="flex items-center gap-2 px-5 py-6 text-body-md text-fg-muted">
+              <Spinner size={14} /> 세션 이력을 불러오고 있어요
+            </div>
+          ) : sessionsQuery.isError ? (
+            <div className="px-5 py-6 text-body-md text-danger">
+              세션 이력을 불러오지 못했어요.
+            </div>
+          ) : (
+            <Table className="border-0 rounded-none">
               <TableRow
-                key={s.id}
+                header
                 cells={[
-                  { content: s.disease },
-                  { content: s.date, width: COLUMN_WIDTHS[1] },
-                  {
-                    content: s.status,
-                    width: COLUMN_WIDTHS[2],
-                    className: "text-success",
-                  },
-                  {
-                    content: s.score,
-                    width: COLUMN_WIDTHS[3],
-                    className: "font-medium",
-                  },
-                  {
-                    content: s.comments > 0 ? `${s.comments}개` : "없음",
-                    width: COLUMN_WIDTHS[4],
-                    className:
-                      s.comments > 0 ? "text-accent" : "text-fg-subtle",
-                  },
-                  {
-                    content: (
-                      <Link
-                        href={`/students/${learnerId}/sessions/${s.id}`}
-                        className="text-accent hover:underline underline-offset-2"
-                      >
-                        상세 보기
-                      </Link>
-                    ),
-                    width: COLUMN_WIDTHS[5],
-                  },
+                  { content: "시나리오 (질환)" },
+                  { content: "수행일시", width: COLUMN_WIDTHS[1] },
+                  { content: "상태", width: COLUMN_WIDTHS[2] },
+                  { content: "총점", width: COLUMN_WIDTHS[3] },
+                  { content: "코멘트", width: COLUMN_WIDTHS[4] },
+                  { content: "", width: COLUMN_WIDTHS[5] },
                 ]}
               />
-            ))}
-          </Table>
+              {sessions.map((s) => (
+                <TableRow
+                  key={s.id}
+                  cells={[
+                    { content: s.disease },
+                    {
+                      content: formatSessionDate(s.start_time),
+                      width: COLUMN_WIDTHS[1],
+                    },
+                    {
+                      content: s.session_status,
+                      width: COLUMN_WIDTHS[2],
+                      className: "text-success",
+                    },
+                    {
+                      content:
+                        s.total_score != null ? `${s.total_score}점` : "—",
+                      width: COLUMN_WIDTHS[3],
+                      className:
+                        s.total_score != null ? "font-medium" : undefined,
+                    },
+                    {
+                      content:
+                        s.comment_count > 0 ? `${s.comment_count}개` : "없음",
+                      width: COLUMN_WIDTHS[4],
+                      className:
+                        s.comment_count > 0
+                          ? "text-accent"
+                          : "text-fg-subtle",
+                    },
+                    {
+                      content: (
+                        <Link
+                          href={`/students/${learnerId}/sessions/${s.id}`}
+                          className="text-accent hover:underline underline-offset-2"
+                        >
+                          상세 보기
+                        </Link>
+                      ),
+                      width: COLUMN_WIDTHS[5],
+                    },
+                  ]}
+                />
+              ))}
+              {sessions.length === 0 && (
+                <div className="px-4 py-6 text-center text-body-md text-fg-muted">
+                  아직 수행한 세션이 없어요
+                </div>
+              )}
+            </Table>
+          )}
         </Card>
       </PageShell>
     </main>

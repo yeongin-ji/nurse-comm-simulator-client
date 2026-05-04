@@ -1,68 +1,46 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Search } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { PageShell } from "@/components/layout/page-shell";
-
-// TODO(Stage D): fetch from GET /learners
-const MOCK_STUDENTS = [
-  {
-    id: "20210101",
-    name: "김간호",
-    email: "kim@univ.ac.kr",
-    sessions: 5,
-    last: "2026.04.28",
-    avg: "79점",
-  },
-  {
-    id: "20210202",
-    name: "이실습",
-    email: "lee@univ.ac.kr",
-    sessions: 3,
-    last: "2026.04.25",
-    avg: "82점",
-  },
-  {
-    id: "20210303",
-    name: "박학생",
-    email: "park@univ.ac.kr",
-    sessions: 7,
-    last: "2026.04.29",
-    avg: "71점",
-  },
-  {
-    id: "20210404",
-    name: "최간호",
-    email: "choi@univ.ac.kr",
-    sessions: 1,
-    last: "2026.04.10",
-    avg: "65점",
-  },
-  {
-    id: "20210505",
-    name: "정실습",
-    email: "jung@univ.ac.kr",
-    sessions: 0,
-    last: "—",
-    avg: "—",
-  },
-];
+import { learnerKeys, learnersApi } from "@/lib/api/learners";
 
 const COLUMN_WIDTHS = ["100px", "80px", undefined, "64px", "110px", "64px", "80px"];
 
 export default function StudentsPage() {
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? MOCK_STUDENTS.filter(
-        (s) => s.name.toLowerCase().includes(q) || s.id.includes(q)
-      )
-    : MOCK_STUDENTS;
+
+  const learnersQuery = useQuery({
+    queryKey: learnerKeys.list(),
+    queryFn: () => learnersApi.list(),
+  });
+
+  const learners = useMemo(
+    () => learnersQuery.data ?? [],
+    [learnersQuery.data]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return learners;
+    return learners.filter(
+      (s) =>
+        s.name?.toLowerCase().includes(q) ||
+        s.student_number?.includes(q)
+    );
+  }, [learners, query]);
+
+  const totalCount = learners.length;
+  const feedbackNeeded = learners.filter(
+    (l) => (l.session_count ?? 0) > 0
+  ).length;
 
   return (
     <main className="flex-1 bg-background">
@@ -77,11 +55,15 @@ export default function StudentsPage() {
         </header>
 
         <div className="flex gap-3">
-          <StatCard label="전체 학생" value="24명" />
-          <StatCard label="이번 주 세션" value="37회" />
+          <StatCard label="전체 학생" value={`${totalCount}명`} />
+          <StatCard
+            label="활동 학생"
+            value={`${feedbackNeeded}명`}
+            sub="세션 1회 이상"
+          />
           <StatCard
             label="피드백 필요"
-            value="12건"
+            value={`${learners.filter((l) => (l.session_count ?? 0) > 0).length}건`}
             sub="코멘트 미작성"
           />
         </div>
@@ -97,57 +79,75 @@ export default function StudentsPage() {
         </div>
 
         <Card className="p-0 overflow-hidden">
-          <Table className="border-0 rounded-none">
-            <TableRow
-              header
-              cells={[
-                { content: "학번", width: COLUMN_WIDTHS[0] },
-                { content: "이름", width: COLUMN_WIDTHS[1] },
-                { content: "이메일" },
-                { content: "세션", width: COLUMN_WIDTHS[3] },
-                { content: "최근 수행일", width: COLUMN_WIDTHS[4] },
-                { content: "평균", width: COLUMN_WIDTHS[5] },
-                { content: "", width: COLUMN_WIDTHS[6] },
-              ]}
-            />
-            {filtered.map((s) => (
+          {learnersQuery.isLoading ? (
+            <div className="flex items-center gap-2 px-5 py-6 text-body-md text-fg-muted">
+              <Spinner size={14} /> 학생 목록을 불러오고 있어요
+            </div>
+          ) : learnersQuery.isError ? (
+            <div className="px-5 py-6 text-body-md text-danger">
+              학생 목록을 불러오지 못했어요.
+            </div>
+          ) : (
+            <Table className="border-0 rounded-none">
               <TableRow
-                key={s.id}
+                header
                 cells={[
-                  { content: s.id, width: COLUMN_WIDTHS[0] },
-                  {
-                    content: s.name,
-                    width: COLUMN_WIDTHS[1],
-                    className: "font-medium",
-                  },
-                  { content: s.email },
-                  { content: `${s.sessions}회`, width: COLUMN_WIDTHS[3] },
-                  { content: s.last, width: COLUMN_WIDTHS[4] },
-                  {
-                    content: s.avg,
-                    width: COLUMN_WIDTHS[5],
-                    className: s.avg !== "—" ? "font-medium" : undefined,
-                  },
-                  {
-                    content: (
-                      <Link
-                        href={`/students/${s.id}`}
-                        className="text-accent hover:underline underline-offset-2"
-                      >
-                        이력 보기
-                      </Link>
-                    ),
-                    width: COLUMN_WIDTHS[6],
-                  },
+                  { content: "학번", width: COLUMN_WIDTHS[0] },
+                  { content: "이름", width: COLUMN_WIDTHS[1] },
+                  { content: "이메일" },
+                  { content: "세션", width: COLUMN_WIDTHS[3] },
+                  { content: "최근 수행일", width: COLUMN_WIDTHS[4] },
+                  { content: "평균", width: COLUMN_WIDTHS[5] },
+                  { content: "", width: COLUMN_WIDTHS[6] },
                 ]}
               />
-            ))}
-            {filtered.length === 0 && (
-              <div className="px-4 py-6 text-center text-body-md text-fg-muted">
-                일치하는 학생이 없어요
-              </div>
-            )}
-          </Table>
+              {filtered.map((s) => (
+                <TableRow
+                  key={s.id}
+                  cells={[
+                    { content: s.student_number ?? "—", width: COLUMN_WIDTHS[0] },
+                    {
+                      content: s.name ?? "—",
+                      width: COLUMN_WIDTHS[1],
+                      className: "font-medium",
+                    },
+                    { content: s.email ?? "—" },
+                    {
+                      content: `${s.session_count ?? 0}회`,
+                      width: COLUMN_WIDTHS[3],
+                    },
+                    {
+                      content: s.last_session_at ?? "—",
+                      width: COLUMN_WIDTHS[4],
+                    },
+                    {
+                      content:
+                        s.average_score != null ? `${s.average_score}점` : "—",
+                      width: COLUMN_WIDTHS[5],
+                      className:
+                        s.average_score != null ? "font-medium" : undefined,
+                    },
+                    {
+                      content: (
+                        <Link
+                          href={`/students/${s.id}`}
+                          className="text-accent hover:underline underline-offset-2"
+                        >
+                          이력 보기
+                        </Link>
+                      ),
+                      width: COLUMN_WIDTHS[6],
+                    },
+                  ]}
+                />
+              ))}
+              {filtered.length === 0 && (
+                <div className="px-4 py-6 text-center text-body-md text-fg-muted">
+                  일치하는 학생이 없어요
+                </div>
+              )}
+            </Table>
+          )}
         </Card>
 
         <div className="flex items-start gap-2 rounded bg-surface-muted px-3.5 py-2.5">
