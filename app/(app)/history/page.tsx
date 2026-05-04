@@ -4,36 +4,13 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { PageShell } from "@/components/layout/page-shell";
 
-// TODO(Stage D): fetch from GET /learners/{id}/sessions
+// TODO(Stage D): fetch from GET /learners/{id}/sessions (not in swagger yet).
+// IDs are numeric so the detail route can call GET /sessions/{id}/evaluation.
 const MOCK_HISTORY = [
-  {
-    id: "s4",
-    disease: "COPD",
-    date: "2026.04.28",
-    score: "82점",
-    comment: "1개",
-  },
-  {
-    id: "s3",
-    disease: "COPD",
-    date: "2026.04.15",
-    score: "74점",
-    comment: "없음",
-  },
-  {
-    id: "s2",
-    disease: "COPD",
-    date: "2026.04.01",
-    score: "68점",
-    comment: "2개",
-  },
-  {
-    id: "s1",
-    disease: "폐렴",
-    date: "2026.04.20",
-    score: "77점",
-    comment: "없음",
-  },
+  { id: 5004, disease: "COPD", date: "2026.04.28", score: "82점", comment: "1개" },
+  { id: 5003, disease: "COPD", date: "2026.04.15", score: "74점", comment: "없음" },
+  { id: 5002, disease: "COPD", date: "2026.04.01", score: "68점", comment: "2개" },
+  { id: 5001, disease: "폐렴", date: "2026.04.20", score: "77점", comment: "없음" },
 ];
 
 export default function HistoryPage() {

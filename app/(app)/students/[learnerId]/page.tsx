@@ -15,46 +15,11 @@ const MOCK_LEARNER = {
 };
 
 const MOCK_SESSIONS = [
-  {
-    id: "s5",
-    disease: "COPD",
-    date: "2026.04.28 14:22",
-    status: "완료",
-    score: "82점",
-    comments: 0,
-  },
-  {
-    id: "s4",
-    disease: "COPD",
-    date: "2026.04.20 10:05",
-    status: "완료",
-    score: "74점",
-    comments: 1,
-  },
-  {
-    id: "s3",
-    disease: "폐렴",
-    date: "2026.04.15 16:30",
-    status: "완료",
-    score: "80점",
-    comments: 0,
-  },
-  {
-    id: "s2",
-    disease: "COPD",
-    date: "2026.04.10 09:20",
-    status: "완료",
-    score: "68점",
-    comments: 1,
-  },
-  {
-    id: "s1",
-    disease: "심부전",
-    date: "2026.04.05 11:00",
-    status: "완료",
-    score: "72점",
-    comments: 0,
-  },
+  { id: 5005, disease: "COPD", date: "2026.04.28 14:22", status: "완료", score: "82점", comments: 0 },
+  { id: 5004, disease: "COPD", date: "2026.04.20 10:05", status: "완료", score: "74점", comments: 1 },
+  { id: 5003, disease: "폐렴", date: "2026.04.15 16:30", status: "완료", score: "80점", comments: 0 },
+  { id: 5002, disease: "COPD", date: "2026.04.10 09:20", status: "완료", score: "68점", comments: 1 },
+  { id: 5001, disease: "심부전", date: "2026.04.05 11:00", status: "완료", score: "72점", comments: 0 },
 ];
 
 const COLUMN_WIDTHS = [undefined, "130px", "70px", "64px", "70px", "80px"];

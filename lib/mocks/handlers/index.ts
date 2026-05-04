@@ -1,3 +1,4 @@
+import { commentHandlers } from "./comments";
 import { documentHandlers } from "./documents";
 import { evaluationHandlers } from "./evaluation";
 import { passthroughHandlers } from "./passthrough";
@@ -13,6 +14,7 @@ export const handlers = [
   ...pblHandlers,
   ...simulateHandlers,
   ...evaluationHandlers,
+  ...commentHandlers,
   // Must come last so concrete handlers above match first.
   ...passthroughHandlers,
 ];
