@@ -17,3 +17,16 @@ export const scenarioKeys = {
   all: ["scenarios"] as const,
   detail: (id: number) => [...scenarioKeys.all, "detail", id] as const,
 };
+
+export type MedicalRecord = {
+  name?: string;
+  age?: number;
+  sex?: string;
+  difficulty?: string;
+};
+
+/** ScenarioResponse.medical_record is typed as unknown; narrow it for UI. */
+export function projectMedicalRecord(raw: unknown): MedicalRecord {
+  if (!raw || typeof raw !== "object") return {};
+  return raw as MedicalRecord;
+}

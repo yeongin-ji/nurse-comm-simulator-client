@@ -11,10 +11,12 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { ScenarioCreateModal } from "@/components/scenarios/scenario-create-modal";
 
-// TODO(Stage D): fetch from GET /scenarios
+// TODO(Stage D): backend doesn't expose GET /scenarios (or per-learner listing)
+// in the current swagger. Keep mocks; switch to React Query once endpoint lands.
+// IDs map to scenarios MSW handler so detail navigation works end-to-end.
 const MOCK_SCENARIOS = [
   {
-    id: "copd-1",
+    id: 100,
     disease: "COPD",
     patient: "이영수",
     age: "23/M",
@@ -23,7 +25,7 @@ const MOCK_SCENARIOS = [
     lastDate: "2026.04.28",
   },
   {
-    id: "pneumonia-1",
+    id: 101,
     disease: "폐렴",
     patient: "김미래",
     age: "67/F",
@@ -32,7 +34,7 @@ const MOCK_SCENARIOS = [
     lastDate: "2026.04.20",
   },
   {
-    id: "heart-failure-1",
+    id: 102,
     disease: "심부전",
     patient: "박준호",
     age: "54/M",

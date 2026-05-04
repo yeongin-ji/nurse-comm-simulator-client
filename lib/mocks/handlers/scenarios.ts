@@ -35,14 +35,21 @@ export const scenarioHandlers = [
 
   http.get("/api/v1/scenarios/:id", ({ params }) => {
     const id = Number(params.id);
+    // Map known list IDs to documents so listing → detail stays consistent.
+    const SCENARIO_DOC_MAP: Record<number, number> = {
+      100: 2, // COPD
+      101: 4, // 폐렴
+      102: 5, // 심부전
+    };
+    const docId = SCENARIO_DOC_MAP[id] ?? 2;
     return HttpResponse.json({
       id,
-      document_id: 2,
+      document_id: docId,
       learner_id: 1,
       scenario_text:
-        "COPD 환자인 OOO님은 호흡곤란을 호소하며 교육을 완강히 거부합니다. (mock)",
+        '환자는 호흡곤란을 호소하여 간호사가 입술 오므리기 호흡과 복식 호흡을 교육하려 합니다. 하지만 환자는 "숨차 죽겠는데 자꾸 뭘 시키냐"며 교육을 완강히 거부합니다. (mock)',
       dilemma: { summary: "교육 거부 환자 (mock)" },
-      medical_record: { age: 47, sex: "M" },
+      medical_record: { name: "OOO", age: 47, sex: "M", difficulty: "중" },
       created_at: "2026-04-01T00:00:00Z",
     });
   }),
