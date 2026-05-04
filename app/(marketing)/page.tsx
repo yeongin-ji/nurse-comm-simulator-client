@@ -3,29 +3,42 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useForm } from "react-hook-form";
 import { AuthIllustration } from "@/components/auth/auth-illustration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+type LoginForm = {
+  email: string;
+  password: string;
+};
+
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    mode: "onTouched",
+    defaultValues: { email: "", password: "" },
+  });
 
-  const onSubmit = (role: "learner" | "educator") => (e: FormEvent) => {
-    e.preventDefault();
-    // TODO(Stage D): POST /sessions or auth endpoint
-    console.log("[login placeholder]", { role, email, password });
-    router.push(role === "learner" ? "/scenarios" : "/students");
-  };
+  const loginAs = (role: "learner" | "educator") =>
+    handleSubmit(() => {
+      // TODO(D-?): backend has no /auth/login endpoint in the current swagger.
+      // For now, set the role cookie so the (app) layout/proxy treats us as
+      // authenticated, then route to the role-appropriate landing page.
+      document.cookie = `role=${role}; path=/`;
+      router.push(role === "learner" ? "/scenarios" : "/students");
+    });
 
   return (
     <>
       <AuthIllustration variant="login" />
       <section className="flex flex-1 items-center justify-center p-12">
         <form
-          onSubmit={onSubmit("learner")}
+          onSubmit={loginAs("learner")}
           className="w-[340px] flex flex-col gap-7"
           noValidate
         >
@@ -44,20 +57,26 @@ export default function LoginPage() {
               type="email"
               placeholder="학교 이메일을 입력하세요"
               icon={<Mail className="h-4 w-4 text-fg-subtle" />}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
-              required
+              error={errors.email?.message}
+              {...register("email", {
+                required: "이메일을 입력해 주세요",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "올바른 이메일 형식이 아니에요",
+                },
+              })}
             />
             <Input
               label="비밀번호"
               type="password"
               placeholder="비밀번호를 입력하세요"
               icon={<Lock className="h-4 w-4 text-fg-subtle" />}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              required
+              error={errors.password?.message}
+              {...register("password", {
+                required: "비밀번호를 입력해 주세요",
+              })}
             />
           </div>
 
@@ -69,7 +88,7 @@ export default function LoginPage() {
               type="button"
               variant="secondary"
               full
-              onClick={onSubmit("educator")}
+              onClick={loginAs("educator")}
             >
               교육자로 시작
             </Button>

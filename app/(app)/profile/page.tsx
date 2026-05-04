@@ -1,35 +1,75 @@
 "use client";
 
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Hash, Image as ImageIcon, Lock, Mail, Mic, User } from "lucide-react";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { Toggle } from "@/components/ui/toggle";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
+import { learnerKeys, learnersApi } from "@/lib/api/learners";
+import { useSettingsStore } from "@/lib/stores/settings";
 
-// TODO(Stage D): fetch from /learners/{id}
-const MOCK_USER = {
-  role: "learner" as const,
-  name: "홍길동",
-  identifier: "20210101",
-  email: "hong@univ.ac.kr",
+// TODO(D-?): replace with auth store user.id once /auth/me wires up.
+const MOCK_USER_ID = 1;
+const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+type PasswordForm = {
+  current: string;
+  next: string;
+  confirm: string;
 };
 
 export default function ProfilePage() {
-  const isLearner = MOCK_USER.role === "learner";
-  const [tts, setTts] = useState(true);
-  const [profileImg, setProfileImg] = useState(false);
-  const [passwords, setPasswords] = useState({
-    current: "",
-    next: "",
-    confirm: "",
+  const learnerQuery = useQuery({
+    queryKey: learnerKeys.detail(MOCK_USER_ID),
+    queryFn: () => learnersApi.detail(MOCK_USER_ID),
   });
 
-  const setPw = (key: keyof typeof passwords) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      setPasswords((prev) => ({ ...prev, [key]: e.target.value }));
+  const ttsEnabled = useSettingsStore((s) => s.ttsEnabled);
+  const setTtsEnabled = useSettingsStore((s) => s.setTtsEnabled);
+  const profileImageEnabled = useSettingsStore((s) => s.profileImageEnabled);
+  const setProfileImageEnabled = useSettingsStore(
+    (s) => s.setProfileImageEnabled
+  );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitSuccessful },
+  } = useForm<PasswordForm>({
+    mode: "onTouched",
+    defaultValues: { current: "", next: "", confirm: "" },
+  });
+
+  const nextValue = watch("next");
+
+  const passwordMutation = useMutation({
+    // TODO(D-?): backend has no password-change endpoint in the current swagger.
+    // Simulate latency so UX matches a real network call.
+    mutationFn: async () => {
+      await new Promise((r) => setTimeout(r, 400));
+      return true;
+    },
+    onSuccess: () => {
+      reset({ current: "", next: "", confirm: "" });
+    },
+  });
+
+  const onSubmit = handleSubmit(() => passwordMutation.mutate());
+
+  if (learnerQuery.isLoading) {
+    return <LoadingScreen title="프로필을 불러오고 있어요" />;
+  }
+
+  const learner = learnerQuery.data;
+  const isLearner = true; // role inference comes from auth store later
 
   return (
     <main className="flex-1 bg-background">
@@ -55,21 +95,21 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-3.5">
             <Input
               label="이름"
-              defaultValue={MOCK_USER.name}
+              defaultValue={learner?.name ?? ""}
               readOnly
               icon={<User className="h-4 w-4 text-fg-subtle" />}
               suffix="읽기 전용"
             />
             <Input
               label={isLearner ? "학번" : "교번"}
-              defaultValue={MOCK_USER.identifier}
+              defaultValue={learner?.student_number ?? ""}
               readOnly
               icon={<Hash className="h-4 w-4 text-fg-subtle" />}
               suffix="읽기 전용"
             />
             <Input
               label="이메일"
-              defaultValue={MOCK_USER.email}
+              defaultValue={learner?.email ?? ""}
               readOnly
               icon={<Mail className="h-4 w-4 text-fg-subtle" />}
               suffix="읽기 전용"
@@ -78,7 +118,7 @@ export default function ProfilePage() {
 
           <div className="h-px bg-border" />
 
-          <div className="flex flex-col gap-3.5">
+          <form onSubmit={onSubmit} className="flex flex-col gap-3.5" noValidate>
             <h3 className="text-body-md font-medium text-foreground">
               비밀번호 변경
             </h3>
@@ -87,29 +127,68 @@ export default function ProfilePage() {
               type="password"
               placeholder="현재 비밀번호를 입력하세요"
               icon={<Lock className="h-4 w-4 text-fg-subtle" />}
-              value={passwords.current}
-              onChange={setPw("current")}
               autoComplete="current-password"
+              error={errors.current?.message}
+              {...register("current", {
+                required: "현재 비밀번호를 입력해 주세요",
+              })}
             />
             <Input
               label="새 비밀번호"
               type="password"
               placeholder="8자 이상, 영문·숫자 조합"
               icon={<Lock className="h-4 w-4 text-fg-subtle" />}
-              value={passwords.next}
-              onChange={setPw("next")}
               autoComplete="new-password"
+              error={errors.next?.message}
+              {...register("next", {
+                required: "새 비밀번호를 입력해 주세요",
+                pattern: {
+                  value: PASSWORD_RULE,
+                  message: "8자 이상, 영문·숫자를 함께 사용해 주세요",
+                },
+              })}
             />
             <Input
               label="새 비밀번호 확인"
               type="password"
               placeholder="한 번 더 입력하세요"
               icon={<Lock className="h-4 w-4 text-fg-subtle" />}
-              value={passwords.confirm}
-              onChange={setPw("confirm")}
               autoComplete="new-password"
+              error={errors.confirm?.message}
+              {...register("confirm", {
+                required: "비밀번호를 한 번 더 입력해 주세요",
+                validate: (v) =>
+                  v === nextValue || "비밀번호가 일치하지 않아요",
+              })}
             />
-          </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => reset()}
+                disabled={passwordMutation.isPending}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={passwordMutation.isPending}
+                icon={
+                  passwordMutation.isPending ? <Spinner size={14} /> : undefined
+                }
+              >
+                {passwordMutation.isPending ? "저장 중..." : "저장하기"}
+              </Button>
+            </div>
+
+            {isSubmitSuccessful && !passwordMutation.isPending && (
+              <p className="text-label-sm text-success tracking-normal">
+                비밀번호를 변경했어요
+              </p>
+            )}
+          </form>
         </Card>
 
         <Card className="flex flex-col gap-5">
@@ -119,23 +198,18 @@ export default function ProfilePage() {
             icon={<Mic className="h-[18px] w-[18px] text-fg-muted" />}
             title="TTS 음성 합성"
             description="환자의 응답을 음성으로 읽어줘요"
-            on={tts}
-            onChange={setTts}
+            on={ttsEnabled}
+            onChange={setTtsEnabled}
             divider
           />
           <SettingRow
             icon={<ImageIcon className="h-[18px] w-[18px] text-fg-muted" />}
             title="환자 프로필 이미지 생성"
             description="시나리오 생성 시 환자 이미지를 자동으로 만들어요"
-            on={profileImg}
-            onChange={setProfileImg}
+            on={profileImageEnabled}
+            onChange={setProfileImageEnabled}
           />
         </Card>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost">취소</Button>
-          <Button variant="primary">저장하기</Button>
-        </div>
       </PageShell>
     </main>
   );
