@@ -80,10 +80,15 @@ export function PatientStatePanel({
               <div className="flex-1 h-1 bg-surface-muted rounded-full overflow-hidden">
                 <div
                   style={{ width: `${Math.max(0, Math.min(100, g.value))}%` }}
-                  className={cn("h-full rounded-full", toneClass[g.tone])}
+                  className={cn(
+                    "h-full rounded-full",
+                    "transition-[width] duration-500 ease-out",
+                    "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
+                    toneClass[g.tone]
+                  )}
                 />
               </div>
-              <span className="w-[30px] shrink-0 text-right text-[11px] font-medium text-foreground">
+              <span className="w-[30px] shrink-0 text-right text-[11px] font-medium text-foreground tabular-nums">
                 {g.value}%
               </span>
             </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +36,13 @@ export default function PblPage() {
 
   const userTurns = messages.filter((m) => m.role === "user").length;
   const exhausted = userTurns >= MAX_TURNS;
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages.length, exhausted]);
 
   const turnMutation = useMutation({
     mutationFn: (text: string) =>
@@ -98,30 +105,33 @@ export default function PblPage() {
           </Link>
         </aside>
 
-        <section className="flex-1 flex flex-col gap-2.5 min-w-0">
-          <Card className="flex-1 flex flex-col gap-3 overflow-y-auto p-5">
-            <header className="flex items-center gap-2 mb-1">
-              <span
-                className="h-7 w-7 rounded-full bg-surface-muted border border-dashed border-border-strong flex items-center justify-center text-[10px] text-fg-subtle"
-                aria-hidden
-              >
-                AI
-              </span>
-              <span className="text-body-md font-medium text-foreground">
-                AI 동료
-              </span>
-              <Badge>의사소통 방향 논의</Badge>
-            </header>
-            <div className="h-px bg-border" />
-            {messages.map((m, i) => (
-              <ChatBubble key={i} role={m.role} text={m.text} />
-            ))}
-            {waiting && <TypingBubble role="ai-peer" />}
-            {turnMutation.isError && (
-              <p className="text-label-sm text-danger tracking-normal">
-                응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
-              </p>
-            )}
+        <section className="flex-1 flex flex-col gap-2.5 min-w-0 min-h-0">
+          <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto">
+              <header className="sticky top-0 z-10 bg-surface-elevated px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+                <span
+                  className="h-7 w-7 rounded-full bg-surface-muted border border-dashed border-border-strong flex items-center justify-center text-[10px] text-fg-subtle"
+                  aria-hidden
+                >
+                  AI
+                </span>
+                <span className="text-body-md font-medium text-foreground">
+                  AI 동료
+                </span>
+                <Badge>의사소통 방향 논의</Badge>
+              </header>
+              <div className="flex flex-col gap-3 p-5">
+                {messages.map((m, i) => (
+                  <ChatBubble key={i} role={m.role} text={m.text} />
+                ))}
+                {waiting && <TypingBubble role="ai-peer" />}
+                {turnMutation.isError && (
+                  <p className="text-label-sm text-danger tracking-normal">
+                    응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
+                  </p>
+                )}
+              </div>
+            </div>
           </Card>
 
           <ChatInput

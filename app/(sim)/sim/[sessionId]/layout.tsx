@@ -18,7 +18,7 @@ export default function SimLayout({ children }: { children: ReactNode }) {
   const current = PHASE_TO_STEP[phase] ?? 0;
 
   return (
-    <div className="flex flex-1 flex-col min-h-full bg-background">
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden">
       <SimNav current={current} />
       {children}
     </div>
