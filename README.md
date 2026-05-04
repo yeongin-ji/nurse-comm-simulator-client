@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NurseComm Client
 
-## Getting Started
+간호학생의 의사소통 역량 강화를 위한 시뮬레이션 웹 클라이언트. Next.js 16 (App Router) + React 19 + Tailwind v4.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+cp .env.example .env.local   # NEXT_PUBLIC_USE_MSW=1 (MSW 모킹 활성화)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 에서 확인. `/dev/components` 에는 디자인 카탈로그가 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+|---|---|
+| `npm run dev` | dev server (Turbopack) |
+| `npm run build` / `npm start` | production build / start |
+| `npm run lint` | ESLint flat config |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run gen:api` | swagger 2.0 → OpenAPI 3 → `types/api.d.ts` 자동 생성 |
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js 16.2.4 (App Router, RSC, `proxy.ts`)
+- React 19.2.4
+- TypeScript strict
+- Tailwind CSS v4 (`@theme` 기반 토큰)
+- TanStack Query v5 + Zustand (auth/settings)
+- react-hook-form
+- @radix-ui/react-dialog (Modal)
+- MSW v2 (browser worker)
+- lucide-react
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design Handoff
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+핸드오프 자료(`design_handoff_nursecomm/`)에 토큰·시나리오·swagger·PRD가 있습니다. 자세한 화면/컴포넌트 명세는 [design_handoff_nursecomm/README.md](design_handoff_nursecomm/README.md) 참고. 디자인은 코드베이스의 `app/`, `components/`로 옮겨졌고 핸드오프 폴더는 lint/build 대상에서 제외됩니다.
 
-## Deploy on Vercel
+## API Mocking (MSW)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`NEXT_PUBLIC_USE_MSW=1`이면 [lib/mocks/handlers/](lib/mocks/handlers/)의 핸들러가 `/api/v1/*` 요청을 모두 가로채 mock 응답을 반환합니다. swagger에 명시된 16개 endpoint + 보완 필요 항목(`GET /learners`, `GET /learners/{id}/sessions`)까지 포함.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+실제 백엔드와 연결하려면 `.env.local`에서 `NEXT_PUBLIC_USE_MSW`를 비우고, 필요시 `NEXT_PUBLIC_API_BASE_URL`을 설정하세요.
+
+## 주요 구조
+
+```
+app/
+├── (marketing)/  # /, /signup
+├── (app)/        # /scenarios, /history, /students, /profile
+├── (sim)/sim/[sessionId]/  # /start, /pbl, /summary, /chat, /result
+└── dev/components/         # 디자인 카탈로그
+components/
+├── ui/           # Button, Input, Card, Modal, Gauge, ...
+├── layout/       # Nav, SimNav, PageShell, Breadcrumb
+├── chat/         # ChatBubble, TypingBubble, ChatInput
+├── sim/          # PatientStatePanel, Timer, ScenarioTooltip, ...
+├── auth/         # AuthIllustration
+├── educator/     # CommentCard, CommentForm, ConversationLog
+└── feedback/     # LoadingScreen, EmptyState
+lib/
+├── api/          # fetch wrapper + 도메인별 endpoint
+├── mocks/        # MSW worker + handlers
+├── stores/       # Zustand (auth, settings)
+├── query/        # React Query Provider
+└── utils/cn.ts   # tailwind-merge with custom text-* tokens
+proxy.ts          # Next.js 16 보호 라우트 가드 (구 middleware.ts)
+```
