@@ -1,34 +1,66 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Gauge } from "@/components/ui/gauge";
 import { StatCard } from "@/components/ui/stat-card";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
+import {
+  evaluationApi,
+  evaluationKeys,
+  formatDuration,
+  projectEvaluation,
+} from "@/lib/api/evaluation";
 
-type Props = { params: Promise<{ sessionId: string }> };
+export default function SimResultPage() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const numericSessionId = Number(sessionId);
 
-// TODO(Stage D): fetch from GET /sessions/{id}/evaluation
-const MOCK_EVAL = {
-  scenarioId: "copd-1",
-  totalScore: "82점",
-  duration: "6분 42초",
-  turns: "14회",
-  gauges: [
-    { label: "환자 맞이 및 자기소개", value: 90 },
-    { label: "개방형 질문 사용", value: 75 },
-    { label: "경청 및 공감 표현", value: 82 },
-    { label: "환자 감정 확인", value: 68 },
-    { label: "정보 전달 명확성", value: 80 },
-    { label: "환자 동의 및 자율성 존중", value: 70 },
-  ],
-  debriefing: [
-    "자기소개와 초기 접근은 매우 효과적이었어요. 환자의 신뢰를 빠르게 형성했고, 불안감이 유의미하게 낮아졌어요.",
-    '다만 개방형 질문보다 폐쇄형 질문의 비율이 높았어요. 다음에는 "어떻게 느끼세요?"와 같은 개방형 질문을 의식적으로 활용해 보세요.',
-  ],
-};
+  const evaluationQuery = useQuery({
+    queryKey: evaluationKeys.detail(numericSessionId),
+    queryFn: () => evaluationApi.get(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
 
-export default async function SimResultPage({ params }: Props) {
-  await params;
+  if (evaluationQuery.isLoading) {
+    return (
+      <LoadingScreen
+        title="평가 결과를 불러오고 있어요"
+        subtitle="잠시만 기다려 주세요"
+      />
+    );
+  }
+
+  if (evaluationQuery.isError) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8">
+        <Card className="w-full max-w-[480px] flex flex-col gap-3 p-8 text-center">
+          <h1 className="text-title-lg text-foreground">
+            평가 결과를 불러올 수 없어요
+          </h1>
+          <p className="text-body-md text-fg-muted">
+            잠시 후 다시 시도하거나 시나리오 목록으로 돌아가세요.
+          </p>
+          <Link href="/scenarios" className="self-center pt-2">
+            <Button variant="secondary">시나리오 목록으로</Button>
+          </Link>
+        </Card>
+      </main>
+    );
+  }
+
+  const evaluation = projectEvaluation(evaluationQuery.data);
+  if (!evaluation) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8">
+        <p className="text-body-md text-fg-muted">평가 데이터가 비어 있어요.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-y-auto">
@@ -43,9 +75,17 @@ export default async function SimResultPage({ params }: Props) {
         </header>
 
         <div className="flex gap-3">
-          <StatCard label="총점" value={MOCK_EVAL.totalScore} sub="Kalamazoo" />
-          <StatCard label="소요 시간" value={MOCK_EVAL.duration} sub="제한 10분" />
-          <StatCard label="대화 턴" value={MOCK_EVAL.turns} />
+          <StatCard
+            label="총점"
+            value={`${evaluation.totalScore}점`}
+            sub={evaluation.toolName}
+          />
+          <StatCard
+            label="소요 시간"
+            value={formatDuration(evaluation.durationSeconds)}
+            sub="제한 10분"
+          />
+          <StatCard label="대화 턴" value={`${evaluation.turns}회`} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -55,7 +95,7 @@ export default async function SimResultPage({ params }: Props) {
             </h2>
             <div className="h-px bg-border" />
             <div className="flex flex-col gap-3">
-              {MOCK_EVAL.gauges.map((g) => (
+              {evaluation.items.map((g) => (
                 <Gauge key={g.label} label={g.label} value={g.value} />
               ))}
             </div>
@@ -66,11 +106,13 @@ export default async function SimResultPage({ params }: Props) {
             </h2>
             <div className="h-px bg-border" />
             <div className="flex flex-col gap-3">
-              {MOCK_EVAL.debriefing.map((p, i) => (
-                <p key={i} className="text-body-md text-fg-muted leading-6">
-                  {p}
-                </p>
-              ))}
+              {evaluation.debriefing
+                .split(/\n\n+/)
+                .map((p, i) => (
+                  <p key={i} className="text-body-md text-fg-muted leading-6">
+                    {p}
+                  </p>
+                ))}
             </div>
           </Card>
         </div>
@@ -79,7 +121,7 @@ export default async function SimResultPage({ params }: Props) {
           <Link href="/scenarios">
             <Button variant="secondary">시나리오 목록으로</Button>
           </Link>
-          <Link href={`/scenarios/${MOCK_EVAL.scenarioId}`}>
+          <Link href="/scenarios">
             <Button variant="primary">같은 시나리오 다시 도전</Button>
           </Link>
         </div>

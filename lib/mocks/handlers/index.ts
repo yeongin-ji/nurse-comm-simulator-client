@@ -1,4 +1,6 @@
 import { documentHandlers } from "./documents";
+import { evaluationHandlers } from "./evaluation";
+import { passthroughHandlers } from "./passthrough";
 import { pblHandlers } from "./pbl";
 import { scenarioHandlers } from "./scenarios";
 import { sessionHandlers } from "./sessions";
@@ -10,4 +12,7 @@ export const handlers = [
   ...sessionHandlers,
   ...pblHandlers,
   ...simulateHandlers,
+  ...evaluationHandlers,
+  // Must come last so concrete handlers above match first.
+  ...passthroughHandlers,
 ];

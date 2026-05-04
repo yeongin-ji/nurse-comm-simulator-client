@@ -1,12 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { Spinner } from "@/components/ui/spinner";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
@@ -18,6 +19,7 @@ import {
 } from "@/components/sim/patient-state-panel";
 import { ScenarioTooltip } from "@/components/sim/scenario-tooltip";
 import { Timer } from "@/components/sim/timer";
+import { evaluationApi, evaluationKeys } from "@/lib/api/evaluation";
 import { projectPatientState, simulationApi } from "@/lib/api/simulation";
 
 type Message = { role: Extract<ChatRole, "user" | "patient">; text: string };
@@ -53,6 +55,7 @@ function formatTotal() {
 
 export default function ChatPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
 
@@ -96,15 +99,23 @@ export default function ChatPage() {
     setTimeoutOpen(true);
   }, []);
 
-  const goEvaluate = () => {
-    // TODO(D-6): POST /sessions/{id}/evaluate before redirect, and surface a
-    // loading screen while AI evaluation runs.
-    setTimeoutOpen(false);
-    setEndOpen(false);
-    router.push(`/sim/${sessionId}/result`);
-  };
+  const evaluateMutation = useMutation({
+    mutationFn: () => evaluationApi.run(numericSessionId),
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        evaluationKeys.detail(numericSessionId),
+        data
+      );
+      setTimeoutOpen(false);
+      setEndOpen(false);
+      router.push(`/sim/${sessionId}/result`);
+    },
+  });
+
+  const goEvaluate = () => evaluateMutation.mutate();
 
   const waiting = turnMutation.isPending;
+  const evaluating = evaluateMutation.isPending;
 
   return (
     <>
@@ -164,8 +175,13 @@ export default function ChatPage() {
         title="시간이 다 됐어요"
         description={formatTotal()}
         footer={
-          <Button variant="primary" onClick={goEvaluate}>
-            평가 시작하기
+          <Button
+            variant="primary"
+            onClick={goEvaluate}
+            disabled={evaluating}
+            icon={evaluating ? <Spinner size={14} /> : undefined}
+          >
+            {evaluating ? "평가 중..." : "평가 시작하기"}
           </Button>
         }
       >
@@ -173,20 +189,37 @@ export default function ChatPage() {
           대화 시뮬레이션 시간이 종료됐어요. 지금까지의 대화를 바탕으로 평가를
           진행할게요.
         </p>
+        {evaluateMutation.isError && (
+          <p className="mt-2 text-label-sm text-danger tracking-normal">
+            평가를 실행할 수 없어요. 잠시 후 다시 시도해 주세요.
+          </p>
+        )}
       </Modal>
 
       <Modal
         open={endOpen}
-        onOpenChange={setEndOpen}
+        onOpenChange={(next) => {
+          if (evaluating) return;
+          setEndOpen(next);
+        }}
         title="대화를 종료할까요?"
         description="지금까지의 대화를 바탕으로 평가가 시작돼요"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setEndOpen(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => setEndOpen(false)}
+              disabled={evaluating}
+            >
               취소
             </Button>
-            <Button variant="danger" onClick={goEvaluate}>
-              평가 시작하기
+            <Button
+              variant="danger"
+              onClick={goEvaluate}
+              disabled={evaluating}
+              icon={evaluating ? <Spinner size={14} /> : undefined}
+            >
+              {evaluating ? "평가 중..." : "평가 시작하기"}
             </Button>
           </>
         }
@@ -194,6 +227,11 @@ export default function ChatPage() {
         <p className="text-body-md text-fg-muted leading-[22px]">
           평가가 시작되면 더 이상 대화를 이어갈 수 없어요. 정말 종료할까요?
         </p>
+        {evaluateMutation.isError && (
+          <p className="mt-2 text-label-sm text-danger tracking-normal">
+            평가를 실행할 수 없어요. 잠시 후 다시 시도해 주세요.
+          </p>
+        )}
       </Modal>
     </>
   );

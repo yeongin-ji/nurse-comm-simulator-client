@@ -13,7 +13,17 @@ let workerPromise: Promise<unknown> | null = null;
 
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_MSW === "1") {
   workerPromise = import("./browser").then(({ worker }) =>
-    worker.start({ onUnhandledRequest: "bypass", quiet: true })
+    worker.start({
+      quiet: true,
+      // Warn only for our own API paths so we can spot missing handlers,
+      // and silently bypass everything else (Next.js internals, devtools, ...).
+      onUnhandledRequest: (req, print) => {
+        const url = new URL(req.url);
+        if (url.pathname.startsWith("/api/v1")) {
+          print.warning();
+        }
+      },
+    })
   );
 }
 
