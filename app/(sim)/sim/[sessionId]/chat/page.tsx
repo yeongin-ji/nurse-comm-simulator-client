@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { Spinner } from "@/components/ui/spinner";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
@@ -66,6 +66,7 @@ export default function ChatPage() {
 
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  const [redirectingToResult, setRedirectingToResult] = useState(false);
   const [startedAt] = useState(() => Date.now());
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -106,16 +107,32 @@ export default function ChatPage() {
         evaluationKeys.detail(numericSessionId),
         data
       );
-      setTimeoutOpen(false);
-      setEndOpen(false);
+      // Keep showing the LoadingScreen until result page actually mounts;
+      // otherwise the chat UI flashes for one render between mutation success
+      // and Next.js completing the navigation.
+      setRedirectingToResult(true);
       router.push(`/sim/${sessionId}/result`);
     },
   });
 
-  const goEvaluate = () => evaluateMutation.mutate();
+  const goEvaluate = () => {
+    // Close both modals immediately so the LoadingScreen takes over the page.
+    setTimeoutOpen(false);
+    setEndOpen(false);
+    evaluateMutation.mutate();
+  };
 
   const waiting = turnMutation.isPending;
-  const evaluating = evaluateMutation.isPending;
+  const showLoading = evaluateMutation.isPending || redirectingToResult;
+
+  if (showLoading) {
+    return (
+      <LoadingScreen
+        title="대화를 평가하고 있어요"
+        subtitle="지금까지의 대화를 분석해 평가 결과를 만들고 있어요"
+      />
+    );
+  }
 
   return (
     <>
@@ -175,13 +192,8 @@ export default function ChatPage() {
         title="시간이 다 됐어요"
         description={formatTotal()}
         footer={
-          <Button
-            variant="primary"
-            onClick={goEvaluate}
-            disabled={evaluating}
-            icon={evaluating ? <Spinner size={14} /> : undefined}
-          >
-            {evaluating ? "평가 중..." : "평가 시작하기"}
+          <Button variant="primary" onClick={goEvaluate}>
+            평가 시작하기
           </Button>
         }
       >
@@ -189,37 +201,20 @@ export default function ChatPage() {
           대화 시뮬레이션 시간이 종료됐어요. 지금까지의 대화를 바탕으로 평가를
           진행할게요.
         </p>
-        {evaluateMutation.isError && (
-          <p className="mt-2 text-label-sm text-danger tracking-normal">
-            평가를 실행할 수 없어요. 잠시 후 다시 시도해 주세요.
-          </p>
-        )}
       </Modal>
 
       <Modal
         open={endOpen}
-        onOpenChange={(next) => {
-          if (evaluating) return;
-          setEndOpen(next);
-        }}
+        onOpenChange={setEndOpen}
         title="대화를 종료할까요?"
         description="지금까지의 대화를 바탕으로 평가가 시작돼요"
         footer={
           <>
-            <Button
-              variant="ghost"
-              onClick={() => setEndOpen(false)}
-              disabled={evaluating}
-            >
+            <Button variant="ghost" onClick={() => setEndOpen(false)}>
               취소
             </Button>
-            <Button
-              variant="danger"
-              onClick={goEvaluate}
-              disabled={evaluating}
-              icon={evaluating ? <Spinner size={14} /> : undefined}
-            >
-              {evaluating ? "평가 중..." : "평가 시작하기"}
+            <Button variant="danger" onClick={goEvaluate}>
+              평가 시작하기
             </Button>
           </>
         }
@@ -227,11 +222,6 @@ export default function ChatPage() {
         <p className="text-body-md text-fg-muted leading-[22px]">
           평가가 시작되면 더 이상 대화를 이어갈 수 없어요. 정말 종료할까요?
         </p>
-        {evaluateMutation.isError && (
-          <p className="mt-2 text-label-sm text-danger tracking-normal">
-            평가를 실행할 수 없어요. 잠시 후 다시 시도해 주세요.
-          </p>
-        )}
       </Modal>
     </>
   );
