@@ -1,45 +1,60 @@
 import { http, HttpResponse } from "msw";
 import type { components } from "@/types/api";
+import { TOOLS } from "@/lib/tools";
 
 type EvaluationResponse =
   components["schemas"]["handler.EvaluationResultResponse"];
 
-const evaluations = new Map<number, EvaluationResponse>();
+// Session id → already-produced evaluations (one per tool). Once a tool is
+// scored, re-running evaluate doesn't touch it (see policy in user request:
+// "각 평가 도구에 대해선 한 번만 평가가 가능").
+const evaluations = new Map<number, EvaluationResponse[]>();
 
-const ITEMS = [
-  { label: "환자 맞이 및 자기소개", value: 90 },
-  { label: "개방형 질문 사용", value: 75 },
-  { label: "경청 및 공감 표현", value: 82 },
-  { label: "환자 감정 확인", value: 68 },
-  { label: "정보 전달 명확성", value: 80 },
-  { label: "환자 동의 및 자율성 존중", value: 70 },
-];
+const DEBRIEFING_BY_TOOL: Record<number, string> = {
+  1: `자기소개와 초기 접근은 매우 효과적이었어요. 환자의 신뢰를 빠르게 형성했습니다.
 
-const DEBRIEFING = `자기소개와 초기 접근은 매우 효과적이었어요. 환자의 신뢰를 빠르게 형성하는 데 성공했으며, 이후 대화에서 환자의 불안감이 유의미하게 낮아졌습니다.
+다만 개방형 질문보다 폐쇄형 질문의 비율이 높았어요. 다음에는 "어떻게 느끼세요?"와 같은 개방형 질문을 의식적으로 활용해 보세요.`,
+  2: `환자 중심성과 공감적 반응은 인상적이었어요. 환자의 정서 상태에 잘 맞춰 대화를 이어가셨습니다.
 
-다만 개방형 질문보다 폐쇄형 질문의 비율이 높았어요. 다음에는 "어떻게 느끼세요?"와 같은 개방형 질문을 의식적으로 활용해 보세요.`;
+협력적 의사결정 단계에서 선택지를 더 명확히 제시하면 환자 자율성이 한층 강화될 거예요.`,
+};
 
-function buildEvaluation(sessionId: number): EvaluationResponse {
-  const total = Math.round(
-    ITEMS.reduce((acc, i) => acc + i.value, 0) / ITEMS.length
-  );
-  return {
-    id: sessionId * 100,
-    session_id: sessionId,
-    tool_id: 1,
-    item_scores: {
-      items: ITEMS,
-      total,
-      duration_seconds: 402,
-      turns: 14,
-      tool_name: "Kalamazoo",
-    },
-    debriefing_content: DEBRIEFING,
-    created_at: new Date().toISOString(),
-  };
+function buildItemScores(toolId: number, items: string[]) {
+  // Deterministic per-tool/per-item score so re-runs stay stable.
+  return items.map((label, idx) => ({
+    label,
+    value: 60 + ((toolId * 11 + idx * 7) % 36), // 60–95
+  }));
+}
+
+function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {
+  return TOOLS.map((tool) => {
+    const items = buildItemScores(tool.id, tool.items);
+    const total = Math.round(
+      items.reduce((acc, i) => acc + i.value, 0) / items.length
+    );
+    return {
+      id: sessionId * 1000 + tool.id,
+      session_id: sessionId,
+      tool_id: tool.id,
+      item_scores: {
+        items,
+        total,
+        duration_seconds: 402,
+        turns: 14,
+      },
+      debriefing_content: DEBRIEFING_BY_TOOL[tool.id] ?? "",
+      created_at: new Date().toISOString(),
+    } satisfies EvaluationResponse;
+  });
 }
 
 export const evaluationHandlers = [
+  /**
+   * POST /sessions/:id/evaluate — runs every registered tool once.
+   * Re-running on a session that already has evaluations returns 400 to
+   * preserve the "once per tool" policy.
+   */
   http.post("/api/v1/sessions/:id/evaluate", async ({ params }) => {
     const id = Number(params.id);
     if (evaluations.has(id)) {
@@ -48,16 +63,20 @@ export const evaluationHandlers = [
         { status: 400 }
       );
     }
-    // AI evaluation typically takes a moment.
     await new Promise((r) => setTimeout(r, 1500));
-    const result = buildEvaluation(id);
-    evaluations.set(id, result);
-    return HttpResponse.json(result, { status: 201 });
+    const results = buildEvaluationsFor(id);
+    evaluations.set(id, results);
+    return HttpResponse.json(results, { status: 201 });
   }),
 
+  /**
+   * GET /sessions/:id/evaluation — returns the array of per-tool evaluations.
+   * Synthesizes mock results when nothing has been stored yet so existing
+   * history routes don't need a fresh evaluate call to render.
+   */
   http.get("/api/v1/sessions/:id/evaluation", ({ params }) => {
     const id = Number(params.id);
-    const cached = evaluations.get(id) ?? buildEvaluation(id);
+    const cached = evaluations.get(id) ?? buildEvaluationsFor(id);
     return HttpResponse.json(cached);
   }),
 ];

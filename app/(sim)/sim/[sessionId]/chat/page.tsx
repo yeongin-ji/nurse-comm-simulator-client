@@ -104,7 +104,7 @@ export default function ChatPage() {
     mutationFn: () => evaluationApi.run(numericSessionId),
     onSuccess: (data) => {
       queryClient.setQueryData(
-        evaluationKeys.detail(numericSessionId),
+        evaluationKeys.list(numericSessionId),
         data
       );
       // Keep showing the LoadingScreen until result page actually mounts;

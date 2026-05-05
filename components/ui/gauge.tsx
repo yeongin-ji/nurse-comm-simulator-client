@@ -8,10 +8,10 @@ export type GaugeProps = {
 };
 
 const colorClass: Record<NonNullable<GaugeProps["color"]>, string> = {
-  accent: "bg-accent",
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-danger",
+  accent: "bg-gradient-to-r from-accent/50 to-accent",
+  success: "bg-gradient-to-r from-success/50 to-success",
+  warning: "bg-gradient-to-r from-warning/50 to-warning",
+  danger: "bg-gradient-to-r from-danger/50 to-danger",
 };
 
 export function Gauge({

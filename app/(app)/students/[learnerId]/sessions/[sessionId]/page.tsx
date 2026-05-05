@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Gauge } from "@/components/ui/gauge";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
 import { CommentCard } from "@/components/educator/comment-card";
+import { EvaluationSummaryCard } from "@/components/evaluation/evaluation-summary-card";
 import {
   ConversationLog,
   type ConversationMessage,
@@ -20,7 +19,8 @@ import {
   evaluationApi,
   evaluationKeys,
   formatDuration,
-  projectEvaluation,
+  projectEvaluations,
+  topScoringToolId,
 } from "@/lib/api/evaluation";
 
 // TODO(Stage D-?): backend doesn't expose learner meta or full conversation
@@ -91,8 +91,8 @@ export default function StudentSessionDetailPage() {
   const numericSessionId = Number(sessionId);
 
   const evaluationQuery = useQuery({
-    queryKey: evaluationKeys.detail(numericSessionId),
-    queryFn: () => evaluationApi.get(numericSessionId),
+    queryKey: evaluationKeys.list(numericSessionId),
+    queryFn: () => evaluationApi.list(numericSessionId),
     enabled: Number.isFinite(numericSessionId),
   });
 
@@ -120,14 +120,17 @@ export default function StudentSessionDetailPage() {
     );
   }
 
-  const evaluation = projectEvaluation(evaluationQuery.data);
-  if (!evaluation) {
+  const evaluations = projectEvaluations(evaluationQuery.data);
+  if (evaluations.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
         <p className="text-body-md text-fg-muted">평가 데이터가 비어 있어요.</p>
       </main>
     );
   }
+
+  const meta = evaluations[0];
+  const topId = topScoringToolId(evaluations);
 
   return (
     <main className="flex-1 bg-background">
@@ -142,39 +145,16 @@ export default function StudentSessionDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
           <div className="flex flex-col gap-4">
-            <Card className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-body-lg font-semibold text-foreground">
-                    평가 결과
-                  </h2>
-                  <Badge variant="accent">{evaluation.toolName}</Badge>
-                </div>
-                <p className="text-foreground tracking-[-0.03em]">
-                  <span className="text-headline-md text-accent leading-none">
-                    {evaluation.totalScore}
-                  </span>
-                  <span className="text-body-md font-normal text-fg-muted ml-0.5">
-                    점
-                  </span>
-                </p>
-              </div>
-              <div className="h-px bg-border" />
-              <div className="flex flex-col gap-3">
-                {evaluation.items.map((g) => (
-                  <Gauge key={g.label} label={g.label} value={g.value} />
-                ))}
-              </div>
-              <div className="h-px bg-border" />
-              <div className="flex flex-col gap-1.5">
-                <h3 className="text-body-md font-semibold text-foreground">
-                  디브리핑
-                </h3>
-                <p className="text-body-md text-fg-muted leading-6">
-                  {evaluation.debriefing}
-                </p>
-              </div>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {evaluations.map((evaluation) => (
+                <EvaluationSummaryCard
+                  key={evaluation.toolId}
+                  evaluation={evaluation}
+                  detailHrefBase={`/students/${learnerId}/sessions/${sessionId}/tools`}
+                  highlighted={evaluation.toolId === topId}
+                />
+              ))}
+            </div>
 
             <ConversationLog pbl={MOCK_PBL} simulation={MOCK_SIMULATION} />
           </div>
@@ -193,10 +173,10 @@ export default function StudentSessionDetailPage() {
                 <Meta label="시작 시각" value="14:22" />
                 <Meta
                   label="소요 시간"
-                  value={formatDuration(evaluation.durationSeconds)}
+                  value={formatDuration(meta.durationSeconds)}
                 />
                 <Meta label="세션 상태" value="정상 종료" />
-                <Meta label="평가 도구" value={evaluation.toolName} />
+                <Meta label="평가 도구" value={`${evaluations.length}종`} />
               </div>
             </Card>
 

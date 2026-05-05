@@ -3,19 +3,19 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Gauge } from "@/components/ui/gauge";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
 import { CommentCard } from "@/components/educator/comment-card";
+import { EvaluationSummaryCard } from "@/components/evaluation/evaluation-summary-card";
 import {
   evaluationApi,
   evaluationKeys,
   formatDuration,
-  projectEvaluation,
+  projectEvaluations,
+  topScoringToolId,
 } from "@/lib/api/evaluation";
 
 // TODO(Stage D-?): backend doesn't expose scenario meta on a session listing yet.
@@ -26,8 +26,8 @@ export default function HistorySessionPage() {
   const numericSessionId = Number(sessionId);
 
   const evaluationQuery = useQuery({
-    queryKey: evaluationKeys.detail(numericSessionId),
-    queryFn: () => evaluationApi.get(numericSessionId),
+    queryKey: evaluationKeys.list(numericSessionId),
+    queryFn: () => evaluationApi.list(numericSessionId),
     enabled: Number.isFinite(numericSessionId),
   });
 
@@ -55,14 +55,17 @@ export default function HistorySessionPage() {
     );
   }
 
-  const evaluation = projectEvaluation(evaluationQuery.data);
-  if (!evaluation) {
+  const evaluations = projectEvaluations(evaluationQuery.data);
+  if (evaluations.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
         <p className="text-body-md text-fg-muted">평가 데이터가 비어 있어요.</p>
       </main>
     );
   }
+
+  const meta = evaluations[0];
+  const topId = topScoringToolId(evaluations);
 
   return (
     <main className="flex-1 bg-background">
@@ -76,52 +79,23 @@ export default function HistorySessionPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">
           <div className="flex flex-col gap-4">
-            <Card className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-body-lg font-semibold text-foreground">
-                  평가 결과
-                </h2>
-                <Badge variant="accent">{evaluation.toolName}</Badge>
-              </div>
-              <div className="h-px bg-border" />
-              <div className="flex flex-col gap-3">
-                {evaluation.items.map((g) => (
-                  <Gauge key={g.label} label={g.label} value={g.value} />
-                ))}
-              </div>
-            </Card>
-
-            <Card className="flex flex-col gap-3">
-              <h2 className="text-body-lg font-semibold text-foreground">
-                디브리핑
-              </h2>
-              <div className="h-px bg-border" />
-              <div className="flex flex-col gap-3">
-                {evaluation.debriefing.split(/\n\n+/).map((p, i) => (
-                  <p key={i} className="text-body-md text-fg-muted leading-6">
-                    {p}
-                  </p>
-                ))}
-              </div>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {evaluations.map((evaluation) => (
+                <EvaluationSummaryCard
+                  key={evaluation.toolId}
+                  evaluation={evaluation}
+                  detailHrefBase={`/history/${sessionId}/tools`}
+                  highlighted={evaluation.toolId === topId}
+                />
+              ))}
+            </div>
           </div>
 
           <aside className="flex flex-col gap-3">
-            <Card className="flex flex-col gap-3">
-              <p className="text-center text-foreground tracking-[-0.03em]">
-                <span className="text-[32px] font-semibold leading-none">
-                  {evaluation.totalScore}
-                </span>
-                <span className="text-body-lg font-normal text-fg-muted ml-1">
-                  점
-                </span>
-              </p>
-              <div className="h-px bg-border" />
-              <div className="flex flex-col gap-2">
-                <Meta label="소요 시간" value={formatDuration(evaluation.durationSeconds)} />
-                <Meta label="대화 턴" value={`${evaluation.turns}회`} />
-                <Meta label="제한 시간" value="10분" />
-              </div>
+            <Card className="flex flex-col gap-2">
+              <Meta label="소요 시간" value={formatDuration(meta.durationSeconds)} />
+              <Meta label="대화 턴" value={`${meta.turns}회`} />
+              <Meta label="제한 시간" value="10분" />
             </Card>
 
             <CommentCard sessionId={numericSessionId} readOnly />

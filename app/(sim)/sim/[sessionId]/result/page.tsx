@@ -5,15 +5,17 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Gauge } from "@/components/ui/gauge";
 import { StatCard } from "@/components/ui/stat-card";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
+import { EncouragementBanner } from "@/components/evaluation/encouragement-banner";
+import { EvaluationSummaryCard } from "@/components/evaluation/evaluation-summary-card";
 import {
   evaluationApi,
   evaluationKeys,
   formatDuration,
-  projectEvaluation,
+  projectEvaluations,
+  topScoringToolId,
 } from "@/lib/api/evaluation";
 
 export default function SimResultPage() {
@@ -21,8 +23,8 @@ export default function SimResultPage() {
   const numericSessionId = Number(sessionId);
 
   const evaluationQuery = useQuery({
-    queryKey: evaluationKeys.detail(numericSessionId),
-    queryFn: () => evaluationApi.get(numericSessionId),
+    queryKey: evaluationKeys.list(numericSessionId),
+    queryFn: () => evaluationApi.list(numericSessionId),
     enabled: Number.isFinite(numericSessionId),
   });
 
@@ -42,9 +44,6 @@ export default function SimResultPage() {
           <h1 className="text-title-lg text-foreground">
             평가 결과를 불러올 수 없어요
           </h1>
-          <p className="text-body-md text-fg-muted">
-            잠시 후 다시 시도하거나 시나리오 목록으로 돌아가세요.
-          </p>
           <Link href="/scenarios" className="self-center pt-2">
             <Button variant="secondary">시나리오 목록으로</Button>
           </Link>
@@ -53,8 +52,8 @@ export default function SimResultPage() {
     );
   }
 
-  const evaluation = projectEvaluation(evaluationQuery.data);
-  if (!evaluation) {
+  const evaluations = projectEvaluations(evaluationQuery.data);
+  if (evaluations.length === 0) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
         <p className="text-body-md text-fg-muted">평가 데이터가 비어 있어요.</p>
@@ -62,68 +61,51 @@ export default function SimResultPage() {
     );
   }
 
+  const meta = evaluations[0];
+  const topId = topScoringToolId(evaluations);
+
   return (
     <main className="flex-1 overflow-y-auto">
       <PageShell width="lg" className="flex flex-col gap-5 py-6">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">
-            시뮬레이션을 마쳤어요
-          </h1>
-          <p className="text-body-md text-fg-muted">
-            평가 결과를 확인해 보세요
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">
+              시뮬레이션을 마쳤어요
+            </h1>
+            <p className="text-body-md text-fg-muted">
+              평가 도구 {evaluations.length}개의 결과를 확인해 보세요
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link href="/scenarios">
+              <Button variant="secondary">시나리오 목록으로</Button>
+            </Link>
+            <Link href="/scenarios">
+              <Button variant="primary">같은 시나리오 다시 도전</Button>
+            </Link>
+          </div>
         </header>
+
+        <EncouragementBanner evaluations={evaluations} />
 
         <div className="flex gap-3">
           <StatCard
-            label="총점"
-            value={`${evaluation.totalScore}점`}
-            sub={evaluation.toolName}
-          />
-          <StatCard
             label="소요 시간"
-            value={formatDuration(evaluation.durationSeconds)}
+            value={formatDuration(meta.durationSeconds)}
             sub="제한 10분"
           />
-          <StatCard label="대화 턴" value={`${evaluation.turns}회`} />
+          <StatCard label="대화 턴" value={`${meta.turns}회`} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="flex flex-col gap-3.5">
-            <h2 className="text-[15px] font-semibold text-foreground">
-              항목별 점수
-            </h2>
-            <div className="h-px bg-border" />
-            <div className="flex flex-col gap-3">
-              {evaluation.items.map((g) => (
-                <Gauge key={g.label} label={g.label} value={g.value} />
-              ))}
-            </div>
-          </Card>
-          <Card className="flex flex-col gap-3.5">
-            <h2 className="text-[15px] font-semibold text-foreground">
-              디브리핑
-            </h2>
-            <div className="h-px bg-border" />
-            <div className="flex flex-col gap-3">
-              {evaluation.debriefing
-                .split(/\n\n+/)
-                .map((p, i) => (
-                  <p key={i} className="text-body-md text-fg-muted leading-6">
-                    {p}
-                  </p>
-                ))}
-            </div>
-          </Card>
-        </div>
-
-        <div className="flex gap-2 justify-end">
-          <Link href="/scenarios">
-            <Button variant="secondary">시나리오 목록으로</Button>
-          </Link>
-          <Link href="/scenarios">
-            <Button variant="primary">같은 시나리오 다시 도전</Button>
-          </Link>
+          {evaluations.map((evaluation) => (
+            <EvaluationSummaryCard
+              key={evaluation.toolId}
+              evaluation={evaluation}
+              detailHrefBase={`/sim/${sessionId}/result/tools`}
+              highlighted={evaluation.toolId === topId}
+            />
+          ))}
         </div>
       </PageShell>
     </main>
