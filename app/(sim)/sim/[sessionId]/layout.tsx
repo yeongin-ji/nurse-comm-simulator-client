@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { SimNav } from "@/components/layout/sim-nav";
 
 const PHASE_TO_STEP: Record<string, 0 | 1 | 2> = {
-  start: 0,
   pbl: 0,
   summary: 0,
   chat: 1,

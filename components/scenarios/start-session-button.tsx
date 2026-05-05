@@ -22,7 +22,7 @@ export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
         learner_id: MOCK_LEARNER_ID,
       }),
     onSuccess: (session) => {
-      if (session.id != null) router.push(`/sim/${session.id}/start`);
+      if (session.id != null) router.push(`/sim/${session.id}/pbl`);
     },
   });
 

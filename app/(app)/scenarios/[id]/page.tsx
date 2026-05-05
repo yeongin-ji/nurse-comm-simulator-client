@@ -13,8 +13,10 @@ import { PageShell } from "@/components/layout/page-shell";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { StartSessionButton } from "@/components/scenarios/start-session-button";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
+import { PatientStatePanel } from "@/components/sim/patient-state-panel";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import {
+  projectInitialState,
   projectMedicalRecord,
   scenarioKeys,
   scenariosApi,
@@ -66,6 +68,7 @@ export default function ScenarioDetailPage() {
   const scenario = scenarioQuery.data;
   const record = projectMedicalRecord(scenario.medical_record);
   const document = documentQuery.data;
+  const initial = projectInitialState(scenario.initial_state);
 
   const disease = document?.disease_name ?? "시나리오";
   const category = document?.category_path?.join(" > ") ?? "";
@@ -73,6 +76,7 @@ export default function ScenarioDetailPage() {
   const patientMeta = [record.sex, record.age && `${record.age}세`]
     .filter(Boolean)
     .join("/");
+  const objectives = scenario.objectives ?? [];
 
   return (
     <main className="flex-1 bg-background">
@@ -86,7 +90,7 @@ export default function ScenarioDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
           <div className="flex flex-col gap-4">
-            <Card>
+            <Card className="flex flex-col gap-5">
               <div className="flex gap-5 items-start">
                 <PatientAvatar size={100} name={patientName} />
                 <div className="flex-1 flex flex-col gap-2.5">
@@ -103,12 +107,40 @@ export default function ScenarioDetailPage() {
                     {patientMeta && ` (${patientMeta})`}
                     {category && ` · ${category}`}
                   </p>
-                  <div className="h-px bg-border" />
-                  <p className="text-body-md leading-6 text-foreground">
-                    {scenario.scenario_text ?? "시나리오 본문이 비어 있어요."}
-                  </p>
                 </div>
               </div>
+
+              <div className="h-px bg-border" />
+
+              <section className="flex flex-col gap-2">
+                <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
+                  시나리오
+                </h2>
+                <p className="text-body-md leading-6 text-foreground">
+                  {scenario.scenario_text ?? "시나리오 본문이 비어 있어요."}
+                </p>
+              </section>
+
+              {objectives.length > 0 && (
+                <>
+                  <div className="h-px bg-border" />
+                  <section className="flex flex-col gap-2.5">
+                    <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
+                      학습 목표
+                    </h2>
+                    <ul className="flex flex-col gap-2.5">
+                      {objectives.map((obj, i) => (
+                        <li key={i} className="flex gap-2 items-start">
+                          <Badge variant="accent">{i + 1}</Badge>
+                          <p className="text-body-md text-fg-muted leading-[22px] pt-px">
+                            {obj}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </>
+              )}
             </Card>
 
             <Card className="p-0 overflow-hidden">
@@ -164,7 +196,7 @@ export default function ScenarioDetailPage() {
                 시뮬레이션
               </h2>
               <p className="text-[13px] text-fg-muted leading-5">
-                PBL 단계에서 간호 방향을 논의한 뒤, 가상 환자와 대화를 시작해요
+                AI 동료와 의사소통 방향을 논의한 뒤 가상 환자와 대화를 시작해요.
               </p>
               <div className="h-px bg-border" />
               <div className="flex items-center gap-1.5">
@@ -178,6 +210,15 @@ export default function ScenarioDetailPage() {
               </div>
               <StartSessionButton scenarioId={numericScenarioId} />
             </Card>
+
+            {initial && (
+              <PatientStatePanel
+                className="w-full"
+                vitalSigns={initial.vitalSigns}
+                otherSigns={initial.otherSigns}
+                psychological={initial.psychological}
+              />
+            )}
           </aside>
         </div>
       </PageShell>

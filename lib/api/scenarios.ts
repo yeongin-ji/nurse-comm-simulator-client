@@ -1,5 +1,9 @@
 import { api } from "./client";
 import type { components } from "@/types/api";
+import type {
+  Psychological,
+  VitalSign,
+} from "@/components/sim/patient-state-panel";
 
 export type ScenarioResponse = components["schemas"]["handler.ScenarioResponse"];
 export type ScenarioCreateResponse =
@@ -7,8 +11,16 @@ export type ScenarioCreateResponse =
 export type CreateScenarioRequest =
   components["schemas"]["handler.createScenarioRequest"];
 
+// Extension fields the scenario detail surfaces (objectives + initial state).
+// Backend should expose these on GET /scenarios/{id}; mock provides them today.
+export type ScenarioDetailResponse = ScenarioResponse & {
+  objectives?: string[];
+  initial_state?: unknown;
+};
+
 export const scenariosApi = {
-  detail: (id: number) => api.get<ScenarioResponse>(`/scenarios/${id}`),
+  detail: (id: number) =>
+    api.get<ScenarioDetailResponse>(`/scenarios/${id}`),
   create: (body: CreateScenarioRequest) =>
     api.post<ScenarioCreateResponse>("/scenarios", body),
 };
@@ -29,4 +41,67 @@ export type MedicalRecord = {
 export function projectMedicalRecord(raw: unknown): MedicalRecord {
   if (!raw || typeof raw !== "object") return {};
   return raw as MedicalRecord;
+}
+
+const VITAL_LABEL: Record<string, string> = {
+  blood_pressure: "혈압",
+  pulse: "맥박",
+  respiration: "호흡",
+  temperature: "체온",
+};
+
+type RawInitialState = {
+  환경적_상태?: {
+    vital_signs?: Record<string, string>;
+    other_signs?: string;
+  };
+  심리적_상태?: {
+    anxiety?: number;
+    anger?: number;
+    depression?: number;
+  };
+};
+
+export type InitialPatientState = {
+  vitalSigns: VitalSign[];
+  otherSigns?: string;
+  psychological: Psychological[];
+};
+
+/** Project the unknown initial_state blob into PatientStatePanel-friendly shape. */
+export function projectInitialState(
+  raw: unknown
+): InitialPatientState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const state = raw as RawInitialState;
+
+  const vitalSigns: VitalSign[] = state.환경적_상태?.vital_signs
+    ? Object.entries(state.환경적_상태.vital_signs).map(([key, value]) => ({
+        label: VITAL_LABEL[key] ?? key,
+        value: String(value),
+      }))
+    : [];
+
+  const psy = state.심리적_상태;
+  const psychological: Psychological[] = psy
+    ? [
+        { label: "불안", value: psy.anxiety ?? 0, tone: "danger" as const },
+        { label: "분노", value: psy.anger ?? 0, tone: "warning" as const },
+        { label: "우울", value: psy.depression ?? 0, tone: "subtle" as const },
+      ]
+    : [];
+
+  if (
+    vitalSigns.length === 0 &&
+    psychological.length === 0 &&
+    !state.환경적_상태?.other_signs
+  ) {
+    return null;
+  }
+
+  return {
+    vitalSigns,
+    otherSigns: state.환경적_상태?.other_signs,
+    psychological,
+  };
 }

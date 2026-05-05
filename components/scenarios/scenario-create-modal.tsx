@@ -12,9 +12,9 @@ import { scenariosApi } from "@/lib/api/scenarios";
 import { cn } from "@/lib/utils/cn";
 
 const DIFFICULTIES = [
-  { value: "하", label: "하" },
-  { value: "중", label: "중" },
   { value: "상", label: "상" },
+  { value: "중", label: "중" },
+  { value: "하", label: "하" },
 ] as const;
 
 // TODO(Stage D-3): replace with auth store user.id once /learners/me wires up.
