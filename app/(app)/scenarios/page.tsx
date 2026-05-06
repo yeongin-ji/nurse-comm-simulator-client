@@ -16,9 +16,11 @@ import { ScenarioCreateModal } from "@/components/scenarios/scenario-create-moda
 import { scenariosApi, scenarioKeys } from "@/lib/api/scenarios";
 import { formatSessionDate } from "@/lib/api/learners";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useToast } from "@/lib/stores/toast";
 
 export default function ScenariosPage() {
   const user = useAuthStore((s) => s.user);
+  const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: number;
@@ -35,8 +37,10 @@ export default function ScenariosPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => scenariosApi.delete(id),
     onSuccess: () => {
+      const name = deleteTarget?.name;
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: scenarioKeys.list() });
+      toast(`'${name}' 시나리오가 삭제되었어요`, "success");
     },
   });
 

@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/query/provider";
 import { MockProvider } from "@/lib/mocks/init";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <MockProvider>
           <QueryProvider>{children}</QueryProvider>
+          <Toaster />
         </MockProvider>
       </body>
     </html>

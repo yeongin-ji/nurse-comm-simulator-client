@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api/client";
 import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useToast } from "@/lib/stores/toast";
 
 type LoginForm = {
   email: string;
@@ -22,7 +23,19 @@ type LoginForm = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useToast();
   const setUser = useAuthStore((s) => s.setUser);
+
+  const toastShown = useRef(false);
+  useEffect(() => {
+    if (toastShown.current) return;
+    const reason = searchParams.get("reason");
+    if (reason === "session_expired") {
+      toastShown.current = true;
+      toast("로그인이 필요해요. 다시 로그인해 주세요.");
+    }
+  }, [searchParams, toast]);
   const [errorRole, setErrorRole] = useState<"learner" | "educator" | null>(
     null,
   );

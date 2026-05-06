@@ -22,6 +22,7 @@ export function proxy(req: NextRequest) {
 
   const url = req.nextUrl.clone();
   url.pathname = "/";
+  url.searchParams.set("reason", "session_expired");
   return NextResponse.redirect(url);
 }
 
