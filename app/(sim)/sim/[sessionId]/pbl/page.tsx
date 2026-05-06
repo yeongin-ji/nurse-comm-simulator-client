@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import { PblProgress } from "@/components/sim/pbl-progress";
 import { pblApi, pblKeys } from "@/lib/api/pbl";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import {
+  scenarioKeys,
+  scenariosApi,
+  projectMedicalRecord,
+} from "@/lib/api/scenarios";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
 
@@ -30,6 +36,27 @@ export default function PblPage() {
   const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
+
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  const scenario = scenarioQuery.data;
+  const record = scenario ? projectMedicalRecord(scenario.medical_record) : null;
+  const patientMeta = record
+    ? [record.name, [record.sex, record.age && `${record.age}세`].filter(Boolean).join("/")]
+        .filter(Boolean)
+        .join(" (") + (record.name && record.sex ? ")" : "")
+    : null;
 
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [completeOpen, setCompleteOpen] = useState(false);
@@ -83,11 +110,11 @@ export default function PblPage() {
               환자 정보
             </h2>
             <p className="text-[13px] font-medium text-foreground">
-              세션 #{sessionId}
+              {patientMeta ?? "불러오는 중..."}
             </p>
             <div className="h-px bg-border" />
-            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-              가상 환자와의 의사소통 방향을 AI 동료와 함께 논의해요.
+            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal line-clamp-6">
+              {scenario?.scenario_text ?? "시나리오를 불러오고 있어요..."}
             </p>
           </Card>
 
