@@ -53,16 +53,23 @@ const VITAL_LABEL: Record<string, string> = {
   temperature: "체온",
 };
 
+type RawPsychological = {
+  anxiety?: number;
+  anger?: number;
+  depression?: number;
+};
+
 type RawInitialState = {
+  // 서버 실제 구조: top-level vital_signs + psychological
+  vital_signs?: Record<string, string>;
+  other_signs?: string[];
+  psychological?: RawPsychological;
+  // 레거시/mock 구조: nested environmental_state + psychological_state
   environmental_state?: {
     vital_signs?: Record<string, string>;
     other_signs?: string[];
   };
-  psychological_state?: {
-    anxiety?: number;
-    anger?: number;
-    depression?: number;
-  };
+  psychological_state?: RawPsychological;
 };
 
 export type InitialPatientState = {
@@ -78,14 +85,17 @@ export function projectInitialState(
   if (!raw || typeof raw !== "object") return null;
   const state = raw as RawInitialState;
 
-  const vitalSigns: VitalSign[] = state.environmental_state?.vital_signs
-    ? Object.entries(state.environmental_state.vital_signs).map(([key, value]) => ({
+  const rawVitals = state.vital_signs ?? state.environmental_state?.vital_signs;
+  const vitalSigns: VitalSign[] = rawVitals
+    ? Object.entries(rawVitals).map(([key, value]) => ({
         label: VITAL_LABEL[key] ?? key,
         value: String(value),
       }))
     : [];
 
-  const psy = state.psychological_state;
+  const rawOther = state.other_signs ?? state.environmental_state?.other_signs;
+
+  const psy = state.psychological ?? state.psychological_state;
   const psychological: Psychological[] = psy
     ? [
         { label: "불안", value: psy.anxiety ?? 0, tone: "danger" as const },
@@ -97,14 +107,14 @@ export function projectInitialState(
   if (
     vitalSigns.length === 0 &&
     psychological.length === 0 &&
-    !state.environmental_state?.other_signs?.length
+    !rawOther?.length
   ) {
     return null;
   }
 
   return {
     vitalSigns,
-    otherSigns: state.environmental_state?.other_signs,
+    otherSigns: rawOther,
     psychological,
   };
 }
