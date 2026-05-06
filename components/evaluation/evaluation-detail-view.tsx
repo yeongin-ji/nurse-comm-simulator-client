@@ -41,7 +41,9 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
             <span className="text-[44px] font-semibold leading-none">
               {evaluation.totalScore}
             </span>
-            <span className="text-body-lg font-normal text-fg-muted">점</span>
+            <span className="text-body-lg font-normal text-fg-muted">
+              / {evaluation.totalMaxScore}
+            </span>
           </p>
         </Card>
         {top3.length > 0 && (
@@ -68,7 +70,7 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
                       {item.label}
                     </span>
                     <span className="text-body-md font-semibold text-foreground tabular-nums">
-                      {item.value}점
+                      {item.value} / {item.maxScore}
                     </span>
                   </li>
                 ))}
@@ -86,7 +88,7 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
           <div className="h-px bg-border" />
           <div className="flex flex-col gap-3">
             {evaluation.items.map((item) => (
-              <Gauge key={item.label} label={item.label} value={item.value} />
+              <Gauge key={item.label} label={item.label} value={item.value} maxValue={item.maxScore} />
             ))}
           </div>
         </Card>

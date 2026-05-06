@@ -19,27 +19,24 @@ const DEBRIEFING_BY_TOOL: Record<number, string> = {
 협력적 의사결정 단계에서 선택지를 더 명확히 제시하면 환자 자율성이 한층 강화될 거예요.`,
 };
 
-function buildItemScores(toolId: number, items: string[]) {
-  // Deterministic per-tool/per-item score so re-runs stay stable.
+function buildItemScores(toolId: number, items: string[], maxScore: number) {
+  // Deterministic per-tool/per-item score within the tool's scale.
+  // 0 = N/A (해당 없음), 1..maxScore = actual score.
   return items.map((label, idx) => ({
     label,
-    value: 60 + ((toolId * 11 + idx * 7) % 36), // 60–95
+    value: 1 + ((toolId * 3 + idx * 2) % maxScore), // 1..maxScore
   }));
 }
 
 function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {
   return TOOLS.map((tool) => {
-    const items = buildItemScores(tool.id, tool.items);
-    const total = Math.round(
-      items.reduce((acc, i) => acc + i.value, 0) / items.length
-    );
+    const items = buildItemScores(tool.id, tool.items, tool.maxScore);
     return {
       id: sessionId * 1000 + tool.id,
       session_id: sessionId,
       tool_id: tool.id,
       item_scores: {
         items,
-        total,
         duration_seconds: 402,
         turns: 14,
       },
@@ -51,22 +48,45 @@ function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {
 
 export const evaluationHandlers = [
   /**
-   * POST /sessions/:id/evaluate — runs every registered tool once.
-   * Re-running on a session that already has evaluations returns 400 to
-   * preserve the "once per tool" policy.
+   * POST /sessions/:id/evaluate — runs a single tool by tool_id.
+   * Re-running on a tool that already has a result returns 400.
    */
-  http.post("/api/v1/sessions/:id/evaluate", async ({ params }) => {
+  http.post("/api/v1/sessions/:id/evaluate", async ({ params, request }) => {
     const id = Number(params.id);
-    if (evaluations.has(id)) {
+    const body = (await request.json()) as { tool_id: number };
+    const toolId = body.tool_id;
+
+    const existing = evaluations.get(id) ?? [];
+    if (existing.some((r) => r.tool_id === toolId)) {
       return HttpResponse.json(
-        { error: "already evaluated" },
-        { status: 400 }
+        { error: "evaluation already completed for this tool" },
+        { status: 400 },
       );
     }
+
+    const tool = TOOLS.find((t) => t.id === toolId);
+    if (!tool) {
+      return HttpResponse.json(
+        { error: "evaluation tool not found" },
+        { status: 404 },
+      );
+    }
+
     await new Promise((r) => setTimeout(r, 1500));
-    const results = buildEvaluationsFor(id);
-    evaluations.set(id, results);
-    return HttpResponse.json(results, { status: 201 });
+
+    const items = buildItemScores(tool.id, tool.items, tool.maxScore);
+    const result: EvaluationResponse = {
+      id: id * 1000 + tool.id,
+      session_id: id,
+      tool_id: tool.id,
+      item_scores: { items, duration_seconds: 402, turns: 14 },
+      debriefing_content: DEBRIEFING_BY_TOOL[tool.id] ?? "",
+      created_at: new Date().toISOString(),
+    };
+
+    existing.push(result);
+    evaluations.set(id, existing);
+    return HttpResponse.json(result, { status: 201 });
   }),
 
   /**

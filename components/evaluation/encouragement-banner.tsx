@@ -5,19 +5,25 @@ import { getToolName } from "@/lib/tools";
 type TopItem = {
   label: string;
   value: number;
+  maxScore: number;
   toolName: string;
 };
 
 function findTopItem(evaluations: ProjectedEvaluation[]): TopItem | null {
   let top: TopItem | null = null;
+  let topRatio = 0;
   for (const evaluation of evaluations) {
     for (const item of evaluation.items) {
-      if (!top || item.value > top.value) {
+      if (item.value === 0 || item.maxScore === 0) continue;
+      const ratio = item.value / item.maxScore;
+      if (!top || ratio > topRatio) {
         top = {
           label: item.label,
           value: item.value,
+          maxScore: item.maxScore,
           toolName: getToolName(evaluation.toolId),
         };
+        topRatio = ratio;
       }
     }
   }
@@ -47,7 +53,7 @@ export function EncouragementBanner({ evaluations }: EncouragementBannerProps) {
           이번 시뮬레이션의 강점
         </p>
         <h2 className="text-title-lg font-semibold text-foreground">
-          {top.label} 영역에서 가장 높은 점수({top.value}점)를 받았어요
+          {top.label} 영역에서 가장 높은 점수({top.value}/{top.maxScore})를 받았어요
         </h2>
         <p className="text-body-md text-fg-muted leading-[22px]">
           {top.toolName} 평가에서 두드러진 강점이에요. 다음 시뮬레이션에서도

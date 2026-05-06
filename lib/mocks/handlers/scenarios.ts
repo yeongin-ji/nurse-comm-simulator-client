@@ -26,8 +26,8 @@ export const scenarioHandlers = [
         created_at: new Date().toISOString(),
       },
       initial_state: {
-        심리적_상태: { anxiety: 70, anger: 50, depression: 20 },
-        환경적_상태: { vital_signs: "혈압 138/88, 맥박 102" },
+        psychological_state: { anxiety: 70, anger: 50, depression: 20 },
+        environmental_state: { vital_signs: "혈압 138/88, 맥박 102" },
       },
     };
     return HttpResponse.json(payload, { status: 201 });
@@ -58,7 +58,7 @@ export const scenarioHandlers = [
         "의사결정을 바탕으로 환자와 효과적으로 의사소통 할 수 있다.",
       ],
       initial_state: {
-        환경적_상태: {
+        environmental_state: {
           vital_signs: {
             blood_pressure: "138/88",
             pulse: "102 bpm",
@@ -68,7 +68,7 @@ export const scenarioHandlers = [
           other_signs:
             "호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰.",
         },
-        심리적_상태: { anxiety: 72, anger: 55, depression: 20 },
+        psychological_state: { anxiety: 72, anger: 55, depression: 20 },
       },
       created_at: "2026-04-01T00:00:00Z",
     });

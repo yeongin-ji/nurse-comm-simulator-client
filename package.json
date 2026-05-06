@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "gen:api": "swagger2openapi design_handoff_nursecomm/api/swagger.json --outfile types/.openapi3.tmp.json && openapi-typescript types/.openapi3.tmp.json -o types/api.d.ts"
+    "gen:api": "swagger2openapi ../nurse-comm-simulator-server/docs/swagger.json --outfile types/.openapi3.tmp.json && openapi-typescript types/.openapi3.tmp.json -o types/api.d.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

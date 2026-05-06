@@ -13,6 +13,8 @@ export type EvaluationTool = {
   description: string;
   /** Display labels for each item the tool scores. Order matters. */
   items: string[];
+  /** Maximum score per item (e.g. 5 for Kalamazoo, 3 for GITCS). 0 = N/A. */
+  maxScore: number;
 };
 
 export const TOOLS: EvaluationTool[] = [
@@ -20,6 +22,7 @@ export const TOOLS: EvaluationTool[] = [
     id: 1,
     name: "Kalamazoo",
     description: "환자 중심 의사소통의 핵심 영역을 평가해요.",
+    maxScore: 5,
     items: [
       "환자 맞이 및 자기소개",
       "개방형 질문 사용",
@@ -33,6 +36,7 @@ export const TOOLS: EvaluationTool[] = [
     id: 2,
     name: "GITCS",
     description: "포괄적 임상 의사소통 기술 평가.",
+    maxScore: 3,
     items: [
       "환자 중심성",
       "정보 공유의 명확성",

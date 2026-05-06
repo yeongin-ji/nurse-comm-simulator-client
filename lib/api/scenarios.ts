@@ -51,11 +51,11 @@ const VITAL_LABEL: Record<string, string> = {
 };
 
 type RawInitialState = {
-  환경적_상태?: {
+  environmental_state?: {
     vital_signs?: Record<string, string>;
     other_signs?: string;
   };
-  심리적_상태?: {
+  psychological_state?: {
     anxiety?: number;
     anger?: number;
     depression?: number;
@@ -75,14 +75,14 @@ export function projectInitialState(
   if (!raw || typeof raw !== "object") return null;
   const state = raw as RawInitialState;
 
-  const vitalSigns: VitalSign[] = state.환경적_상태?.vital_signs
-    ? Object.entries(state.환경적_상태.vital_signs).map(([key, value]) => ({
+  const vitalSigns: VitalSign[] = state.environmental_state?.vital_signs
+    ? Object.entries(state.environmental_state.vital_signs).map(([key, value]) => ({
         label: VITAL_LABEL[key] ?? key,
         value: String(value),
       }))
     : [];
 
-  const psy = state.심리적_상태;
+  const psy = state.psychological_state;
   const psychological: Psychological[] = psy
     ? [
         { label: "불안", value: psy.anxiety ?? 0, tone: "danger" as const },
@@ -94,14 +94,14 @@ export function projectInitialState(
   if (
     vitalSigns.length === 0 &&
     psychological.length === 0 &&
-    !state.환경적_상태?.other_signs
+    !state.environmental_state?.other_signs
   ) {
     return null;
   }
 
   return {
     vitalSigns,
-    otherSigns: state.환경적_상태?.other_signs,
+    otherSigns: state.environmental_state?.other_signs,
     psychological,
   };
 }

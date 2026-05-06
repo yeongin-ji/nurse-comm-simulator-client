@@ -4,17 +4,35 @@ import type { components } from "@/types/api";
 type TurnResponse = components["schemas"]["handler.PBLTurnResponse"];
 type SummaryResponse = components["schemas"]["handler.PBLSummaryResponse"];
 
-const SUMMARY_TEXT = `환자의 호흡 상태를 안정시키기 위해 산소 포화도를 지속적으로 모니터링하고, 반좌위를 유지하도록 돕는 것이 필요해요.
-
-환자는 현재 높은 불안감과 분노감을 보이고 있으므로, 공감적 경청과 안심 제공을 통해 심리적 안정을 도모해야 해요. 신뢰 관계가 형성되어야 이후 교육적 중재가 효과적으로 이루어질 수 있어요.
-
-환자가 안정된 이후에는 흡입기 사용법과 증상 악화 시 대처법에 대해 교육하는 것이 좋아요.`;
+const SUMMARY_CATEGORIES = [
+  {
+    name: "신체적 안정 확보",
+    items: [
+      "산소 포화도를 지속적으로 모니터링하고, 반좌위를 유지하도록 도와요",
+      "활력징후(혈압, 맥박, 호흡, 체온)를 주기적으로 측정해요",
+    ],
+  },
+  {
+    name: "심리적 안정 및 신뢰 형성",
+    items: [
+      "공감적 경청과 안심 제공을 통해 심리적 안정을 도모해요",
+      "환자의 감정을 인정하고, 신뢰 관계를 먼저 형성해요",
+    ],
+  },
+  {
+    name: "교육적 중재",
+    items: [
+      "환자가 안정된 이후에 흡입기 사용법을 교육해요",
+      "증상 악화 시 대처법에 대해 단계적으로 안내해요",
+    ],
+  },
+];
 
 function buildSummary(sessionId: number): SummaryResponse {
   return {
     id: sessionId * 10,
     session_id: sessionId,
-    categories: { text: SUMMARY_TEXT },
+    categories: SUMMARY_CATEGORIES,
     created_at: new Date().toISOString(),
   };
 }

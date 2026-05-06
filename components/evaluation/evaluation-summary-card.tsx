@@ -56,12 +56,12 @@ export function EvaluationSummaryCard({
             </p>
           )}
         </div>
-        <p className="text-foreground tracking-[-0.03em] shrink-0">
+        <p className="text-foreground tracking-[-0.03em] shrink-0 tabular-nums">
           <span className="text-headline-md text-accent leading-none">
             {evaluation.totalScore}
           </span>
           <span className="text-body-md font-normal text-fg-muted ml-0.5">
-            점
+            / {evaluation.totalMaxScore}
           </span>
         </p>
       </header>
@@ -70,7 +70,7 @@ export function EvaluationSummaryCard({
 
       <div className="flex flex-col gap-2.5">
         {evaluation.items.slice(0, 3).map((item) => (
-          <Gauge key={item.label} label={item.label} value={item.value} />
+          <Gauge key={item.label} label={item.label} value={item.value} maxValue={item.maxScore} />
         ))}
         {evaluation.items.length > 3 && (
           <span className="text-label-sm font-normal text-fg-subtle tracking-normal">

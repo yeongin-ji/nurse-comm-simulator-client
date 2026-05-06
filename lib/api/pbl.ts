@@ -22,14 +22,23 @@ export const pblKeys = {
     [...pblKeys.all, "summary", sessionId] as const,
 };
 
-/** Best-effort extraction of the human-readable summary text from PBLSummaryResponse.categories (typed unknown). */
-export function extractSummaryText(summary: PblSummaryResponse | undefined) {
-  if (!summary?.categories) return "";
-  const c = summary.categories;
-  if (typeof c === "string") return c;
-  if (typeof c === "object" && c !== null && "text" in c) {
-    const text = (c as { text?: unknown }).text;
-    if (typeof text === "string") return text;
-  }
-  return "";
+export type PblSummaryCategory = {
+  name: string;
+  items: string[];
+};
+
+/** Parse PBLSummaryResponse.categories (typed unknown) into a typed array. */
+export function projectCategories(
+  summary: PblSummaryResponse | undefined,
+): PblSummaryCategory[] {
+  if (!summary?.categories) return [];
+  const raw = summary.categories;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (c): c is PblSummaryCategory =>
+      typeof c === "object" &&
+      c !== null &&
+      typeof c.name === "string" &&
+      Array.isArray(c.items),
+  );
 }

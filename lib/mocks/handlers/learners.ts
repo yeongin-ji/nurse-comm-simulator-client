@@ -21,7 +21,7 @@ type LearnerSession = {
   disease: string;
   start_time: string;
   session_status: string;
-  total_score: number | null;
+  total_score?: number | null;
   comment_count: number;
 };
 

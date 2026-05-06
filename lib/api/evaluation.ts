@@ -1,13 +1,27 @@
 import { api } from "./client";
 import type { components } from "@/types/api";
+import { TOOLS, getToolById } from "@/lib/tools";
 
 export type EvaluationResponse =
   components["schemas"]["handler.EvaluationResultResponse"];
 
 export const evaluationApi = {
-  /** Run every registered tool once. Returns the new array of per-tool results. */
-  run: (sessionId: number) =>
-    api.post<EvaluationResponse[]>(`/sessions/${sessionId}/evaluate`),
+  /** Run every registered tool once (sequentially). Returns per-tool results. */
+  run: async (sessionId: number): Promise<EvaluationResponse[]> => {
+    const results: EvaluationResponse[] = [];
+    for (const tool of TOOLS) {
+      const result = await api.post<EvaluationResponse>(
+        `/sessions/${sessionId}/evaluate`,
+        { tool_id: tool.id },
+      );
+      // POST 응답이 tool_id 대신 tool_version_id를 반환할 수 있으므로 보정
+      if (result.tool_id == null) {
+        result.tool_id = tool.id;
+      }
+      results.push(result);
+    }
+    return results;
+  },
   /** List all per-tool evaluations stored for the session. */
   list: (sessionId: number) =>
     api.get<EvaluationResponse[]>(`/sessions/${sessionId}/evaluation`),
@@ -19,11 +33,20 @@ export const evaluationKeys = {
     [...evaluationKeys.all, "list", sessionId] as const,
 };
 
-export type EvaluationItem = { label: string; value: number };
+export type EvaluationItem = {
+  label: string;
+  /** Raw score (0 = N/A) */
+  value: number;
+  /** Maximum possible score for this tool (e.g. 5, 3) */
+  maxScore: number;
+};
 
 export type ProjectedEvaluation = {
   toolId: number;
+  /** Sum of scored items (excluding 0/N/A) */
   totalScore: number;
+  /** Sum of maxScore for scored items (excluding 0/N/A) */
+  totalMaxScore: number;
   durationSeconds: number;
   turns: number;
   items: EvaluationItem[];
@@ -31,7 +54,7 @@ export type ProjectedEvaluation = {
 };
 
 type RawScores = {
-  items?: EvaluationItem[];
+  items?: { label: string; value: number }[];
   total?: number;
   duration_seconds?: number;
   turns?: number;
@@ -39,14 +62,28 @@ type RawScores = {
 
 /** EvaluationResultResponse.item_scores is typed as unknown; narrow it. */
 export function projectEvaluation(
-  res: EvaluationResponse | undefined
+  res: EvaluationResponse | undefined,
 ): ProjectedEvaluation | null {
   if (!res || res.tool_id == null) return null;
+  const tool = getToolById(res.tool_id);
+  const maxScore = tool?.maxScore ?? 5;
+
   const raw = (res.item_scores as RawScores | null) ?? {};
-  const items = Array.isArray(raw.items) ? raw.items : [];
+  const rawItems = Array.isArray(raw.items) ? raw.items : [];
+  const items: EvaluationItem[] = rawItems.map((item) => ({
+    label: item.label,
+    value: item.value,
+    maxScore,
+  }));
+
+  const scored = items.filter((i) => i.value > 0);
+  const totalScore = scored.reduce((acc, i) => acc + i.value, 0);
+  const totalMaxScore = scored.length * maxScore;
+
   return {
     toolId: res.tool_id,
-    totalScore: raw.total ?? 0,
+    totalScore,
+    totalMaxScore,
     durationSeconds: raw.duration_seconds ?? 0,
     turns: raw.turns ?? 0,
     items,
@@ -55,7 +92,7 @@ export function projectEvaluation(
 }
 
 export function projectEvaluations(
-  res: EvaluationResponse[] | undefined
+  res: EvaluationResponse[] | undefined,
 ): ProjectedEvaluation[] {
   if (!res) return [];
   return res
@@ -65,7 +102,7 @@ export function projectEvaluations(
 
 export function findEvaluationForTool(
   res: EvaluationResponse[] | undefined,
-  toolId: number
+  toolId: number,
 ): ProjectedEvaluation | null {
   if (!res) return null;
   const match = res.find((r) => r.tool_id === toolId);
@@ -78,20 +115,24 @@ export function formatDuration(seconds: number) {
   return `${m}분 ${String(s).padStart(2, "0")}초`;
 }
 
-export function averageScore(evaluations: ProjectedEvaluation[]): number {
-  if (evaluations.length === 0) return 0;
-  const sum = evaluations.reduce((acc, e) => acc + e.totalScore, 0);
-  return Math.round(sum / evaluations.length);
+/** Format a score as "n / max" string. */
+export function formatScore(value: number, maxScore: number) {
+  return `${value} / ${maxScore}`;
 }
 
-/** Returns the toolId of the highest-scoring tool, or null when empty/tied at zero. */
+/** Returns the toolId of the highest-scoring tool by ratio, or null when empty. */
 export function topScoringToolId(
-  evaluations: ProjectedEvaluation[]
+  evaluations: ProjectedEvaluation[],
 ): number | null {
   if (evaluations.length === 0) return null;
   let best = evaluations[0];
+  let bestRatio = best.totalMaxScore > 0 ? best.totalScore / best.totalMaxScore : 0;
   for (const e of evaluations) {
-    if (e.totalScore > best.totalScore) best = e;
+    const ratio = e.totalMaxScore > 0 ? e.totalScore / e.totalMaxScore : 0;
+    if (ratio > bestRatio) {
+      best = e;
+      bestRatio = ratio;
+    }
   }
   return best.toolId;
 }

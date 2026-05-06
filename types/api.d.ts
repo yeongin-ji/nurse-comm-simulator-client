@@ -109,6 +109,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/evaluation-tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 평가 도구 목록 조회
+         * @description 시드된 평가 도구 전체를 반환합니다.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.EvaluationToolResponse"][];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/learners": {
         parameters: {
             query?: never;
@@ -116,7 +164,57 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 학습자 목록 조회 또는 학번 검색 */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description 학번 (지정 시 단건 검색) */
+                    student_number?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.LearnerWithStatsResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** 학습자(간호학생) 등록 */
         post: {
@@ -181,7 +279,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Learner ID */
+                    /** @description User ID */
                     id: number;
                 };
                 cookie?: never;
@@ -208,6 +306,72 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learners/{id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 학습자의 세션 목록 조회 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description User ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.LearnerSessionResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -582,8 +746,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 루브릭 평가 실행 (AI)
-         * @description 시뮬레이션 대화를 AI로 평가하고 결과를 저장합니다. 이미 평가된 세션에 재요청하면 400을 반환합니다.
+         * 평가 실행 (AI)
+         * @description 선택한 평가 도구로 시뮬레이션 대화를 AI 평가하고 결과를 저장합니다. 이미 평가된 세션에 재요청하면 400을 반환합니다.
          */
         post: {
             parameters: {
@@ -595,7 +759,12 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            /** @description 평가 도구 ID */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["handler.TriggerEvaluationRequest"];
+                };
+            };
             responses: {
                 /** @description Created */
                 201: {
@@ -709,7 +878,7 @@ export interface paths {
         put?: never;
         /**
          * PBL 대화 턴 처리
-         * @description 학습자 메시지를 저장하고 AI 동료의 응답을 생성합니다.
+         * @description 학습자 메시지를 저장하고 AI 동료의 응답을 생성합니다. message가 빈 문자열이면 오프닝 호출로 간주하여 학생 로그 없이 AI 동료의 첫 메시지를 반환합니다.
          */
         post: {
             parameters: {
@@ -721,8 +890,8 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            /** @description 학습자 메시지 */
-            requestBody: {
+            /** @description 학습자 메시지 (오프닝 호출 시 생략 또는 빈 문자열) */
+            requestBody?: {
                 content: {
                     "application/json": components["schemas"]["handler.pblTurnRequest"];
                 };
@@ -1050,15 +1219,38 @@ export interface components {
             session_id?: number;
             tool_id?: number;
         };
+        "handler.EvaluationToolResponse": {
+            created_at?: string;
+            id?: number;
+            tool_name?: string;
+        };
         "handler.InitialState": {
-            "\uC2EC\uB9AC\uC801_\uC0C1\uD0DC"?: unknown;
-            "\uD658\uACBD\uC801_\uC0C1\uD0DC"?: unknown;
+            environmental_state?: unknown;
+            psychological_state?: unknown;
         };
         "handler.LearnerResponse": {
             created_at?: string;
             email?: string;
             id?: number;
             name?: string;
+            student_number?: string;
+        };
+        "handler.LearnerSessionResponse": {
+            comment_count?: number;
+            disease?: string;
+            id?: number;
+            learner_id?: number;
+            scenario_id?: number;
+            session_status?: string;
+            start_time?: string;
+        };
+        "handler.LearnerWithStatsResponse": {
+            created_at?: string;
+            email?: string;
+            id?: number;
+            last_session_at?: string;
+            name?: string;
+            session_count?: number;
             student_number?: string;
         };
         "handler.PBLSummaryResponse": {
@@ -1098,6 +1290,9 @@ export interface components {
             current_state?: unknown;
             reply?: string;
         };
+        "handler.TriggerEvaluationRequest": {
+            tool_id: number;
+        };
         "handler.addCommentRequest": {
             content: string;
             educator_id: number;
@@ -1122,7 +1317,8 @@ export interface components {
             scenario_id: number;
         };
         "handler.pblTurnRequest": {
-            message: string;
+            /** @description 오프닝 호출 시 빈 문자열 허용 */
+            message?: string;
         };
         "handler.simTurnRequest": {
             current_state?: {

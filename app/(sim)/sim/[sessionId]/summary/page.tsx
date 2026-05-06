@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
-import { extractSummaryText, pblApi, pblKeys } from "@/lib/api/pbl";
+import { projectCategories, pblApi, pblKeys } from "@/lib/api/pbl";
 
 export default function PblSummaryPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -46,7 +46,7 @@ export default function PblSummaryPage() {
     );
   }
 
-  const summaryText = extractSummaryText(summaryQuery.data);
+  const categories = projectCategories(summaryQuery.data);
 
   return (
     <main className="flex flex-1 items-center justify-center p-8">
@@ -62,12 +62,34 @@ export default function PblSummaryPage() {
 
         <Card className="flex flex-col gap-3.5">
           <p className="text-[13px] text-fg-muted leading-5">
-            PBL 대화를 바탕으로 아래와 같은 의사소통 방향이 도출되었어요.
+            PBL 대화를 바탕으로 아래와 같은 간호 중재 방향이 도출되었어요.
           </p>
           <div className="h-px bg-border" />
-          <p className="text-body-md text-foreground leading-[26px] whitespace-pre-line">
-            {summaryText || "요약 내용이 비어 있어요."}
-          </p>
+          {categories.length > 0 ? (
+            <ul className="flex flex-col gap-4">
+              {categories.map((cat) => (
+                <li key={cat.name}>
+                  <h3 className="text-body-md font-medium text-foreground mb-1.5">
+                    {cat.name}
+                  </h3>
+                  <ul className="flex flex-col gap-1 pl-4">
+                    {cat.items.map((item, idx) => (
+                      <li
+                        key={idx}
+                        className="text-body-md text-fg-muted leading-[26px] list-disc"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-body-md text-fg-muted">
+              요약 내용이 비어 있어요.
+            </p>
+          )}
         </Card>
 
         <div className="flex items-start gap-2 rounded bg-surface-muted px-3.5 py-2.5">
