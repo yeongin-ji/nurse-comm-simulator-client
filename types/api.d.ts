@@ -1378,6 +1378,7 @@ export interface components {
             dilemma?: unknown;
             document_id?: number;
             id?: number;
+            initial_state?: unknown;
             learner_id?: number;
             medical_record?: unknown;
             scenario_text?: string;
