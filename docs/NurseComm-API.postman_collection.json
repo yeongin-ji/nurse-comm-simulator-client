@@ -1,0 +1,839 @@
+{
+  "info": {
+    "name": "NurseComm API Integration Test",
+    "description": "간호 의사소통 시뮬레이터 API 통합 테스트. 순서대로 실행하세요.\n\n1. 기초 데이터 조회\n2. 학습자 등록\n3. 시나리오 생성\n4. 세션 생성 → PBL → 시뮬레이션 → 평가\n5. 교육자 기능",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://34.59.172.47:8080/api/v1" },
+    { "key": "learnerId", "value": "" },
+    { "key": "documentId", "value": "" },
+    { "key": "scenarioId", "value": "" },
+    { "key": "sessionId", "value": "" },
+    { "key": "educatorId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "0. 기초 데이터 조회",
+      "item": [
+        {
+          "name": "질환 문서 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('배열 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array').and.not.empty;",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.length > 0) {",
+                  "  pm.collectionVariables.set('documentId', data[0].id);",
+                  "  console.log('documentId set:', data[0].id, data[0].disease_name);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/documents"
+          }
+        },
+        {
+          "name": "질환 문서 단건 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('필수 필드 존재', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('disease_name');",
+                  "  pm.expect(data).to.have.property('category_path');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/documents/{{documentId}}"
+          }
+        },
+        {
+          "name": "평가 도구 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('배열 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array');",
+                  "});",
+                  "console.log('평가 도구:', JSON.stringify(pm.response.json().map(t => ({id: t.id, name: t.tool_name}))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/evaluation-tools"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. 학습자",
+      "item": [
+        {
+          "name": "학습자 등록",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('필수 필드 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('name');",
+                  "  pm.expect(data).to.have.property('email');",
+                  "  pm.expect(data).to.have.property('student_number');",
+                  "});",
+                  "pm.collectionVariables.set('learnerId', pm.response.json().id);",
+                  "console.log('learnerId set:', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/learners",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"테스트학생\",\n  \"email\": \"test@univ.ac.kr\",\n  \"student_number\": \"20210999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "학습자 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('배열 반환', () => {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "pm.test('session_count/last_session_at 필드 존재', () => {",
+                  "  const data = pm.response.json();",
+                  "  if (data.length > 0) {",
+                  "    pm.expect(data[0]).to.have.property('session_count');",
+                  "    pm.expect(data[0]).to.have.property('last_session_at');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/learners"
+          }
+        },
+        {
+          "name": "학습자 단건 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('id 일치', () => {",
+                  "  pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('learnerId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/learners/{{learnerId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. 시나리오 생성 (AI)",
+      "item": [
+        {
+          "name": "시나리오 생성",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "",
+                  "pm.test('scenario 객체 반환', () => {",
+                  "  pm.expect(data).to.have.property('scenario');",
+                  "  pm.expect(data.scenario).to.have.property('id');",
+                  "  pm.expect(data.scenario).to.have.property('scenario_text');",
+                  "  pm.expect(data.scenario).to.have.property('medical_record');",
+                  "  pm.expect(data.scenario).to.have.property('dilemma');",
+                  "});",
+                  "",
+                  "pm.test('initial_state 반환', () => {",
+                  "  pm.expect(data).to.have.property('initial_state');",
+                  "  pm.expect(data.initial_state).to.have.property('environmental_state');",
+                  "  pm.expect(data.initial_state).to.have.property('psychological_state');",
+                  "});",
+                  "",
+                  "// medical_record 내부 구조 확인 (클라이언트 기대: flat {name, age, sex, difficulty})",
+                  "pm.test('[확인] medical_record 구조', () => {",
+                  "  const mr = data.scenario.medical_record;",
+                  "  console.log('medical_record:', JSON.stringify(mr));",
+                  "  // 서버가 flat 구조로 수정했는지 확인",
+                  "  // pm.expect(mr).to.have.property('name');",
+                  "});",
+                  "",
+                  "// initial_state 내부 구조 확인",
+                  "pm.test('[확인] initial_state.environmental_state 구조', () => {",
+                  "  const env = data.initial_state.environmental_state;",
+                  "  console.log('environmental_state:', JSON.stringify(env));",
+                  "  // 클라이언트 기대: { vital_signs: Record<string,string>, other_signs: string }",
+                  "});",
+                  "",
+                  "pm.test('[확인] initial_state.psychological_state 구조', () => {",
+                  "  const psy = data.initial_state.psychological_state;",
+                  "  console.log('psychological_state:', JSON.stringify(psy));",
+                  "  // 클라이언트 기대: { anxiety: number, anger: number, depression: number }",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('scenarioId', data.scenario.id);",
+                  "console.log('scenarioId set:', data.scenario.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/scenarios",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"learner_id\": {{learnerId}},\n  \"document_id\": {{documentId}},\n  \"difficulty\": \"중\"\n}"
+            }
+          }
+        },
+        {
+          "name": "시나리오 단건 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('시나리오 필드 존재', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('scenario_text');",
+                  "  pm.expect(data).to.have.property('medical_record');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/scenarios/{{scenarioId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. 세션 & PBL",
+      "item": [
+        {
+          "name": "세션 생성",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('세션 필드 확인', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('current_phase');",
+                  "  pm.expect(data).to.have.property('session_status');",
+                  "  console.log('current_phase:', data.current_phase);",
+                  "});",
+                  "pm.collectionVariables.set('sessionId', pm.response.json().id);",
+                  "console.log('sessionId set:', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"learner_id\": {{learnerId}},\n  \"scenario_id\": {{scenarioId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "PBL 오프닝 (빈 메시지)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('AI 동료 응답 존재', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('reply');",
+                  "  pm.expect(data.reply).to.be.a('string').and.not.empty;",
+                  "  console.log('AI 동료:', data.reply.substring(0, 80) + '...');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/pbl",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PBL 턴 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('reply 존재', () => {",
+                  "  pm.expect(pm.response.json()).to.have.property('reply');",
+                  "  console.log('AI 동료:', pm.response.json().reply.substring(0, 80) + '...');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/pbl",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"환자가 호흡 교육을 거부하고 있어요. 먼저 공감적 경청으로 신뢰를 쌓은 뒤, 단계적으로 교육을 시도하면 어떨까요?\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PBL 턴 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "console.log('AI 동료:', pm.response.json().reply?.substring(0, 80) + '...');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/pbl",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"감정을 먼저 인정하고, 환자가 준비됐을 때 호흡법을 안내하겠습니다.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PBL 요약 생성 (AI)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const status = pm.response.code;",
+                  "pm.test('201 Created 또는 200 OK', () => {",
+                  "  pm.expect(status).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('categories 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('categories');",
+                  "  console.log('categories 타입:', typeof data.categories, Array.isArray(data.categories) ? '(배열)' : '');",
+                  "});",
+                  "",
+                  "// 클라이언트 기대 구조: [{name: string, items: string[]}]",
+                  "pm.test('[확인] categories 내부 구조', () => {",
+                  "  const cats = pm.response.json().categories;",
+                  "  if (Array.isArray(cats) && cats.length > 0) {",
+                  "    pm.expect(cats[0]).to.have.property('name');",
+                  "    pm.expect(cats[0]).to.have.property('items');",
+                  "    pm.expect(cats[0].items).to.be.an('array');",
+                  "    console.log('첫 카테고리:', cats[0].name, '항목 수:', cats[0].items.length);",
+                  "  } else {",
+                  "    console.warn('categories가 배열이 아니거나 비어있음:', JSON.stringify(cats));",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/pbl/summary"
+          }
+        },
+        {
+          "name": "PBL 요약 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('categories 존재', () => {",
+                  "  pm.expect(pm.response.json()).to.have.property('categories');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/pbl/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. 시뮬레이션",
+      "item": [
+        {
+          "name": "단계 전환 → SIMULATION",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('current_phase = SIMULATION', () => {",
+                  "  pm.expect(pm.response.json().current_phase).to.eql('SIMULATION');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/phase",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phase\": \"SIMULATION\"\n}"
+            }
+          }
+        },
+        {
+          "name": "시뮬레이션 턴 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "",
+                  "pm.test('reply 존재', () => {",
+                  "  pm.expect(data).to.have.property('reply');",
+                  "  pm.expect(data.reply).to.be.a('string').and.not.empty;",
+                  "  console.log('환자:', data.reply.substring(0, 80) + '...');",
+                  "});",
+                  "",
+                  "pm.test('current_state 존재', () => {",
+                  "  pm.expect(data).to.have.property('current_state');",
+                  "});",
+                  "",
+                  "// 클라이언트 기대: { vital_signs: Record, psychological: {anxiety, anger, depression} }",
+                  "pm.test('[확인] current_state 내부 구조', () => {",
+                  "  const cs = data.current_state;",
+                  "  console.log('current_state:', JSON.stringify(cs));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/simulate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"안녕하세요, 저는 담당 간호학생이에요. 지금 많이 힘드시죠? 어떤 부분이 가장 불편하세요?\"\n}"
+            }
+          }
+        },
+        {
+          "name": "시뮬레이션 턴 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "console.log('환자:', pm.response.json().reply?.substring(0, 80) + '...');",
+                  "console.log('current_state:', JSON.stringify(pm.response.json().current_state));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/simulate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"많이 답답하셨겠어요. 호흡을 편하게 하는 방법을 같이 시도해 볼까요? 강요는 아니에요.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "시뮬레이션 턴 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "console.log('환자:', pm.response.json().reply?.substring(0, 80) + '...');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/simulate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"입을 살짝 오므리고 천천히 내쉬는 거예요. 제가 같이 할게요. 준비되시면 시작해 볼까요?\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. 평가",
+      "item": [
+        {
+          "name": "단계 전환 → EVALUATION",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('current_phase = EVALUATION', () => {",
+                  "  pm.expect(pm.response.json().current_phase).to.eql('EVALUATION');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/phase",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phase\": \"EVALUATION\"\n}"
+            }
+          }
+        },
+        {
+          "name": "평가 실행 - Kalamazoo (tool_id=1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "",
+                  "pm.test('tool_id 반환 확인', () => {",
+                  "  // 서버가 tool_id를 반환하는지, tool_version_id를 반환하는지 확인",
+                  "  console.log('응답 키:', Object.keys(data));",
+                  "  console.log('tool_id:', data.tool_id, 'tool_version_id:', data.tool_version_id);",
+                  "});",
+                  "",
+                  "pm.test('item_scores 존재', () => {",
+                  "  pm.expect(data).to.have.property('item_scores');",
+                  "});",
+                  "",
+                  "// 클라이언트 기대: { items: [{label, value}], duration_seconds, turns }",
+                  "pm.test('[확인] item_scores 내부 구조', () => {",
+                  "  const scores = data.item_scores;",
+                  "  console.log('item_scores 타입:', typeof scores, Array.isArray(scores) ? '(배열)' : '(객체)');",
+                  "  console.log('item_scores:', JSON.stringify(scores).substring(0, 200));",
+                  "  ",
+                  "  if (Array.isArray(scores)) {",
+                  "    console.warn('item_scores가 배열 → 클라이언트는 {items:[...]} 객체를 기대');",
+                  "    if (scores.length > 0) {",
+                  "      console.log('첫 항목 키:', Object.keys(scores[0]));",
+                  "      // 서버: item_id, item_name, score, reason",
+                  "      // 클라이언트 기대: label, value",
+                  "    }",
+                  "  } else if (typeof scores === 'object') {",
+                  "    console.log('items 존재:', !!scores.items);",
+                  "    if (scores.items && scores.items.length > 0) {",
+                  "      console.log('첫 항목 키:', Object.keys(scores.items[0]));",
+                  "    }",
+                  "  }",
+                  "});",
+                  "",
+                  "pm.test('debriefing_content 존재', () => {",
+                  "  pm.expect(data).to.have.property('debriefing_content');",
+                  "  console.log('debriefing:', data.debriefing_content?.substring(0, 80) + '...');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/evaluate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tool_id\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "평가 실행 - GITCS (tool_id=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json();",
+                  "console.log('item_scores:', JSON.stringify(data.item_scores).substring(0, 200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/evaluate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tool_id\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "평가 실행 중복 시도 (400 기대)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('이미 평가됨 에러', () => {",
+                  "  pm.expect(pm.response.json()).to.have.property('error');",
+                  "  console.log('에러:', pm.response.json().error);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/evaluate",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tool_id\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "평가 결과 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "",
+                  "pm.test('배열 반환 (도구별 결과)', () => {",
+                  "  pm.expect(data).to.be.an('array');",
+                  "  pm.expect(data.length).to.be.at.least(2);",
+                  "  console.log('평가 결과 수:', data.length);",
+                  "});",
+                  "",
+                  "pm.test('각 결과에 tool_id 존재', () => {",
+                  "  data.forEach((r, i) => {",
+                  "    pm.expect(r).to.have.property('tool_id');",
+                  "    console.log(`결과[${i}] tool_id:`, r.tool_id);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/evaluation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. 코멘트 (교육자)",
+      "item": [
+        {
+          "name": "코멘트 추가",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('코멘트 필드 확인', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('content');",
+                  "  pm.expect(data).to.have.property('educator_id');",
+                  "  pm.expect(data).to.have.property('session_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"educator_id\": {{educatorId}},\n  \"content\": \"공감적 경청이 잘 이루어졌습니다. 개방형 질문을 더 활용해 보세요.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "코멘트 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('배열 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array');",
+                  "  pm.expect(data.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/comments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. 교육자 - 학생 이력",
+      "item": [
+        {
+          "name": "학습자별 세션 목록",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('배열 반환', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.be.an('array');",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.length > 0) {",
+                  "  console.log('세션 필드:', Object.keys(data[0]));",
+                  "  // 클라이언트 기대: id, learner_id, scenario_id, disease, start_time, session_status, total_score?, comment_count",
+                  "  pm.test('필수 필드 존재', () => {",
+                  "    pm.expect(data[0]).to.have.property('id');",
+                  "    pm.expect(data[0]).to.have.property('session_status');",
+                  "    pm.expect(data[0]).to.have.property('comment_count');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/learners/{{learnerId}}/sessions"
+          }
+        },
+        {
+          "name": "세션 단건 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('세션 필드 확인', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('current_phase');",
+                  "  pm.expect(data).to.have.property('session_status');",
+                  "  pm.expect(data).to.have.property('evaluation_status');",
+                  "  console.log('session:', JSON.stringify(data));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sessions/{{sessionId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

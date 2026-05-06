@@ -139,7 +139,7 @@ export default function ChatPage() {
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <PatientStatePanel
           vitalSigns={vitalSigns}
-          otherSigns="호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰."
+          otherSigns={["호흡 시 천명음(wheezing) 청진됨", "입술 오므리기 호흡 자세 관찰"]}
           psychological={psychological}
           onEnd={() => setEndOpen(true)}
         />

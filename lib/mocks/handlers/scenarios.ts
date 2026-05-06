@@ -65,8 +65,10 @@ export const scenarioHandlers = [
             respiration: "24회/분",
             temperature: "37.2℃",
           },
-          other_signs:
-            "호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰.",
+          other_signs: [
+            "호흡 시 천명음(wheezing) 청진됨",
+            "입술 오므리기 호흡 자세 관찰",
+          ],
         },
         psychological_state: { anxiety: 72, anger: 55, depression: 20 },
       },

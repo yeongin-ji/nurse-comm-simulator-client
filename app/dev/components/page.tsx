@@ -380,7 +380,7 @@ export default function ComponentsCatalog() {
               { label: "호흡", value: "24회/분" },
               { label: "체온", value: "37.2℃" },
             ]}
-            otherSigns="호흡 시 천명음(wheezing) 청진됨. 입술 오므리기 호흡 자세 관찰."
+            otherSigns={["호흡 시 천명음(wheezing) 청진됨", "입술 오므리기 호흡 자세 관찰"]}
             psychological={[
               { label: "불안", value: 72, tone: "danger" },
               { label: "분노", value: 55, tone: "warning" },

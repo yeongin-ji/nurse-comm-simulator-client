@@ -12,7 +12,7 @@ export type Psychological = {
 
 export type PatientStatePanelProps = {
   vitalSigns: VitalSign[];
-  otherSigns?: string;
+  otherSigns?: string[];
   psychological: Psychological[];
   onEnd?: () => void;
   className?: string;
@@ -55,14 +55,21 @@ export function PatientStatePanel({
           ))}
         </div>
 
-        {otherSigns && (
+        {otherSigns && otherSigns.length > 0 && (
           <div className="flex flex-col gap-1">
             <SectionLabel as="span" small>
               기타 징후
             </SectionLabel>
-            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-              {otherSigns}
-            </p>
+            <ul className="flex flex-col gap-0.5">
+              {otherSigns.map((sign, i) => (
+                <li
+                  key={i}
+                  className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal"
+                >
+                  {sign}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

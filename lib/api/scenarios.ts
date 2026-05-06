@@ -53,7 +53,7 @@ const VITAL_LABEL: Record<string, string> = {
 type RawInitialState = {
   environmental_state?: {
     vital_signs?: Record<string, string>;
-    other_signs?: string;
+    other_signs?: string[];
   };
   psychological_state?: {
     anxiety?: number;
@@ -64,7 +64,7 @@ type RawInitialState = {
 
 export type InitialPatientState = {
   vitalSigns: VitalSign[];
-  otherSigns?: string;
+  otherSigns?: string[];
   psychological: Psychological[];
 };
 
@@ -94,7 +94,7 @@ export function projectInitialState(
   if (
     vitalSigns.length === 0 &&
     psychological.length === 0 &&
-    !state.environmental_state?.other_signs
+    !state.environmental_state?.other_signs?.length
   ) {
     return null;
   }
