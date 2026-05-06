@@ -25,6 +25,7 @@ export const scenariosApi = {
     api.get<ScenarioDetailResponse>(`/scenarios/${id}`),
   create: (body: CreateScenarioRequest) =>
     api.post<ScenarioCreateResponse>("/scenarios", body),
+  delete: (id: number) => api.delete<void>(`/scenarios/${id}`),
 };
 
 export const scenarioKeys = {

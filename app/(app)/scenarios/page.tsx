@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,20 @@ export default function ScenariosPage() {
     queryKey: scenarioKeys.list(),
     queryFn: scenariosApi.list,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => scenariosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: scenarioKeys.list() });
+    },
+  });
+
+  const handleDelete = (e: React.MouseEvent, id: number, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`'${name}' 시나리오를 삭제하시겠습니까?`)) return;
+    deleteMutation.mutate(id);
+  };
 
   const list = scenarios ?? [];
 
@@ -88,6 +102,19 @@ export default function ScenariosPage() {
                         : "아직 시뮬레이션을 시작하지 않았어요"}
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    className="p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
+                    onClick={(e) =>
+                      handleDelete(
+                        e,
+                        s.id!,
+                        s.disease_name ?? s.patient_name ?? "시나리오"
+                      )
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                   <ChevronRight
                     className="h-4 w-4 text-fg-subtle"
                     aria-hidden
