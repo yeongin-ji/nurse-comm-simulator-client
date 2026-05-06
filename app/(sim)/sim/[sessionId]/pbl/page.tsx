@@ -18,7 +18,9 @@ import {
   scenarioKeys,
   scenariosApi,
   projectMedicalRecord,
+  projectInitialState,
 } from "@/lib/api/scenarios";
+import { PatientStatePanel } from "@/components/sim/patient-state-panel";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
 
@@ -52,6 +54,7 @@ export default function PblPage() {
 
   const scenario = scenarioQuery.data;
   const record = scenario ? projectMedicalRecord(scenario.medical_record) : null;
+  const initial = scenario ? projectInitialState(scenario.initial_state) : null;
   const patientMeta = record
     ? [record.name, [record.sex, record.age && `${record.age}세`].filter(Boolean).join("/")]
         .filter(Boolean)
@@ -104,7 +107,7 @@ export default function PblPage() {
   return (
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
-        <aside className="w-[210px] shrink-0 flex flex-col gap-2.5">
+        <aside className="w-[210px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
           <Card className="flex flex-col gap-2.5 p-4">
             <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
               환자 정보
@@ -113,10 +116,19 @@ export default function PblPage() {
               {patientMeta ?? "불러오는 중..."}
             </p>
             <div className="h-px bg-border" />
-            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal line-clamp-6">
+            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
               {scenario?.scenario_text ?? "시나리오를 불러오고 있어요..."}
             </p>
           </Card>
+
+          {initial && (
+            <PatientStatePanel
+              className="w-full"
+              vitalSigns={initial.vitalSigns}
+              otherSigns={initial.otherSigns}
+              psychological={initial.psychological}
+            />
+          )}
 
           <PblProgress
             current={userTurns}

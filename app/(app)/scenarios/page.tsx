@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -14,28 +15,39 @@ import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { ScenarioCreateModal } from "@/components/scenarios/scenario-create-modal";
 import { scenariosApi, scenarioKeys } from "@/lib/api/scenarios";
 import { formatSessionDate } from "@/lib/api/learners";
+import { useAuthStore } from "@/lib/stores/auth";
 
 export default function ScenariosPage() {
+  const user = useAuthStore((s) => s.user);
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: scenarios, isLoading } = useQuery({
     queryKey: scenarioKeys.list(),
-    queryFn: scenariosApi.list,
+    queryFn: () => scenariosApi.list(user?.id),
+    enabled: !!user,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => scenariosApi.delete(id),
     onSuccess: () => {
+      setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: scenarioKeys.list() });
     },
   });
 
-  const handleDelete = (e: React.MouseEvent, id: number, name: string) => {
+  const handleDeleteClick = (
+    e: React.MouseEvent,
+    id: number,
+    name: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`'${name}' 시나리오를 삭제하시겠습니까?`)) return;
-    deleteMutation.mutate(id);
+    setDeleteTarget({ id, name });
   };
 
   const list = scenarios ?? [];
@@ -106,10 +118,10 @@ export default function ScenariosPage() {
                     type="button"
                     className="p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
                     onClick={(e) =>
-                      handleDelete(
+                      handleDeleteClick(
                         e,
                         s.id!,
-                        s.disease_name ?? s.patient_name ?? "시나리오"
+                        s.disease_name ?? s.patient_name ?? "시나리오",
                       )
                     }
                   >
@@ -135,6 +147,58 @@ export default function ScenariosPage() {
           }
         }}
       />
+
+      <Modal
+        open={deleteTarget !== null}
+        onOpenChange={(next) => {
+          if (deleteMutation.isPending) return;
+          if (!next) setDeleteTarget(null);
+        }}
+        title="시나리오를 삭제할까요?"
+        width={400}
+        hideClose
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleteMutation.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() =>
+                deleteTarget && deleteMutation.mutate(deleteTarget.id)
+              }
+              disabled={deleteMutation.isPending}
+              icon={
+                deleteMutation.isPending ? <Spinner size={14} /> : undefined
+              }
+            >
+              {deleteMutation.isPending ? "삭제 중..." : "삭제하기"}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-body-md text-fg-muted leading-[22px]">
+            <strong className="font-medium text-foreground">
+              &apos;{deleteTarget?.name}&apos;
+            </strong>{" "}
+            시나리오를 삭제해요. 삭제된 시나리오는 목록에서 사라지며, 이 작업은
+            되돌릴 수 없어요.
+          </p>
+          {deleteMutation.isError && (
+            <div className="flex items-start gap-2 rounded bg-danger/[0.04] border border-danger/40 px-3 py-2.5">
+              <AlertCircle className="h-3.5 w-3.5 text-danger mt-0.5 shrink-0" />
+              <p className="text-label-sm text-danger tracking-normal">
+                삭제에 실패했어요. 잠시 후 다시 시도해 주세요.
+              </p>
+            </div>
+          )}
+        </div>
+      </Modal>
     </main>
   );
 }

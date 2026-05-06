@@ -20,7 +20,10 @@ export type ScenarioDetailResponse = ScenarioResponse & {
 };
 
 export const scenariosApi = {
-  list: () => api.get<ScenarioListItem[]>("/scenarios"),
+  list: (learnerId?: number) =>
+    api.get<ScenarioListItem[]>(
+      learnerId ? `/scenarios?learner_id=${learnerId}` : "/scenarios",
+    ),
   detail: (id: number) =>
     api.get<ScenarioDetailResponse>(`/scenarios/${id}`),
   create: (body: CreateScenarioRequest) =>
