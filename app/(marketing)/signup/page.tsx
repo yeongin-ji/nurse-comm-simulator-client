@@ -49,6 +49,7 @@ export default function SignupPage() {
         name: form.name,
         email: form.email,
         student_number: form.studentNumber,
+        password: form.password,
       }),
     onSuccess: () => {
       // TODO(D-10): set auth store user + persist learner id; for now mark

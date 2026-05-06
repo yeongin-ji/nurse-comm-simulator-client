@@ -1221,7 +1221,10 @@ export interface components {
         };
         "handler.EvaluationToolResponse": {
             created_at?: string;
+            evaluation_items?: unknown;
             id?: number;
+            scoring_schema?: unknown;
+            tool_description?: string;
             tool_name?: string;
         };
         "handler.InitialState": {
@@ -1304,6 +1307,7 @@ export interface components {
         "handler.createLearnerRequest": {
             email: string;
             name: string;
+            password: string;
             student_number: string;
         };
         "handler.createScenarioRequest": {
@@ -1321,9 +1325,6 @@ export interface components {
             message?: string;
         };
         "handler.simTurnRequest": {
-            current_state?: {
-                [key: string]: unknown;
-            };
             message: string;
         };
     };
