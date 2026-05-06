@@ -11,7 +11,6 @@ import { Modal } from "@/components/ui/modal";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
-import { PblProgress } from "@/components/sim/pbl-progress";
 import { pblApi, pblKeys } from "@/lib/api/pbl";
 import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
 import {
@@ -143,13 +142,6 @@ export default function PblPage() {
             />
           )}
 
-          <PblProgress
-            current={userTurns}
-            max={MAX_TURNS}
-            onComplete={() => setCompleteOpen(true)}
-            completeDisabled={userTurns === 0}
-          />
-
           <Link href="/scenarios" className="block">
             <Button variant="ghost" full size="sm">
               나가기
@@ -160,7 +152,7 @@ export default function PblPage() {
         <section className="flex-1 flex flex-col gap-2.5 min-w-0 min-h-0">
           <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
-              <header className="sticky top-0 z-10 bg-surface-elevated px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+              <header className="sticky top-0 z-10 bg-surface-elevated px-5 py-3 border-b border-border flex items-center gap-2">
                 <span
                   className="h-7 w-7 rounded-full bg-surface-muted border border-dashed border-border-strong flex items-center justify-center text-[10px] text-fg-subtle"
                   aria-hidden
@@ -171,6 +163,27 @@ export default function PblPage() {
                   AI 동료
                 </span>
                 <Badge>의사소통 방향 논의</Badge>
+                <div className="ml-auto flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${Math.min(1, userTurns / MAX_TURNS) * 100}%` }}
+                        className="h-full bg-foreground rounded-full transition-[width] duration-300"
+                      />
+                    </div>
+                    <span className="text-label-sm font-medium text-fg-muted tracking-normal">
+                      {userTurns}/{MAX_TURNS}턴
+                    </span>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setCompleteOpen(true)}
+                    disabled={userTurns === 0}
+                  >
+                    완료 및 요약하기
+                  </Button>
+                </div>
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
