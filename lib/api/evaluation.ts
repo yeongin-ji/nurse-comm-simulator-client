@@ -1,27 +1,14 @@
 import { api } from "./client";
 import type { components } from "@/types/api";
-import { TOOLS, getToolById } from "@/lib/tools";
+import { getToolById } from "@/lib/tools";
 
 export type EvaluationResponse =
   components["schemas"]["handler.EvaluationResultResponse"];
 
 export const evaluationApi = {
-  /** Run every registered tool once (sequentially). Returns per-tool results. */
-  run: async (sessionId: number): Promise<EvaluationResponse[]> => {
-    const results: EvaluationResponse[] = [];
-    for (const tool of TOOLS) {
-      const result = await api.post<EvaluationResponse>(
-        `/sessions/${sessionId}/evaluate`,
-        { tool_id: tool.id },
-      );
-      // POST 응답이 tool_id 대신 tool_version_id를 반환할 수 있으므로 보정
-      if (result.tool_id == null) {
-        result.tool_id = tool.id;
-      }
-      results.push(result);
-    }
-    return results;
-  },
+  /** Trigger evaluation for all tools at once. Server runs them in parallel. */
+  run: (sessionId: number) =>
+    api.post<EvaluationResponse[]>(`/sessions/${sessionId}/evaluate`),
   /** List all per-tool evaluations stored for the session. */
   list: (sessionId: number) =>
     api.get<EvaluationResponse[]>(`/sessions/${sessionId}/evaluation`),

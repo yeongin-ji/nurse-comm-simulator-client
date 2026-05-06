@@ -48,45 +48,21 @@ function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {
 
 export const evaluationHandlers = [
   /**
-   * POST /sessions/:id/evaluate — runs a single tool by tool_id.
-   * Re-running on a tool that already has a result returns 400.
+   * POST /sessions/:id/evaluate — runs all tools at once, returns results array.
+   * Re-running on an already-evaluated session returns 400.
    */
-  http.post("/api/v1/sessions/:id/evaluate", async ({ params, request }) => {
+  http.post("/api/v1/sessions/:id/evaluate", async ({ params }) => {
     const id = Number(params.id);
-    const body = (await request.json()) as { tool_id: number };
-    const toolId = body.tool_id;
-
-    const existing = evaluations.get(id) ?? [];
-    if (existing.some((r) => r.tool_id === toolId)) {
+    if (evaluations.has(id)) {
       return HttpResponse.json(
-        { error: "evaluation already completed for this tool" },
+        { error: "already evaluated" },
         { status: 400 },
       );
     }
-
-    const tool = TOOLS.find((t) => t.id === toolId);
-    if (!tool) {
-      return HttpResponse.json(
-        { error: "evaluation tool not found" },
-        { status: 404 },
-      );
-    }
-
     await new Promise((r) => setTimeout(r, 1500));
-
-    const items = buildItemScores(tool.id, tool.items, tool.maxScore);
-    const result: EvaluationResponse = {
-      id: id * 1000 + tool.id,
-      session_id: id,
-      tool_id: tool.id,
-      item_scores: { items, duration_seconds: 402, turns: 14 },
-      debriefing_content: DEBRIEFING_BY_TOOL[tool.id] ?? "",
-      created_at: new Date().toISOString(),
-    };
-
-    existing.push(result);
-    evaluations.set(id, existing);
-    return HttpResponse.json(result, { status: 201 });
+    const results = buildEvaluationsFor(id);
+    evaluations.set(id, results);
+    return HttpResponse.json(results, { status: 201 });
   }),
 
   /**
