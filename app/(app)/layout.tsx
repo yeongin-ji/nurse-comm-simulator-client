@@ -1,13 +1,25 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Nav } from "@/components/layout/nav";
+import { useAuthStore } from "@/lib/stores/auth";
 
 // TODO(Stage D): replace with cookie/session-driven role from /learners/me.
-// Cookie/auth gating happens in proxy.ts; this layout only renders the right Nav.
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) {
+      router.replace("/");
+    }
+  }, [user, router]);
+
+  if (!user) return null;
+
   const role = pathname.startsWith("/students") ? "educator" : "learner";
 
   return (
