@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { sessionsApi } from "@/lib/api/sessions";
-
-// TODO(Stage D-3): replace with auth store user.id once /learners/me wires up.
-const MOCK_LEARNER_ID = 1;
+import { useAuthStore } from "@/lib/stores/auth";
 
 export type StartSessionButtonProps = {
   scenarioId: number;
@@ -15,11 +13,12 @@ export type StartSessionButtonProps = {
 
 export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
   const router = useRouter();
+  const learnerId = useAuthStore((s) => s.user?.id);
   const mutation = useMutation({
     mutationFn: () =>
       sessionsApi.create({
         scenario_id: scenarioId,
-        learner_id: MOCK_LEARNER_ID,
+        learner_id: learnerId ?? 0,
       }),
     onSuccess: (session) => {
       if (session.id != null) router.push(`/sim/${session.id}/pbl`);

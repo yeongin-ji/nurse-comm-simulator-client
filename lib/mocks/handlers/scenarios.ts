@@ -1,12 +1,55 @@
 import { http, HttpResponse } from "msw";
 import type { components } from "@/types/api";
 
+type ScenarioListItem = components["schemas"]["handler.ScenarioListItem"];
 type CreateRequest = components["schemas"]["handler.createScenarioRequest"];
 type CreateResponse = components["schemas"]["handler.ScenarioCreateResponse"];
 
 let nextId = 1001;
 
+const MOCK_LIST: ScenarioListItem[] = [
+  {
+    id: 100,
+    learner_id: 1,
+    document_id: 2,
+    disease_name: "COPD",
+    patient_name: "이영수",
+    difficulty: "중",
+    scenario_text: "이영수님 (M/23)은 호흡곤란을 호소합니다...",
+    session_count: 3,
+    last_session_at: "2026-04-28T14:30:00Z",
+    created_at: "2026-04-01T00:00:00Z",
+  },
+  {
+    id: 101,
+    learner_id: 1,
+    document_id: 4,
+    disease_name: "폐렴",
+    patient_name: "김미래",
+    difficulty: "하",
+    scenario_text: "김미래님 (F/67)은 기침과 고열을 호소합니다...",
+    session_count: 1,
+    last_session_at: "2026-04-20T09:00:00Z",
+    created_at: "2026-04-10T00:00:00Z",
+  },
+  {
+    id: 102,
+    learner_id: 1,
+    document_id: 5,
+    disease_name: "심부전",
+    patient_name: "박준호",
+    difficulty: "상",
+    scenario_text: "박준호님 (M/54)은 호흡곤란과 부종을 호소합니다...",
+    session_count: 0,
+    created_at: "2026-04-15T00:00:00Z",
+  },
+];
+
 export const scenarioHandlers = [
+  http.get("/api/v1/scenarios", () => {
+    return HttpResponse.json(MOCK_LIST);
+  }),
+
   http.post("/api/v1/scenarios", async ({ request }) => {
     const body = (await request.json()) as CreateRequest;
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
 export type NavRole = "learner" | "educator";
@@ -21,7 +22,9 @@ const linksByRole: Record<NavRole, { href: string; label: string }[]> = {
   educator: [{ href: "/students", label: "학생 목록" }],
 };
 
-export function Nav({ role, userName = "홍길동" }: NavProps) {
+export function Nav({ role, userName }: NavProps) {
+  const authName = useAuthStore((s) => s.user?.name);
+  const displayName = userName ?? authName ?? "사용자";
   const pathname = usePathname();
   const router = useRouter();
   const links = linksByRole[role];
@@ -72,7 +75,7 @@ export function Nav({ role, userName = "홍길동" }: NavProps) {
             <User className="h-3.5 w-3.5 text-fg-muted" aria-hidden />
           </span>
           <span className="text-[13px] font-medium text-foreground">
-            {userName}
+            {displayName}
           </span>
           <Badge>{role === "learner" ? "학습자" : "교육자"}</Badge>
         </Link>

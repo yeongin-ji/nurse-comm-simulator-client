@@ -1,5 +1,8 @@
+"use client";
+
 import { User } from "lucide-react";
 import { Fragment } from "react";
+import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
 const STEPS = ["PBL", "대화 시뮬레이션", "디브리핑"] as const;
@@ -9,7 +12,9 @@ export type SimNavProps = {
   userName?: string;
 };
 
-export function SimNav({ current, userName = "홍길동" }: SimNavProps) {
+export function SimNav({ current, userName }: SimNavProps) {
+  const authName = useAuthStore((s) => s.user?.name);
+  const displayName = userName ?? authName ?? "사용자";
   return (
     <header className="h-[52px] bg-surface border-b border-border flex items-center justify-between px-6">
       <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
@@ -62,7 +67,7 @@ export function SimNav({ current, userName = "홍길동" }: SimNavProps) {
           <User className="h-3.5 w-3.5 text-fg-muted" aria-hidden />
         </div>
         <span className="text-[13px] font-medium text-foreground">
-          {userName}
+          {displayName}
         </span>
       </div>
     </header>

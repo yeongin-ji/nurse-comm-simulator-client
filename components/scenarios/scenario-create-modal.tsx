@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { scenariosApi } from "@/lib/api/scenarios";
+import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
 const DIFFICULTIES = [
@@ -16,9 +17,6 @@ const DIFFICULTIES = [
   { value: "중", label: "중" },
   { value: "하", label: "하" },
 ] as const;
-
-// TODO(Stage D-3): replace with auth store user.id once /learners/me wires up.
-const MOCK_LEARNER_ID = 1;
 
 export type ScenarioCreateModalProps = {
   open: boolean;
@@ -30,6 +28,7 @@ export function ScenarioCreateModal({
   onOpenChange,
 }: ScenarioCreateModalProps) {
   const router = useRouter();
+  const learnerId = useAuthStore((s) => s.user?.id);
   const [pickedId, setPickedId] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState<string>("중");
 
@@ -54,9 +53,9 @@ export function ScenarioCreateModal({
   const breadcrumb = documents.find((d) => d.id === documentId)?.category_path;
 
   const onCreate = () => {
-    if (documentId == null) return;
+    if (documentId == null || learnerId == null) return;
     createMutation.mutate({
-      learner_id: MOCK_LEARNER_ID,
+      learner_id: learnerId,
       document_id: documentId,
       difficulty,
     });

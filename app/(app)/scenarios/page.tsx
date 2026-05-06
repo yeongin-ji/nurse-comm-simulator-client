@@ -3,49 +3,28 @@
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { ScenarioCreateModal } from "@/components/scenarios/scenario-create-modal";
-
-// TODO(Stage D): backend doesn't expose GET /scenarios (or per-learner listing)
-// in the current swagger. Keep mocks; switch to React Query once endpoint lands.
-// IDs map to scenarios MSW handler so detail navigation works end-to-end.
-const MOCK_SCENARIOS = [
-  {
-    id: 100,
-    disease: "COPD",
-    patient: "이영수",
-    age: "23/M",
-    difficulty: "중",
-    count: 3,
-    lastDate: "2026.04.28",
-  },
-  {
-    id: 101,
-    disease: "폐렴",
-    patient: "김미래",
-    age: "67/F",
-    difficulty: "하",
-    count: 1,
-    lastDate: "2026.04.20",
-  },
-  {
-    id: 102,
-    disease: "심부전",
-    patient: "박준호",
-    age: "54/M",
-    difficulty: "상",
-    count: 0,
-    lastDate: null as string | null,
-  },
-];
+import { scenariosApi, scenarioKeys } from "@/lib/api/scenarios";
+import { formatSessionDate } from "@/lib/api/learners";
 
 export default function ScenariosPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: scenarios, isLoading } = useQuery({
+    queryKey: scenarioKeys.list(),
+    queryFn: scenariosApi.list,
+  });
+
+  const list = scenarios ?? [];
 
   return (
     <main className="flex-1 bg-background">
@@ -67,7 +46,11 @@ export default function ScenariosPage() {
           </Button>
         </header>
 
-        {MOCK_SCENARIOS.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-fg-muted">
+            <Spinner size={18} /> 시나리오를 불러오고 있어요
+          </div>
+        ) : list.length === 0 ? (
           <Card className="p-0">
             <EmptyState
               title="아직 시뮬레이션을 시작하지 않았어요"
@@ -81,27 +64,27 @@ export default function ScenariosPage() {
           </Card>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {MOCK_SCENARIOS.map((s) => (
+            {list.map((s) => (
               <Link
                 key={s.id}
                 href={`/scenarios/${s.id}`}
                 className="group block"
               >
                 <Card className="flex items-center gap-4 px-5 py-4 transition-[box-shadow,border-color] duration-150 group-hover:border-border-strong group-hover:shadow-md cursor-pointer">
-                  <PatientAvatar size={44} name={s.patient} />
+                  <PatientAvatar size={44} name={s.patient_name ?? "환자"} />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[15px] font-medium text-foreground">
-                        {s.disease}
+                        {s.disease_name ?? "시나리오"}
                       </span>
                       <span className="text-body-md text-fg-muted">
-                        {s.patient} ({s.age})
+                        {s.patient_name}
                       </span>
-                      <Badge>난이도 {s.difficulty}</Badge>
+                      {s.difficulty && <Badge>난이도 {s.difficulty}</Badge>}
                     </div>
                     <span className="text-[13px] text-fg-muted">
-                      {s.lastDate
-                        ? `최근 시뮬레이션: ${s.lastDate} · ${s.count}회 수행`
+                      {s.last_session_at
+                        ? `최근 시뮬레이션: ${formatSessionDate(s.last_session_at)} · ${s.session_count ?? 0}회 수행`
                         : "아직 시뮬레이션을 시작하지 않았어요"}
                     </span>
                   </div>
@@ -116,7 +99,15 @@ export default function ScenariosPage() {
         )}
       </PageShell>
 
-      <ScenarioCreateModal open={modalOpen} onOpenChange={setModalOpen} />
+      <ScenarioCreateModal
+        open={modalOpen}
+        onOpenChange={(next) => {
+          setModalOpen(next);
+          if (!next) {
+            queryClient.invalidateQueries({ queryKey: scenarioKeys.list() });
+          }
+        }}
+      />
     </main>
   );
 }

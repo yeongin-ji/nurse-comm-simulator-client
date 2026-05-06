@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api/client";
 import { authApi } from "@/lib/api/auth";
+import { useAuthStore } from "@/lib/stores/auth";
 
 type LoginForm = {
   email: string;
@@ -21,6 +22,7 @@ type LoginForm = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const setUser = useAuthStore((s) => s.setUser);
   const [errorRole, setErrorRole] = useState<"learner" | "educator" | null>(
     null,
   );
@@ -42,10 +44,15 @@ export default function LoginPage() {
     handleSubmit((form) => {
       mutation.mutate(form, {
         onSuccess: (res) => {
-          document.cookie = `role=${res.role ?? role}; path=/`;
-          const landing =
-            (res.role ?? role) === "learner" ? "/scenarios" : "/students";
-          router.push(landing);
+          const userRole = (res.role as "learner" | "educator") ?? role;
+          setUser({
+            id: res.id ?? 0,
+            name: res.name ?? "",
+            email: res.email ?? "",
+            role: userRole,
+          });
+          document.cookie = `role=${userRole}; path=/`;
+          router.push(userRole === "learner" ? "/scenarios" : "/students");
         },
         onError: (err) => {
           if (err instanceof ApiError && err.status === 401) {

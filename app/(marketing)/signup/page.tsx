@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api/client";
+import { authApi } from "@/lib/api/auth";
 import { learnersApi } from "@/lib/api/learners";
+import { useAuthStore } from "@/lib/stores/auth";
 
 type SignupForm = {
   name: string;
@@ -42,18 +44,30 @@ export default function SignupPage() {
   });
 
   const passwordValue = watch("password");
+  const setUser = useAuthStore((s) => s.setUser);
 
   const mutation = useMutation({
-    mutationFn: (form: SignupForm) =>
-      learnersApi.create({
+    mutationFn: async (form: SignupForm) => {
+      const learner = await learnersApi.create({
         name: form.name,
         email: form.email,
         student_number: form.studentNumber,
         password: form.password,
-      }),
-    onSuccess: () => {
-      // TODO(D-10): set auth store user + persist learner id; for now mark
-      // role cookie so the (app) layout/proxy treats us as authenticated.
+      });
+      // 회원가입 성공 후 자동 로그인
+      const login = await authApi.login({
+        email: form.email,
+        password: form.password,
+      });
+      return { learner, login };
+    },
+    onSuccess: ({ learner, login }) => {
+      setUser({
+        id: login.id ?? learner.id ?? 0,
+        name: login.name ?? learner.name ?? "",
+        email: login.email ?? learner.email ?? "",
+        role: "learner",
+      });
       document.cookie = "role=learner; path=/";
       router.push("/scenarios");
     },

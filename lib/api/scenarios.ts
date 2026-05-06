@@ -6,6 +6,7 @@ import type {
 } from "@/components/sim/patient-state-panel";
 
 export type ScenarioResponse = components["schemas"]["handler.ScenarioResponse"];
+export type ScenarioListItem = components["schemas"]["handler.ScenarioListItem"];
 export type ScenarioCreateResponse =
   components["schemas"]["handler.ScenarioCreateResponse"];
 export type CreateScenarioRequest =
@@ -19,6 +20,7 @@ export type ScenarioDetailResponse = ScenarioResponse & {
 };
 
 export const scenariosApi = {
+  list: () => api.get<ScenarioListItem[]>("/scenarios"),
   detail: (id: number) =>
     api.get<ScenarioDetailResponse>(`/scenarios/${id}`),
   create: (body: CreateScenarioRequest) =>
@@ -27,6 +29,7 @@ export const scenariosApi = {
 
 export const scenarioKeys = {
   all: ["scenarios"] as const,
+  list: () => [...scenarioKeys.all, "list"] as const,
   detail: (id: number) => [...scenarioKeys.all, "detail", id] as const,
 };
 

@@ -458,7 +458,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 시나리오 목록 조회 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ScenarioListItem"][];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
         put?: never;
         /**
          * 시나리오 생성 (AI)
@@ -1331,6 +1360,18 @@ export interface components {
         "handler.ScenarioCreateResponse": {
             initial_state?: components["schemas"]["handler.InitialState"];
             scenario?: components["schemas"]["handler.ScenarioResponse"];
+        };
+        "handler.ScenarioListItem": {
+            created_at?: string;
+            difficulty?: string;
+            disease_name?: string;
+            document_id?: number;
+            id?: number;
+            last_session_at?: string;
+            learner_id?: number;
+            patient_name?: string;
+            scenario_text?: string;
+            session_count?: number;
         };
         "handler.ScenarioResponse": {
             created_at?: string;
