@@ -1,3 +1,4 @@
+import { authHandlers } from "./auth";
 import { commentHandlers } from "./comments";
 import { documentHandlers } from "./documents";
 import { evaluationHandlers } from "./evaluation";
@@ -9,6 +10,7 @@ import { sessionHandlers } from "./sessions";
 import { simulateHandlers } from "./simulate";
 
 export const handlers = [
+  ...authHandlers,
   ...documentHandlers,
   ...scenarioHandlers,
   ...sessionHandlers,

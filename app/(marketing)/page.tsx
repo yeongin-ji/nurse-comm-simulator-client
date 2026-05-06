@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthIllustration } from "@/components/auth/auth-illustration";
+import { LoginErrorModal } from "@/components/auth/login-error-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { ApiError } from "@/lib/api/client";
+import { authApi } from "@/lib/api/auth";
 
 type LoginForm = {
   email: string;
@@ -15,6 +21,9 @@ type LoginForm = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [errorRole, setErrorRole] = useState<"learner" | "educator" | null>(
+    null,
+  );
   const {
     register,
     handleSubmit,
@@ -24,13 +33,26 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
+  const mutation = useMutation({
+    mutationFn: (form: LoginForm) =>
+      authApi.login({ email: form.email, password: form.password }),
+  });
+
   const loginAs = (role: "learner" | "educator") =>
-    handleSubmit(() => {
-      // TODO(D-?): backend has no /auth/login endpoint in the current swagger.
-      // For now, set the role cookie so the (app) layout/proxy treats us as
-      // authenticated, then route to the role-appropriate landing page.
-      document.cookie = `role=${role}; path=/`;
-      router.push(role === "learner" ? "/scenarios" : "/students");
+    handleSubmit((form) => {
+      mutation.mutate(form, {
+        onSuccess: (res) => {
+          document.cookie = `role=${res.role ?? role}; path=/`;
+          const landing =
+            (res.role ?? role) === "learner" ? "/scenarios" : "/students";
+          router.push(landing);
+        },
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            setErrorRole(role);
+          }
+        },
+      });
     });
 
   return (
@@ -81,13 +103,20 @@ export default function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-2.5">
-            <Button type="submit" variant="primary" full>
-              학습자로 시작
+            <Button
+              type="submit"
+              variant="primary"
+              full
+              disabled={mutation.isPending}
+              icon={mutation.isPending ? <Spinner size={14} /> : undefined}
+            >
+              {mutation.isPending ? "로그인 중..." : "학습자로 시작"}
             </Button>
             <Button
               type="button"
               variant="secondary"
               full
+              disabled={mutation.isPending}
               onClick={loginAs("educator")}
             >
               교육자로 시작
@@ -107,6 +136,12 @@ export default function LoginPage() {
           </div>
         </form>
       </section>
+
+      <LoginErrorModal
+        open={errorRole !== null}
+        role={errorRole ?? "learner"}
+        onClose={() => setErrorRole(null)}
+      />
     </>
   );
 }

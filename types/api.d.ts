@@ -4,6 +4,68 @@
  */
 
 export interface paths {
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 로그인
+         * @description 이메일과 비밀번호로 로그인합니다.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description 로그인 정보 */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["handler.loginRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.LoginResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -746,8 +808,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 평가 실행 (AI)
-         * @description 선택한 평가 도구로 시뮬레이션 대화를 AI 평가하고 결과를 저장합니다. 이미 평가된 세션에 재요청하면 400을 반환합니다.
+         * 전체 평가 도구로 일괄 평가 실행 (AI)
+         * @description 등록된 모든 평가 도구로 시뮬레이션 대화를 병렬 AI 평가하고 결과를 저장합니다. 이미 평가된 세션에 재요청하면 400을 반환합니다.
          */
         post: {
             parameters: {
@@ -759,12 +821,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            /** @description 평가 도구 ID */
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["handler.TriggerEvaluationRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description Created */
                 201: {
@@ -772,7 +829,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["handler.EvaluationResultResponse"];
+                        "application/json": components["schemas"]["handler.EvaluationResultResponse"][];
                     };
                 };
                 /** @description Bad Request */
@@ -1256,6 +1313,12 @@ export interface components {
             session_count?: number;
             student_number?: string;
         };
+        "handler.LoginResponse": {
+            email?: string;
+            id?: number;
+            name?: string;
+            role?: string;
+        };
         "handler.PBLSummaryResponse": {
             categories?: unknown;
             created_at?: string;
@@ -1293,9 +1356,6 @@ export interface components {
             current_state?: unknown;
             reply?: string;
         };
-        "handler.TriggerEvaluationRequest": {
-            tool_id: number;
-        };
         "handler.addCommentRequest": {
             content: string;
             educator_id: number;
@@ -1319,6 +1379,10 @@ export interface components {
         "handler.createSessionRequest": {
             learner_id: number;
             scenario_id: number;
+        };
+        "handler.loginRequest": {
+            email: string;
+            password: string;
         };
         "handler.pblTurnRequest": {
             /** @description 오프닝 호출 시 빈 문자열 허용 */
