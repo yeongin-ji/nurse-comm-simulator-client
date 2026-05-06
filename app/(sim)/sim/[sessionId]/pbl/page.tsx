@@ -24,13 +24,6 @@ import { PatientStatePanel } from "@/components/sim/patient-state-panel";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    role: "ai-peer",
-    text: "안녕하세요! 가상 환자를 만나기 전에 의사소통 방향을 함께 논의해 봐요. 어떤 목표를 세우고 싶으세요?",
-  },
-];
-
 const MAX_TURNS = 5;
 
 export default function PblPage() {
@@ -61,8 +54,28 @@ export default function PblPage() {
         .join(" (") + (record.name && record.sex ? ")" : "")
     : null;
 
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [openingLoading, setOpeningLoading] = useState(true);
+
+  // 페이지 진입 시 빈 메시지로 오프닝 요청
+  const openingRequested = useRef(false);
+  useEffect(() => {
+    if (openingRequested.current || !Number.isFinite(numericSessionId)) return;
+    openingRequested.current = true;
+    pblApi
+      .sendTurn(numericSessionId, { message: "" })
+      .then((res) => {
+        const reply = res.reply ?? "안녕하세요! 의사소통 방향을 함께 논의해 봐요.";
+        setMessages([{ role: "ai-peer", text: reply }]);
+      })
+      .catch(() => {
+        setMessages([
+          { role: "ai-peer", text: "오프닝 메시지를 불러오지 못했어요. 대화를 시작해 주세요." },
+        ]);
+      })
+      .finally(() => setOpeningLoading(false));
+  }, [numericSessionId]);
 
   const userTurns = messages.filter((m) => m.role === "user").length;
   const exhausted = userTurns >= MAX_TURNS;
@@ -101,7 +114,7 @@ export default function PblPage() {
     turnMutation.mutate(text);
   };
 
-  const waiting = turnMutation.isPending;
+  const waiting = turnMutation.isPending || openingLoading;
   const summarizing = summaryMutation.isPending;
 
   return (
