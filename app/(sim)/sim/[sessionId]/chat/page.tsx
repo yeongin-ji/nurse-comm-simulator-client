@@ -93,53 +93,15 @@ export default function ChatPage() {
     setPsychological(initial.psychological);
   }, [initial]);
 
-  // Advance phase to SIMULATION, then send empty message for patient opening line
-  const openingSent = useRef(false);
-  const [openingError, setOpeningError] = useState(false);
+  // Advance phase to SIMULATION on mount
+  const phaseAdvanced = useRef(false);
   useEffect(() => {
-    if (openingSent.current || !Number.isFinite(numericSessionId)) return;
-    openingSent.current = true;
-
+    if (phaseAdvanced.current || !Number.isFinite(numericSessionId)) return;
+    phaseAdvanced.current = true;
     sessionsApi
       .advancePhase(numericSessionId, { phase: "SIMULATION" })
-      .catch(() => {
-        // Already in SIMULATION phase — safe to ignore
-      })
-      .then(() => simulationApi.sendTurn(numericSessionId, { message: "" }))
-      .then((res) => {
-        if (!res) return;
-        const reply = res.reply ?? "(응답을 받지 못했어요)";
-        setMessages([{ role: "patient", text: reply }]);
-        const projected = projectPatientState(res.current_state);
-        if (projected) {
-          if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
-          if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
-          if (projected.psychological.length > 0) setPsychological(projected.psychological);
-        }
-      })
-      .catch(() => {
-        setOpeningError(true);
-      });
+      .catch(() => {});
   }, [numericSessionId]);
-
-  const retryOpening = () => {
-    setOpeningError(false);
-    simulationApi
-      .sendTurn(numericSessionId, { message: "" })
-      .then((res) => {
-        const reply = res.reply ?? "(응답을 받지 못했어요)";
-        setMessages([{ role: "patient", text: reply }]);
-        const projected = projectPatientState(res.current_state);
-        if (projected) {
-          if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
-          if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
-          if (projected.psychological.length > 0) setPsychological(projected.psychological);
-        }
-      })
-      .catch(() => {
-        setOpeningError(true);
-      });
-  };
 
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
@@ -206,7 +168,6 @@ export default function ChatPage() {
   };
 
   const waiting = turnMutation.isPending;
-  const openingWaiting = messages.length === 0 && !openingError;
   const showLoading = evaluateMutation.isPending || redirectingToResult;
 
   if (showLoading) {
@@ -253,21 +214,7 @@ export default function ChatPage() {
                 {messages.map((m, i) => (
                   <ChatBubble key={i} role={m.role} text={m.text} />
                 ))}
-                {(waiting || openingWaiting) && <TypingBubble role="patient" />}
-                {openingError && (
-                  <div className="flex items-center gap-2">
-                    <p className="text-label-sm text-danger tracking-normal">
-                      환자 응답을 불러오지 못했어요.
-                    </p>
-                    <button
-                      type="button"
-                      className="text-label-sm text-accent hover:underline underline-offset-2"
-                      onClick={retryOpening}
-                    >
-                      다시 시도
-                    </button>
-                  </div>
-                )}
+                {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (
                   <p className="text-label-sm text-danger tracking-normal">
                     응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
@@ -279,7 +226,7 @@ export default function ChatPage() {
 
           <ChatInput
             onSubmit={onSend}
-            disabled={waiting || openingWaiting}
+            disabled={waiting}
             disabledHint="환자가 응답하고 있어요..."
           />
         </section>
