@@ -461,7 +461,10 @@ export interface paths {
         /** 시나리오 목록 조회 */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description User ID (Users.id) — 해당 학습자의 시나리오만 반환 */
+                    learner_id?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -578,6 +581,102 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["handler.ScenarioResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** 시나리오 삭제 (논리적 삭제) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Scenario ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "*/*": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "*/*": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/{id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 시나리오별 세션 이력 조회 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Scenario ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ScenarioSessionResponse"][];
                     };
                 };
                 /** @description Bad Request */
@@ -1382,6 +1481,15 @@ export interface components {
             learner_id?: number;
             medical_record?: unknown;
             scenario_text?: string;
+        };
+        "handler.ScenarioSessionResponse": {
+            id?: number;
+            learner_id?: number;
+            scenario_id?: number;
+            session_status?: string;
+            start_time?: string;
+            total_max_score?: number;
+            total_score?: number;
         };
         "handler.SessionResponse": {
             current_phase?: string;

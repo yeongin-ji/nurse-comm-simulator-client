@@ -7,6 +7,8 @@ import type {
 
 export type ScenarioResponse = components["schemas"]["handler.ScenarioResponse"];
 export type ScenarioListItem = components["schemas"]["handler.ScenarioListItem"];
+export type ScenarioSessionResponse =
+  components["schemas"]["handler.ScenarioSessionResponse"];
 export type ScenarioCreateResponse =
   components["schemas"]["handler.ScenarioCreateResponse"];
 export type CreateScenarioRequest =
@@ -29,12 +31,15 @@ export const scenariosApi = {
   create: (body: CreateScenarioRequest) =>
     api.post<ScenarioCreateResponse>("/scenarios", body),
   delete: (id: number) => api.delete<void>(`/scenarios/${id}`),
+  sessions: (id: number) =>
+    api.get<ScenarioSessionResponse[]>(`/scenarios/${id}/sessions`),
 };
 
 export const scenarioKeys = {
   all: ["scenarios"] as const,
   list: () => [...scenarioKeys.all, "list"] as const,
   detail: (id: number) => [...scenarioKeys.all, "detail", id] as const,
+  sessions: (id: number) => [...scenarioKeys.all, "sessions", id] as const,
 };
 
 export type MedicalRecord = {

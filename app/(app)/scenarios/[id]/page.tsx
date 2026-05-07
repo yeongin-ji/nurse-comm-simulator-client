@@ -7,6 +7,7 @@ import { Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { Table, TableRow } from "@/components/ui/table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
@@ -15,6 +16,7 @@ import { StartSessionButton } from "@/components/scenarios/start-session-button"
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { PatientStatePanel } from "@/components/sim/patient-state-panel";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { formatSessionDate } from "@/lib/api/learners";
 import {
   projectInitialState,
   projectMedicalRecord,
@@ -22,12 +24,13 @@ import {
   scenariosApi,
 } from "@/lib/api/scenarios";
 
-// TODO(Stage D-?): backend doesn't expose per-scenario session history yet.
-const MOCK_SESSIONS = [
-  { id: 5003, n: "3회", date: "2026.04.28 14:22", status: "평가 완료", score: "82점" },
-  { id: 5002, n: "2회", date: "2026.04.15 10:05", status: "평가 완료", score: "74점" },
-  { id: 5001, n: "1회", date: "2026.04.01 09:30", status: "평가 완료", score: "68점" },
-];
+const STATUS_LABEL: Record<string, string> = {
+  PBL: "PBL 진행 중",
+  SIMULATION: "시뮬레이션 중",
+  EVALUATION: "평가 중",
+  COMPLETED: "평가 완료",
+  DONE: "평가 완료",
+};
 
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +47,12 @@ export default function ScenarioDetailPage() {
     queryKey: documentId != null ? documentKeys.detail(documentId) : ["doc", "wait"],
     queryFn: () => documentsApi.detail(documentId as number),
     enabled: documentId != null,
+  });
+
+  const sessionsQuery = useQuery({
+    queryKey: scenarioKeys.sessions(numericScenarioId),
+    queryFn: () => scenariosApi.sessions(numericScenarioId),
+    enabled: Number.isFinite(numericScenarioId),
   });
 
   if (scenarioQuery.isLoading) {
@@ -149,44 +158,66 @@ export default function ScenarioDetailPage() {
                   수행 이력
                 </h2>
               </div>
-              <Table className="border-0 rounded-none">
-                <TableRow
-                  header
-                  cells={[
-                    { content: "회차", width: "56px" },
-                    { content: "수행일시" },
-                    { content: "상태" },
-                    { content: "점수", width: "64px" },
-                    { content: "", width: "80px" },
-                  ]}
-                />
-                {MOCK_SESSIONS.map((r) => (
+              {sessionsQuery.isLoading ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-fg-muted">
+                  <Spinner size={16} /> 수행 이력을 불러오고 있어요
+                </div>
+              ) : (sessionsQuery.data ?? []).length === 0 ? (
+                <p className="py-8 text-center text-body-md text-fg-muted">
+                  아직 수행 이력이 없어요
+                </p>
+              ) : (
+                <Table className="border-0 rounded-none">
                   <TableRow
-                    key={r.id}
+                    header
                     cells={[
-                      { content: r.n, width: "56px" },
-                      { content: r.date },
-                      { content: r.status },
-                      {
-                        content: r.score,
-                        width: "64px",
-                        className: "font-medium",
-                      },
-                      {
-                        content: (
-                          <Link
-                            href={`/history/${r.id}`}
-                            className="text-accent hover:underline underline-offset-2"
-                          >
-                            보기
-                          </Link>
-                        ),
-                        width: "80px",
-                      },
+                      { content: "회차", width: "56px" },
+                      { content: "수행일시" },
+                      { content: "상태" },
+                      { content: "점수", width: "80px" },
+                      { content: "", width: "80px" },
                     ]}
                   />
-                ))}
-              </Table>
+                  {(sessionsQuery.data ?? []).map((s, i) => (
+                    <TableRow
+                      key={s.id}
+                      cells={[
+                        { content: i + 1, width: "56px" },
+                        {
+                          content: s.start_time
+                            ? formatSessionDate(s.start_time)
+                            : "—",
+                        },
+                        {
+                          content:
+                            STATUS_LABEL[s.session_status ?? ""] ??
+                            s.session_status ??
+                            "—",
+                        },
+                        {
+                          content:
+                            s.total_score != null
+                              ? `${s.total_score}/${s.total_max_score ?? "?"}`
+                              : "—",
+                          width: "80px",
+                          className: "font-medium",
+                        },
+                        {
+                          content: (
+                            <Link
+                              href={`/history/${s.id}`}
+                              className="text-accent hover:underline underline-offset-2"
+                            >
+                              보기
+                            </Link>
+                          ),
+                          width: "80px",
+                        },
+                      ]}
+                    />
+                  ))}
+                </Table>
+              )}
             </Card>
           </div>
 
