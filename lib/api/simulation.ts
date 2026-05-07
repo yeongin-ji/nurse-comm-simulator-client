@@ -24,6 +24,7 @@ const VITAL_LABEL: Record<string, string> = {
 
 type RawState = {
   vital_signs?: Record<string, string>;
+  other_signs?: string[];
   psychological?: { anxiety?: number; anger?: number; depression?: number };
 };
 
@@ -33,6 +34,7 @@ type RawState = {
  */
 export function projectPatientState(state: unknown): {
   vitalSigns: VitalSign[];
+  otherSigns?: string[];
   psychological: Psychological[];
 } | null {
   if (!state || typeof state !== "object") return null;
@@ -54,6 +56,6 @@ export function projectPatientState(state: unknown): {
       ]
     : [];
 
-  if (vitalSigns.length === 0 && psychological.length === 0) return null;
-  return { vitalSigns, psychological };
+  if (vitalSigns.length === 0 && psychological.length === 0 && !raw.other_signs?.length) return null;
+  return { vitalSigns, otherSigns: raw.other_signs, psychological };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,28 +21,16 @@ import { ScenarioTooltip } from "@/components/sim/scenario-tooltip";
 import { Timer } from "@/components/sim/timer";
 import { evaluationApi, evaluationKeys } from "@/lib/api/evaluation";
 import { projectPatientState, simulationApi } from "@/lib/api/simulation";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import {
+  projectInitialState,
+  projectMedicalRecord,
+  scenarioKeys,
+  scenariosApi,
+} from "@/lib/api/scenarios";
+import { documentKeys, documentsApi } from "@/lib/api/documents";
 
 type Message = { role: Extract<ChatRole, "user" | "patient">; text: string };
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    role: "patient",
-    text: "(거칠게 숨을 몰아쉬며) 뭐가 필요해요? 어차피 나한테 관심 없잖아요...",
-  },
-];
-
-const INITIAL_VITALS: VitalSign[] = [
-  { label: "혈압", value: "138/88" },
-  { label: "맥박", value: "102 bpm" },
-  { label: "호흡", value: "24회/분" },
-  { label: "체온", value: "37.2℃" },
-];
-
-const INITIAL_PSYCH: Psychological[] = [
-  { label: "불안", value: 72, tone: "danger" },
-  { label: "분노", value: 55, tone: "warning" },
-  { label: "우울", value: 20, tone: "subtle" },
-];
 
 const TOTAL_SECONDS = 600;
 
@@ -59,10 +47,76 @@ export default function ChatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
 
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [vitalSigns, setVitalSigns] = useState<VitalSign[]>(INITIAL_VITALS);
-  const [psychological, setPsychological] =
-    useState<Psychological[]>(INITIAL_PSYCH);
+  /* ── fetch session → scenario → document chain ── */
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  const documentId = scenarioQuery.data?.document_id;
+  const documentQuery = useQuery({
+    queryKey: documentId != null ? documentKeys.detail(documentId) : ["doc", "wait"],
+    queryFn: () => documentsApi.detail(documentId as number),
+    enabled: documentId != null,
+  });
+
+  const scenario = scenarioQuery.data;
+  const record = scenario ? projectMedicalRecord(scenario.medical_record) : {};
+  const initial = scenario ? projectInitialState(scenario.initial_state) : null;
+  const disease = documentQuery.data?.disease_name ?? "시나리오";
+  const patientName = record.name ?? "환자";
+  const patientMeta = [record.sex, record.age && `${record.age}세`]
+    .filter(Boolean)
+    .join("/");
+
+  /* ── chat + patient state ── */
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [vitalSigns, setVitalSigns] = useState<VitalSign[]>([]);
+  const [otherSigns, setOtherSigns] = useState<string[] | undefined>(undefined);
+  const [psychological, setPsychological] = useState<Psychological[]>([]);
+
+  // Set initial patient state from scenario data once loaded
+  const initialApplied = useRef(false);
+  useEffect(() => {
+    if (initialApplied.current || !initial) return;
+    initialApplied.current = true;
+    setVitalSigns(initial.vitalSigns);
+    setOtherSigns(initial.otherSigns);
+    setPsychological(initial.psychological);
+  }, [initial]);
+
+  // Advance phase to SIMULATION, then send empty message for patient opening line
+  const openingSent = useRef(false);
+  useEffect(() => {
+    if (openingSent.current || !Number.isFinite(numericSessionId)) return;
+    openingSent.current = true;
+
+    sessionsApi
+      .advancePhase(numericSessionId, { phase: "SIMULATION" })
+      .catch(() => {
+        // Already in SIMULATION phase — safe to ignore
+      })
+      .then(() => simulationApi.sendTurn(numericSessionId, { message: "" }))
+      .then((res) => {
+        if (!res) return;
+        const reply = res.reply ?? "(응답을 받지 못했어요)";
+        setMessages([{ role: "patient", text: reply }]);
+        const projected = projectPatientState(res.current_state);
+        if (projected) {
+          if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
+          if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
+          if (projected.psychological.length > 0) setPsychological(projected.psychological);
+        }
+      });
+  }, [numericSessionId]);
 
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
@@ -85,6 +139,7 @@ export default function ChatPage() {
       const projected = projectPatientState(res.current_state);
       if (projected) {
         if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
+        if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
         if (projected.psychological.length > 0)
           setPsychological(projected.psychological);
       }
@@ -101,7 +156,12 @@ export default function ChatPage() {
   }, []);
 
   const evaluateMutation = useMutation({
-    mutationFn: () => evaluationApi.run(numericSessionId),
+    mutationFn: async () => {
+      await sessionsApi
+        .advancePhase(numericSessionId, { phase: "EVALUATION" })
+        .catch(() => {});
+      return evaluationApi.run(numericSessionId);
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(
         evaluationKeys.list(numericSessionId),
@@ -123,6 +183,7 @@ export default function ChatPage() {
   };
 
   const waiting = turnMutation.isPending;
+  const openingWaiting = messages.length === 0;
   const showLoading = evaluateMutation.isPending || redirectingToResult;
 
   if (showLoading) {
@@ -139,7 +200,7 @@ export default function ChatPage() {
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <PatientStatePanel
           vitalSigns={vitalSigns}
-          otherSigns={["호흡 시 천명음(wheezing) 청진됨", "입술 오므리기 호흡 자세 관찰"]}
+          otherSigns={otherSigns}
           psychological={psychological}
           onEnd={() => setEndOpen(true)}
         />
@@ -148,12 +209,16 @@ export default function ChatPage() {
           <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
               <header className="sticky top-0 z-10 bg-surface-elevated px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
-                <PatientAvatar size={28} name="OOO" rounded />
+                <PatientAvatar size={28} name={patientName} rounded />
                 <span className="text-body-md font-medium text-foreground">
                   가상 환자
                 </span>
-                <Badge>COPD · OOO (M/47)</Badge>
-                <ScenarioTooltip description="COPD 환자인 OOO님 (M/47)은 호흡곤란을 호소하여 간호사가 입술 오므리기 호흡과 복식 호흡을 교육하려 합니다. 하지만 환자는 교육을 완강히 거부합니다." />
+                <Badge>
+                  {disease}
+                  {patientName !== "환자" && ` · ${patientName}`}
+                  {patientMeta && ` (${patientMeta})`}
+                </Badge>
+                <ScenarioTooltip description={scenario?.scenario_text ?? ""} />
                 <span className="flex-1" />
                 <Timer
                   startedAt={startedAt}
@@ -165,7 +230,7 @@ export default function ChatPage() {
                 {messages.map((m, i) => (
                   <ChatBubble key={i} role={m.role} text={m.text} />
                 ))}
-                {waiting && <TypingBubble role="patient" />}
+                {(waiting || openingWaiting) && <TypingBubble role="patient" />}
                 {turnMutation.isError && (
                   <p className="text-label-sm text-danger tracking-normal">
                     응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.
@@ -177,7 +242,7 @@ export default function ChatPage() {
 
           <ChatInput
             onSubmit={onSend}
-            disabled={waiting}
+            disabled={waiting || openingWaiting}
             disabledHint="환자가 응답하고 있어요..."
           />
         </section>
