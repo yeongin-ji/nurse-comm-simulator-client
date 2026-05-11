@@ -1496,8 +1496,11 @@ export interface components {
             total_score?: number;
         };
         "handler.LearnerWithStatsResponse": {
+            average_score?: number;
+            completed_session_count?: number;
             created_at?: string;
             email?: string;
+            feedback_needed_count?: number;
             id?: number;
             last_session_at?: string;
             name?: string;

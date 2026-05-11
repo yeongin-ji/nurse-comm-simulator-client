@@ -5,13 +5,8 @@ export type LearnerResponse = components["schemas"]["handler.LearnerResponse"];
 export type CreateLearnerRequest =
   components["schemas"]["handler.createLearnerRequest"];
 
-// Backend extension fields (see README "API 보완 필요"). Mock provides these;
-// real backend should add them to LearnerResponse when endpoint is specified.
-export type LearnerWithStats = LearnerResponse & {
-  session_count?: number;
-  last_session_at?: string | null;
-  average_score?: number | null;
-};
+export type LearnerWithStats =
+  components["schemas"]["handler.LearnerWithStatsResponse"];
 
 export type LearnerSession =
   components["schemas"]["handler.LearnerSessionResponse"];

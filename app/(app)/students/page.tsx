@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { PageShell } from "@/components/layout/page-shell";
-import { learnerKeys, learnersApi } from "@/lib/api/learners";
+import { formatSessionDate, learnerKeys, learnersApi } from "@/lib/api/learners";
 
 const COLUMN_WIDTHS = ["100px", "80px", undefined, "64px", "110px", "64px", "80px"];
 
@@ -38,9 +38,13 @@ export default function StudentsPage() {
   }, [learners, query]);
 
   const totalCount = learners.length;
-  const feedbackNeeded = learners.filter(
-    (l) => (l.session_count ?? 0) > 0
+  const activeCount = learners.filter(
+    (l) => (l.completed_session_count ?? 0) > 0,
   ).length;
+  const feedbackNeededTotal = learners.reduce(
+    (acc, l) => acc + (l.feedback_needed_count ?? 0),
+    0,
+  );
 
   return (
     <main className="flex-1 bg-background">
@@ -58,12 +62,12 @@ export default function StudentsPage() {
           <StatCard label="전체 학생" value={`${totalCount}명`} />
           <StatCard
             label="활동 학생"
-            value={`${feedbackNeeded}명`}
-            sub="세션 1회 이상"
+            value={`${activeCount}명`}
+            sub="완료 세션 1회 이상"
           />
           <StatCard
             label="피드백 필요"
-            value={`${learners.filter((l) => (l.session_count ?? 0) > 0).length}건`}
+            value={`${feedbackNeededTotal}건`}
             sub="코멘트 미작성"
           />
         </div>
@@ -117,7 +121,9 @@ export default function StudentsPage() {
                       width: COLUMN_WIDTHS[3],
                     },
                     {
-                      content: s.last_session_at ?? "—",
+                      content: s.last_session_at
+                        ? formatSessionDate(s.last_session_at)
+                        : "—",
                       width: COLUMN_WIDTHS[4],
                     },
                     {
