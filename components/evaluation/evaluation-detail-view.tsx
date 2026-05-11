@@ -1,3 +1,4 @@
+import Markdown from "react-markdown";
 import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -97,12 +98,8 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
             디브리핑
           </h3>
           <div className="h-px bg-border" />
-          <div className="flex flex-col gap-3">
-            {evaluation.debriefing.split(/\n\n+/).map((p, i) => (
-              <p key={i} className="text-body-md text-fg-muted leading-6">
-                {p}
-              </p>
-            ))}
+          <div className="prose prose-sm max-w-none text-fg-muted prose-headings:text-foreground prose-strong:text-foreground">
+            <Markdown>{evaluation.debriefing}</Markdown>
           </div>
         </Card>
       </div>

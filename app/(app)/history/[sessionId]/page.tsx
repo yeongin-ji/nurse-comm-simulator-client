@@ -17,10 +17,26 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
-import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import {
+  sessionKeys,
+  sessionsApi,
+  type SessionMessage,
+} from "@/lib/api/sessions";
 import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
+import {
+  ConversationLog,
+  type ConversationMessage,
+} from "@/components/educator/conversation-log";
+
+function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
+  if (!raw) return [];
+  return raw.map((m) => ({
+    role: (m.role ?? "user") as ConversationMessage["role"],
+    text: m.content ?? "",
+  }));
+}
 
 export default function HistorySessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -47,6 +63,12 @@ export default function HistorySessionPage() {
   });
 
   const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
+
+  const messagesQuery = useQuery({
+    queryKey: sessionKeys.messages(numericSessionId),
+    queryFn: () => sessionsApi.messages(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
 
   const toolsQuery = useQuery({
     queryKey: toolKeys.all,
@@ -119,6 +141,11 @@ export default function HistorySessionPage() {
                 />
               ))}
             </div>
+
+            <ConversationLog
+              pbl={toMessages(messagesQuery.data?.pbl)}
+              simulation={toMessages(messagesQuery.data?.simulation)}
+            />
           </div>
 
           <aside className="flex flex-col gap-3">

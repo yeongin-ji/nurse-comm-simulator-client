@@ -17,8 +17,24 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
-import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import {
+  sessionKeys,
+  sessionsApi,
+  type SessionMessage,
+} from "@/lib/api/sessions";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
+import {
+  ConversationLog,
+  type ConversationMessage,
+} from "@/components/educator/conversation-log";
+
+function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
+  if (!raw) return [];
+  return raw.map((m) => ({
+    role: (m.role ?? "user") as ConversationMessage["role"],
+    text: m.content ?? "",
+  }));
+}
 
 export default function SimResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -36,6 +52,12 @@ export default function SimResultPage() {
   const sessionQuery = useQuery({
     queryKey: sessionKeys.detail(numericSessionId),
     queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: sessionKeys.messages(numericSessionId),
+    queryFn: () => sessionsApi.messages(numericSessionId),
     enabled: Number.isFinite(numericSessionId),
   });
 
@@ -128,6 +150,11 @@ export default function SimResultPage() {
             />
           ))}
         </div>
+
+        <ConversationLog
+          pbl={toMessages(messagesQuery.data?.pbl)}
+          simulation={toMessages(messagesQuery.data?.simulation)}
+        />
       </PageShell>
     </main>
   );

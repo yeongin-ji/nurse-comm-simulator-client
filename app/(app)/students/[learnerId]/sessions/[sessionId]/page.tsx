@@ -22,66 +22,16 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
-import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import {
+  sessionKeys,
+  sessionsApi,
+  type SessionMessage,
+} from "@/lib/api/sessions";
 import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { learnersApi, learnerKeys } from "@/lib/api/learners";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 import { useAuthStore } from "@/lib/stores/auth";
-
-const MOCK_PBL: ConversationMessage[] = [
-  {
-    role: "ai-peer",
-    text: "COPD 환자를 만나기 전에 의사소통 방향을 함께 논의해 봐요.",
-  },
-  {
-    role: "user",
-    text: "환자의 불안을 줄이고 호흡 교육에 대한 거부감을 낮추고 싶어요.",
-  },
-  {
-    role: "ai-peer",
-    text: "공감적 경청 후 단계적 교육 흐름이 좋겠어요.",
-  },
-  {
-    role: "user",
-    text: "공감 → 신뢰 → 동의 → 교육 순서로 진행하겠습니다.",
-  },
-];
-
-const MOCK_SIMULATION: ConversationMessage[] = [
-  {
-    role: "patient",
-    text: "(거칠게 숨을 몰아쉬며) 뭐가 필요해요? 어차피 나한테 관심 없잖아요...",
-  },
-  {
-    role: "user",
-    text: "안녕하세요, 저는 담당 간호학생이에요. 지금 많이 힘드시죠?",
-  },
-  {
-    role: "patient",
-    text: "(시선을 잠깐 돌리며) ...네, 숨쉬기가 너무 힘들어요.",
-  },
-  {
-    role: "user",
-    text: "지금 가장 불편한 부분이 어디세요? 천천히 말씀해 주셔도 돼요.",
-  },
-  { role: "patient", text: "가슴이 꽉 막힌 것 같고 자꾸 기침이 나와요." },
-  {
-    role: "user",
-    text: "많이 답답하셨겠어요. 호흡을 편하게 하실 방법을 같이 해 보시겠어요?",
-  },
-  { role: "patient", text: "...뭐 또 시키려고요?" },
-  { role: "user", text: "강요는 하지 않을게요. 편안해지셨으면 해서요." },
-  { role: "patient", text: "(잠시 침묵) ...어떻게 하는 건데요?" },
-  {
-    role: "user",
-    text: "입을 살짝 오므리고 천천히 내쉬는 거예요. 같이 해볼까요?",
-  },
-  { role: "patient", text: "(시도하며) ...조금 편한 것 같기도 하네요." },
-  { role: "user", text: "잘 하셨어요." },
-  { role: "patient", text: "고마워요... 이 방법은 처음 알았어요." },
-  { role: "user", text: "필요하실 때 언제든 사용하세요." },
-];
 
 export default function StudentSessionDetailPage() {
   const { learnerId, sessionId } = useParams<{
@@ -121,6 +71,12 @@ export default function StudentSessionDetailPage() {
   const learnerName = learnerQuery.data?.name ?? "학생";
   const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
   const session = sessionQuery.data;
+
+  const messagesQuery = useQuery({
+    queryKey: sessionKeys.messages(numericSessionId),
+    queryFn: () => sessionsApi.messages(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
 
   const toolsQuery = useQuery({
     queryKey: toolKeys.all,
@@ -195,7 +151,10 @@ export default function StudentSessionDetailPage() {
               ))}
             </div>
 
-            <ConversationLog pbl={MOCK_PBL} simulation={MOCK_SIMULATION} />
+            <ConversationLog
+              pbl={toMessages(messagesQuery.data?.pbl)}
+              simulation={toMessages(messagesQuery.data?.simulation)}
+            />
           </div>
 
           <aside className="flex flex-col gap-3">
@@ -243,6 +202,14 @@ export default function StudentSessionDetailPage() {
       </PageShell>
     </main>
   );
+}
+
+function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
+  if (!raw) return [];
+  return raw.map((m) => ({
+    role: (m.role ?? "user") as ConversationMessage["role"],
+    text: m.content ?? "",
+  }));
 }
 
 function Meta({ label, value }: { label: string; value: string }) {

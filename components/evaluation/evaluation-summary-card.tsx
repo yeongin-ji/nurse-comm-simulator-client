@@ -27,7 +27,8 @@ export function EvaluationSummaryCard({
   highlighted,
 }: EvaluationSummaryCardProps) {
   const tool = getToolById(evaluation.toolId);
-  const previewLine = evaluation.debriefing.split(/\n+/)[0] ?? "";
+  const previewLine = (evaluation.debriefing.split(/\n+/)[0] ?? "")
+    .replace(/[*_#>`~\[\]]/g, "");
 
   return (
     <Card

@@ -1052,6 +1052,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 세션 대화 내역 조회
+         * @description PBL 및 시뮬레이션 단계의 전체 대화 메시지를 시간순으로 반환합니다.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Session ID */
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.SessionMessagesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{id}/pbl": {
         parameters: {
             query?: never;
@@ -1492,6 +1552,14 @@ export interface components {
             start_time?: string;
             total_max_score?: number;
             total_score?: number;
+        };
+        "handler.SessionMessage": {
+            content?: string;
+            role?: string;
+        };
+        "handler.SessionMessagesResponse": {
+            pbl?: components["schemas"]["handler.SessionMessage"][];
+            simulation?: components["schemas"]["handler.SessionMessage"][];
         };
         "handler.SessionResponse": {
             current_phase?: string;
