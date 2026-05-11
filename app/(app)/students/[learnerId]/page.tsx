@@ -16,7 +16,7 @@ import {
   learnersApi,
 } from "@/lib/api/learners";
 
-const COLUMN_WIDTHS = [undefined, "150px", "70px", "64px", "70px", "80px"];
+const COLUMN_WIDTHS = [undefined, "150px", "70px", "80px", "80px", "96px"];
 
 export default function StudentHistoryPage() {
   const { learnerId } = useParams<{ learnerId: string }>();
@@ -58,12 +58,14 @@ export default function StudentHistoryPage() {
 
   const learner = learnerQuery.data;
   const sessions = sessionsQuery.data ?? [];
-  const totalScore = sessions.reduce(
-    (acc, s) => acc + (s.total_score ?? 0),
-    0
-  );
-  const scored = sessions.filter((s) => s.total_score != null).length;
-  const avg = scored > 0 ? Math.round(totalScore / scored) : 0;
+  const scored = sessions.filter((s) => s.total_score != null);
+  const avgScore =
+    scored.length > 0
+      ? Math.round(
+          scored.reduce((acc, s) => acc + (s.total_score ?? 0), 0) /
+            scored.length,
+        )
+      : null;
   const myComments = sessions.reduce(
     (acc, s) => acc + (s.comment_count ?? 0),
     0
@@ -90,7 +92,7 @@ export default function StudentHistoryPage() {
 
         <div className="flex gap-3">
           <StatCard label="총 세션" value={`${sessions.length}회`} />
-          <StatCard label="평균 점수" value={`${avg}점`} />
+          <StatCard label="평균 점수" value={avgScore != null ? `${avgScore}점` : "—"} />
           <StatCard label="내 코멘트" value={`${myComments}건`} />
         </div>
 
@@ -120,29 +122,33 @@ export default function StudentHistoryPage() {
                 <TableRow
                   key={s.id}
                   cells={[
-                    { content: s.disease },
+                    { content: s.disease ?? "—" },
                     {
-                      content: formatSessionDate(s.start_time),
+                      content: s.start_time
+                        ? formatSessionDate(s.start_time)
+                        : "—",
                       width: COLUMN_WIDTHS[1],
                     },
                     {
-                      content: s.session_status,
+                      content: s.session_status ?? "—",
                       width: COLUMN_WIDTHS[2],
                       className: "text-success",
                     },
                     {
                       content:
-                        s.total_score != null ? `${s.total_score}점` : "—",
+                        s.total_score != null
+                          ? `${s.total_score}/${s.total_max_score ?? "?"}`
+                          : "—",
                       width: COLUMN_WIDTHS[3],
                       className:
                         s.total_score != null ? "font-medium" : undefined,
                     },
                     {
                       content:
-                        s.comment_count > 0 ? `${s.comment_count}개` : "없음",
+                        (s.comment_count ?? 0) > 0 ? `${s.comment_count}개` : "없음",
                       width: COLUMN_WIDTHS[4],
                       className:
-                        s.comment_count > 0
+                        (s.comment_count ?? 0) > 0
                           ? "text-accent"
                           : "text-fg-subtle",
                     },

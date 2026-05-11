@@ -13,16 +13,8 @@ export type LearnerWithStats = LearnerResponse & {
   average_score?: number | null;
 };
 
-export type LearnerSession = {
-  id: number;
-  learner_id: number;
-  scenario_id: number;
-  disease: string;
-  start_time: string;
-  session_status: string;
-  total_score?: number | null;
-  comment_count: number;
-};
+export type LearnerSession =
+  components["schemas"]["handler.LearnerSessionResponse"];
 
 export const learnersApi = {
   list: () => api.get<LearnerWithStats[]>("/learners"),

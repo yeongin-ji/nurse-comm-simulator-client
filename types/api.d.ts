@@ -1431,6 +1431,8 @@ export interface components {
             scenario_id?: number;
             session_status?: string;
             start_time?: string;
+            total_max_score?: number;
+            total_score?: number;
         };
         "handler.LearnerWithStatsResponse": {
             created_at?: string;
