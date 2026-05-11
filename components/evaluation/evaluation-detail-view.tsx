@@ -39,13 +39,16 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
             총점
           </span>
           <p className="text-foreground tracking-[-0.03em] flex items-baseline gap-1">
-            <span className="text-[44px] font-semibold leading-none">
-              {evaluation.totalScore}
-            </span>
-            <span className="text-body-lg font-normal text-fg-muted">
-              / {evaluation.totalMaxScore}
+            <span className="text-[44px] font-semibold leading-none text-accent">
+              {evaluation.totalMaxScore > 0
+                ? Math.round((evaluation.totalScore / evaluation.totalMaxScore) * 100)
+                : 0}
+              <span className="text-[28px] font-medium">%</span>
             </span>
           </p>
+          <span className="text-body-md font-normal text-fg-subtle tabular-nums">
+            {evaluation.totalScore} / {evaluation.totalMaxScore}
+          </span>
         </Card>
         {top3.length > 0 && (
           <div className="rounded-lg border border-accent/30 bg-accent/[0.05] p-5 flex items-start gap-3">

@@ -214,7 +214,7 @@ export default function ChatPage() {
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
-                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} />
+                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} />
                 ))}
                 {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (

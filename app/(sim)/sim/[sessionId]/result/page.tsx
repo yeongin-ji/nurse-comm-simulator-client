@@ -22,6 +22,11 @@ import {
   sessionsApi,
   type SessionMessage,
 } from "@/lib/api/sessions";
+import {
+  scenarioKeys,
+  scenariosApi,
+  projectMedicalRecord,
+} from "@/lib/api/scenarios";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 import {
   ConversationLog,
@@ -56,6 +61,16 @@ export default function SimResultPage() {
     queryFn: () => sessionsApi.detail(numericSessionId),
     enabled: Number.isFinite(numericSessionId),
   });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+  const patientName = scenarioQuery.data
+    ? (projectMedicalRecord(scenarioQuery.data.medical_record).name ?? undefined)
+    : undefined;
 
   const messagesQuery = useQuery({
     queryKey: sessionKeys.messages(numericSessionId),
@@ -157,6 +172,7 @@ export default function SimResultPage() {
           pbl={toMessages(messagesQuery.data?.pbl)}
           simulation={toMessages(messagesQuery.data?.simulation)}
           userName={userName}
+          patientName={patientName}
         />
       </PageShell>
     </main>

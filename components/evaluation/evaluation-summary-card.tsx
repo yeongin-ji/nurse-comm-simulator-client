@@ -57,14 +57,17 @@ export function EvaluationSummaryCard({
             </p>
           )}
         </div>
-        <p className="text-foreground tracking-[-0.03em] shrink-0 tabular-nums">
+        <div className="flex flex-col items-end shrink-0 tabular-nums tracking-[-0.03em]">
           <span className="text-headline-md text-accent leading-none">
-            {evaluation.totalScore}
+            {evaluation.totalMaxScore > 0
+              ? Math.round((evaluation.totalScore / evaluation.totalMaxScore) * 100)
+              : 0}
+            <span className="text-body-lg font-medium">%</span>
           </span>
-          <span className="text-body-md font-normal text-fg-muted ml-0.5">
-            / {evaluation.totalMaxScore}
+          <span className="text-label-sm font-normal text-fg-subtle mt-0.5">
+            {evaluation.totalScore} / {evaluation.totalMaxScore}
           </span>
-        </p>
+        </div>
       </header>
 
       <div className="h-px bg-border" />

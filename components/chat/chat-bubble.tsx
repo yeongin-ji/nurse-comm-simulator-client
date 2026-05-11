@@ -13,12 +13,16 @@ export type ChatBubbleProps = {
   text: string;
   /** Override the display name for the "user" role (defaults to "간호학생"). */
   userName?: string;
+  /** Override the display name for the "patient" role (defaults to "가상 환자"). */
+  patientName?: string;
   className?: string;
 };
 
-export function ChatBubble({ role, text, userName, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, patientName, className }: ChatBubbleProps) {
   const isUser = role === "user";
-  const label = isUser && userName ? userName : ROLE_LABEL[role];
+  let label = ROLE_LABEL[role];
+  if (isUser && userName) label = userName;
+  if (role === "patient" && patientName) label = `${patientName} 환자`;
   return (
     <div
       className={cn(

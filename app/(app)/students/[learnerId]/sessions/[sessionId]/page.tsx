@@ -27,7 +27,7 @@ import {
   sessionsApi,
   type SessionMessage,
 } from "@/lib/api/sessions";
-import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
+import { scenarioKeys, scenariosApi, projectMedicalRecord } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { learnersApi, learnerKeys } from "@/lib/api/learners";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
@@ -70,6 +70,9 @@ export default function StudentSessionDetailPage() {
 
   const learnerName = learnerQuery.data?.name ?? "학생";
   const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
+  const patientName = scenarioQuery.data
+    ? (projectMedicalRecord(scenarioQuery.data.medical_record).name ?? undefined)
+    : undefined;
   const session = sessionQuery.data;
 
   const messagesQuery = useQuery({
@@ -155,6 +158,7 @@ export default function StudentSessionDetailPage() {
               pbl={toMessages(messagesQuery.data?.pbl)}
               simulation={toMessages(messagesQuery.data?.simulation)}
               userName={learnerName}
+              patientName={patientName}
             />
           </div>
 
