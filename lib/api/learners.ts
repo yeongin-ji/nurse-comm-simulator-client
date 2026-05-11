@@ -34,9 +34,11 @@ export const learnerKeys = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
+  COMPLETED: "완료",
   DONE: "완료",
-  ACTIVE: "진행 중",
   IN_PROGRESS: "진행 중",
+  ACTIVE: "진행 중",
+  ABORTED: "중단",
   ABANDONED: "중단",
 };
 
@@ -45,8 +47,23 @@ export function formatStatus(status: string | undefined | null): string {
   return STATUS_LABEL[status] ?? status;
 }
 
+const STATUS_VARIANT: Record<string, "success" | "warning" | "danger" | "default"> = {
+  COMPLETED: "success",
+  DONE: "success",
+  IN_PROGRESS: "warning",
+  ACTIVE: "warning",
+  ABORTED: "danger",
+  ABANDONED: "danger",
+};
+
+export function statusVariant(status: string | undefined | null): "success" | "warning" | "danger" | "default" {
+  if (!status) return "default";
+  return STATUS_VARIANT[status] ?? "default";
+}
+
 export function isDoneSession(s: LearnerSession): boolean {
-  return s.session_status === "DONE";
+  const st = s.session_status;
+  return st === "COMPLETED" || st === "DONE";
 }
 
 export function formatSessionDate(iso: string) {

@@ -28,7 +28,7 @@ import {
 } from "@/lib/api/sessions";
 import { scenarioKeys, scenariosApi, projectMedicalRecord } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
-import { learnersApi, learnerKeys } from "@/lib/api/learners";
+import { learnersApi, learnerKeys, formatStatus } from "@/lib/api/learners";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 import { useAuthStore } from "@/lib/stores/auth";
 
@@ -189,7 +189,7 @@ export default function StudentSessionDetailPage() {
                 />
                 <Meta
                   label="세션 상태"
-                  value={session?.session_status === "DONE" ? "정상 종료" : session?.session_status ?? "—"}
+                  value={formatStatus(session?.session_status)}
                 />
                 <Meta label="평가 도구" value={`${evaluations.length}종`} />
               </div>

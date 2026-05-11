@@ -11,10 +11,12 @@ import { Table, TableRow } from "@/components/ui/table";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
+import { Badge } from "@/components/ui/badge";
 import {
   formatSessionDate,
   formatStatus,
   isDoneSession,
+  statusVariant,
   learnerKeys,
   learnersApi,
 } from "@/lib/api/learners";
@@ -146,12 +148,12 @@ export default function StudentHistoryPage() {
                       width: COLUMN_WIDTHS[1],
                     },
                     {
-                      content: formatStatus(s.session_status),
+                      content: (
+                        <Badge variant={statusVariant(s.session_status)}>
+                          {formatStatus(s.session_status)}
+                        </Badge>
+                      ),
                       width: COLUMN_WIDTHS[2],
-                      className:
-                        s.session_status === "DONE"
-                          ? "text-success"
-                          : "text-fg-subtle",
                     },
                     {
                       content:

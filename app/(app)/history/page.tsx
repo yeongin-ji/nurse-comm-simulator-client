@@ -9,9 +9,12 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { PageShell } from "@/components/layout/page-shell";
+import { Badge } from "@/components/ui/badge";
 import {
   formatSessionDate,
+  formatStatus,
   isDoneSession,
+  statusVariant,
   learnerKeys,
   learnersApi,
 } from "@/lib/api/learners";
@@ -88,6 +91,7 @@ export default function HistoryPage() {
                 cells={[
                   { content: "시나리오 (질환)" },
                   { content: "수행일시" },
+                  { content: "상태", width: "80px" },
                   { content: "총점", width: "80px" },
                   { content: "코멘트", width: "80px" },
                   { content: "", width: "96px" },
@@ -104,6 +108,14 @@ export default function HistoryPage() {
                         content: s.start_time
                           ? formatSessionDate(s.start_time)
                           : "—",
+                      },
+                      {
+                        content: (
+                          <Badge variant={statusVariant(s.session_status)}>
+                            {formatStatus(s.session_status)}
+                          </Badge>
+                        ),
+                        width: "80px",
                       },
                       {
                         content:
