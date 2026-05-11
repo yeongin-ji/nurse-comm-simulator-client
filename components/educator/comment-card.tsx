@@ -17,6 +17,8 @@ export type CommentCardProps = {
   readOnly?: boolean;
   /** Educator currently logged in. Required when not readOnly. */
   currentEducatorId?: number;
+  /** Display name of the logged-in educator. */
+  currentEducatorName?: string;
   title?: string;
 };
 
@@ -24,6 +26,7 @@ export function CommentCard({
   sessionId,
   readOnly,
   currentEducatorId,
+  currentEducatorName,
   title = readOnly ? "교수자 코멘트" : "코멘트",
 }: CommentCardProps) {
   const queryClient = useQueryClient();
@@ -75,7 +78,7 @@ export function CommentCard({
           <div key={c.id} className="flex flex-col gap-1">
             <div className="flex justify-between">
               <span className="text-[13px] font-medium text-foreground">
-                {educatorName(c.educator_id)}
+                {c.educator_name || educatorName(c.educator_id)}
               </span>
               <span className="text-label-sm font-normal text-fg-subtle tracking-normal">
                 {formatCommentDate(c.created_at)}

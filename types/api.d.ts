@@ -1443,6 +1443,7 @@ export interface components {
             content?: string;
             created_at?: string;
             educator_id?: number;
+            educator_name?: string;
             id?: number;
             session_id?: number;
         };

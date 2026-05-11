@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
@@ -40,7 +39,9 @@ export default function StudentSessionDetailPage() {
   }>();
   const numericSessionId = Number(sessionId);
   const numericLearnerId = Number(learnerId);
-  const educatorId = useAuthStore((s) => s.user?.id) ?? 0;
+  const authUser = useAuthStore((s) => s.user);
+  const educatorId = authUser?.id ?? 0;
+  const educatorName = authUser?.name;
 
   const learnerQuery = useQuery({
     queryKey: learnerKeys.detail(numericLearnerId),
@@ -166,6 +167,7 @@ export default function StudentSessionDetailPage() {
             <CommentCard
               sessionId={numericSessionId}
               currentEducatorId={educatorId}
+              currentEducatorName={educatorName}
             />
 
             <Card className="flex flex-col gap-3">
@@ -193,15 +195,6 @@ export default function StudentSessionDetailPage() {
               </div>
             </Card>
 
-            <div className="flex items-start gap-2 rounded bg-surface-muted px-3.5 py-2.5">
-              <AlertCircle
-                className="h-3.5 w-3.5 text-fg-subtle mt-0.5 shrink-0"
-                aria-hidden
-              />
-              <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-                코멘트는 추가만 가능해요. 수정·삭제는 할 수 없어요.
-              </p>
-            </div>
           </aside>
         </div>
       </PageShell>

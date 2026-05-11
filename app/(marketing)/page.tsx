@@ -58,6 +58,10 @@ export default function LoginPage() {
       mutation.mutate(form, {
         onSuccess: (res) => {
           const userRole = (res.role as "learner" | "educator") ?? role;
+          if (userRole !== role) {
+            setErrorRole(role);
+            return;
+          }
           setUser({
             id: res.id ?? 0,
             name: res.name ?? "",
