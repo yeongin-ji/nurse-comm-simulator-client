@@ -1,57 +1,75 @@
-/**
- * Evaluation tools registered for the simulation. A session is evaluated
- * against every tool here once the dialogue ends; each tool produces an
- * independent EvaluationResultResponse keyed by `tool_id`.
- *
- * This list is the single source of truth on the client. Backend additions
- * should mirror this constant (or expose `GET /tools` if the registry needs
- * to be remote later).
- */
+import { api } from "./api/client";
+import type { components } from "@/types/api";
+
+export type EvaluationToolResponse =
+  components["schemas"]["handler.EvaluationToolResponse"];
+
 export type EvaluationTool = {
   id: number;
   name: string;
   description: string;
-  /** Display labels for each item the tool scores. Order matters. */
   items: string[];
-  /** Maximum score per item (e.g. 5 for Kalamazoo, 3 for GITCS). 0 = N/A. */
   maxScore: number;
 };
 
-export const TOOLS: EvaluationTool[] = [
-  {
-    id: 1,
-    name: "Kalamazoo",
-    description: "환자 중심 의사소통의 핵심 영역을 평가해요.",
-    maxScore: 5,
-    items: [
-      "환자 맞이 및 자기소개",
-      "개방형 질문 사용",
-      "경청 및 공감 표현",
-      "환자 감정 확인",
-      "정보 전달 명확성",
-      "환자 동의 및 자율성 존중",
-    ],
-  },
-  {
-    id: 2,
-    name: "GITCS",
-    description: "포괄적 임상 의사소통 기술 평가.",
-    maxScore: 3,
-    items: [
-      "환자 중심성",
-      "정보 공유의 명확성",
-      "상호 존중과 신뢰",
-      "협력적 의사결정",
-      "공감적 반응",
-    ],
-  },
-];
+function projectTool(raw: EvaluationToolResponse): EvaluationTool {
+  const schema = raw.scoring_schema as
+    | { scale?: { score: number }[] }
+    | undefined;
+  const maxScore = schema?.scale
+    ? Math.max(...schema.scale.map((s) => s.score))
+    : 5;
 
-export function getToolById(id: number | undefined): EvaluationTool | undefined {
-  if (id == null) return undefined;
-  return TOOLS.find((t) => t.id === id);
+  const items =
+    (raw.evaluation_items as { item_name: string }[] | undefined)?.map(
+      (i) => i.item_name,
+    ) ?? [];
+
+  return {
+    id: raw.id ?? 0,
+    name: raw.tool_name ?? "—",
+    description: raw.tool_description ?? "",
+    items,
+    maxScore,
+  };
 }
 
+export const toolsApi = {
+  list: () =>
+    api
+      .get<EvaluationToolResponse[]>("/evaluation-tools")
+      .then((raw) => raw.map(projectTool)),
+};
+
+export const toolKeys = {
+  all: ["evaluation-tools"] as const,
+};
+
+export function getToolByIdFrom(
+  tools: EvaluationTool[],
+  id: number | undefined,
+): EvaluationTool | undefined {
+  if (id == null) return undefined;
+  return tools.find((t) => t.id === id);
+}
+
+export function getToolNameFrom(tools: EvaluationTool[], id: number | undefined) {
+  return getToolByIdFrom(tools, id)?.name ?? "—";
+}
+
+// ── Backwards-compatible helpers (use empty array when tools not yet loaded) ──
+
+/** @deprecated Prefer passing tools explicitly via getToolByIdFrom */
+let _cache: EvaluationTool[] = [];
+export function setToolsCache(tools: EvaluationTool[]) {
+  _cache = tools;
+}
+export function getCachedTools(): EvaluationTool[] {
+  return _cache;
+}
+export function getToolById(id: number | undefined): EvaluationTool | undefined {
+  return getToolByIdFrom(_cache, id);
+}
 export function getToolName(id: number | undefined) {
-  return getToolById(id)?.name ?? "—";
+  return getToolByIdFrom(_cache, id)?.name ?? "—";
 }

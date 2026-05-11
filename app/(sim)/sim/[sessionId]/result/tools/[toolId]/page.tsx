@@ -14,6 +14,7 @@ import {
   evaluationKeys,
   findEvaluationForTool,
 } from "@/lib/api/evaluation";
+import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 
 export default function SimResultToolPage() {
   const { sessionId, toolId } = useParams<{
@@ -23,10 +24,17 @@ export default function SimResultToolPage() {
   const numericSessionId = Number(sessionId);
   const numericToolId = Number(toolId);
 
+  const toolsQuery = useQuery({
+    queryKey: toolKeys.all,
+    queryFn: toolsApi.list,
+    staleTime: Infinity,
+  });
+  if (toolsQuery.data) setToolsCache(toolsQuery.data);
+
   const evaluationQuery = useQuery({
     queryKey: evaluationKeys.list(numericSessionId),
     queryFn: () => evaluationApi.list(numericSessionId),
-    enabled: Number.isFinite(numericSessionId),
+    enabled: Number.isFinite(numericSessionId) && !!toolsQuery.data,
   });
 
   if (evaluationQuery.isLoading) {

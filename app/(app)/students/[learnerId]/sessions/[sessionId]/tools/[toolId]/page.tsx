@@ -14,10 +14,11 @@ import {
   evaluationKeys,
   findEvaluationForTool,
 } from "@/lib/api/evaluation";
-import { getToolName } from "@/lib/tools";
-
-const MOCK_LEARNER = { name: "김간호" };
-const SESSION_LABEL = "COPD · 2026.04.28";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
+import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { learnersApi, learnerKeys } from "@/lib/api/learners";
+import { getToolName, setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 
 export default function StudentSessionToolPage() {
   const { learnerId, sessionId, toolId } = useParams<{
@@ -27,11 +28,48 @@ export default function StudentSessionToolPage() {
   }>();
   const numericSessionId = Number(sessionId);
   const numericToolId = Number(toolId);
+  const numericLearnerId = Number(learnerId);
+
+  const learnerQuery = useQuery({
+    queryKey: learnerKeys.detail(numericLearnerId),
+    queryFn: () => learnersApi.detail(numericLearnerId),
+    enabled: Number.isFinite(numericLearnerId),
+  });
+
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  const documentId = scenarioQuery.data?.document_id;
+  const documentQuery = useQuery({
+    queryKey: documentId != null ? documentKeys.detail(documentId) : ["doc", "wait"],
+    queryFn: () => documentsApi.detail(documentId as number),
+    enabled: documentId != null,
+  });
+
+  const learnerName = learnerQuery.data?.name ?? "학생";
+  const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
+
+  const toolsQuery = useQuery({
+    queryKey: toolKeys.all,
+    queryFn: toolsApi.list,
+    staleTime: Infinity,
+  });
+  if (toolsQuery.data) setToolsCache(toolsQuery.data);
 
   const evaluationQuery = useQuery({
     queryKey: evaluationKeys.list(numericSessionId),
     queryFn: () => evaluationApi.list(numericSessionId),
-    enabled: Number.isFinite(numericSessionId),
+    enabled: Number.isFinite(numericSessionId) && !!toolsQuery.data,
   });
 
   if (evaluationQuery.isLoading) {
@@ -68,11 +106,11 @@ export default function StudentSessionToolPage() {
           items={[
             { label: "학생 목록", href: "/students" },
             {
-              label: MOCK_LEARNER.name,
+              label: learnerName,
               href: `/students/${learnerId}`,
             },
             {
-              label: SESSION_LABEL,
+              label: diseaseName,
               href: `/students/${learnerId}/sessions/${sessionId}`,
             },
             { label: getToolName(numericToolId) },

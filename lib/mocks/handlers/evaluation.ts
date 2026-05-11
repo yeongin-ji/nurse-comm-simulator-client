@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type { components } from "@/types/api";
-import { TOOLS } from "@/lib/tools";
+import { getCachedTools } from "@/lib/tools";
 
 type EvaluationResponse =
   components["schemas"]["handler.EvaluationResultResponse"];
@@ -29,7 +29,7 @@ function buildItemScores(toolId: number, items: string[], maxScore: number) {
 }
 
 function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {
-  return TOOLS.map((tool) => {
+  return getCachedTools().map((tool) => {
     const items = buildItemScores(tool.id, tool.items, tool.maxScore);
     return {
       id: sessionId * 1000 + tool.id,

@@ -22,12 +22,12 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
-
-// TODO(Stage D-?): backend doesn't expose learner meta or full conversation
-// transcripts via the current swagger. Keep these as mocks until added.
-const MOCK_LEARNER = { name: "김간호" };
-const SESSION_LABEL = "COPD · 2026.04.28";
-const CURRENT_EDUCATOR_ID = 1;
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
+import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { learnersApi, learnerKeys } from "@/lib/api/learners";
+import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
+import { useAuthStore } from "@/lib/stores/auth";
 
 const MOCK_PBL: ConversationMessage[] = [
   {
@@ -89,11 +89,50 @@ export default function StudentSessionDetailPage() {
     sessionId: string;
   }>();
   const numericSessionId = Number(sessionId);
+  const numericLearnerId = Number(learnerId);
+  const educatorId = useAuthStore((s) => s.user?.id) ?? 0;
+
+  const learnerQuery = useQuery({
+    queryKey: learnerKeys.detail(numericLearnerId),
+    queryFn: () => learnersApi.detail(numericLearnerId),
+    enabled: Number.isFinite(numericLearnerId),
+  });
+
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  const documentId = scenarioQuery.data?.document_id;
+  const documentQuery = useQuery({
+    queryKey: documentId != null ? documentKeys.detail(documentId) : ["doc", "wait"],
+    queryFn: () => documentsApi.detail(documentId as number),
+    enabled: documentId != null,
+  });
+
+  const learnerName = learnerQuery.data?.name ?? "학생";
+  const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
+  const session = sessionQuery.data;
+
+  const toolsQuery = useQuery({
+    queryKey: toolKeys.all,
+    queryFn: toolsApi.list,
+    staleTime: Infinity,
+  });
+  if (toolsQuery.data) setToolsCache(toolsQuery.data);
 
   const evaluationQuery = useQuery({
     queryKey: evaluationKeys.list(numericSessionId),
     queryFn: () => evaluationApi.list(numericSessionId),
-    enabled: Number.isFinite(numericSessionId),
+    enabled: Number.isFinite(numericSessionId) && !!toolsQuery.data,
   });
 
   if (evaluationQuery.isLoading) {
@@ -138,8 +177,8 @@ export default function StudentSessionDetailPage() {
         <Breadcrumb
           items={[
             { label: "학생 목록", href: "/students" },
-            { label: MOCK_LEARNER.name, href: `/students/${learnerId}` },
-            { label: SESSION_LABEL },
+            { label: learnerName, href: `/students/${learnerId}` },
+            { label: diseaseName },
           ]}
         />
 
@@ -162,7 +201,7 @@ export default function StudentSessionDetailPage() {
           <aside className="flex flex-col gap-3">
             <CommentCard
               sessionId={numericSessionId}
-              currentEducatorId={CURRENT_EDUCATOR_ID}
+              currentEducatorId={educatorId}
             />
 
             <Card className="flex flex-col gap-3">
@@ -170,12 +209,22 @@ export default function StudentSessionDetailPage() {
                 세션 정보
               </h3>
               <div className="flex flex-col gap-2">
-                <Meta label="시작 시각" value="14:22" />
+                <Meta
+                  label="시작 시각"
+                  value={
+                    session?.start_time
+                      ? new Date(session.start_time).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
+                      : "—"
+                  }
+                />
                 <Meta
                   label="소요 시간"
-                  value={formatDuration(meta.durationSeconds)}
+                  value={formatDuration(session?.simulation_duration_seconds ?? meta.durationSeconds)}
                 />
-                <Meta label="세션 상태" value="정상 종료" />
+                <Meta
+                  label="세션 상태"
+                  value={session?.session_status === "DONE" ? "정상 종료" : session?.session_status ?? "—"}
+                />
                 <Meta label="평가 도구" value={`${evaluations.length}종`} />
               </div>
             </Card>

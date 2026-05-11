@@ -17,15 +17,32 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 
 export default function SimResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
 
+  const toolsQuery = useQuery({
+    queryKey: toolKeys.all,
+    queryFn: toolsApi.list,
+    staleTime: Infinity,
+  });
+
+  // Populate backwards-compatible cache so getToolById works in child components
+  if (toolsQuery.data) setToolsCache(toolsQuery.data);
+
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
   const evaluationQuery = useQuery({
     queryKey: evaluationKeys.list(numericSessionId),
     queryFn: () => evaluationApi.list(numericSessionId),
-    enabled: Number.isFinite(numericSessionId),
+    enabled: Number.isFinite(numericSessionId) && !!toolsQuery.data,
   });
 
   if (evaluationQuery.isLoading) {
@@ -64,6 +81,10 @@ export default function SimResultPage() {
   const meta = evaluations[0];
   const topId = topScoringToolId(evaluations);
 
+  // Prefer session-level duration from the server; fall back to evaluation data
+  const durationSeconds =
+    sessionQuery.data?.simulation_duration_seconds ?? meta.durationSeconds;
+
   return (
     <main className="flex-1 overflow-y-auto">
       <PageShell width="lg" className="flex flex-col gap-5 py-6">
@@ -91,7 +112,7 @@ export default function SimResultPage() {
         <div className="flex gap-3">
           <StatCard
             label="소요 시간"
-            value={formatDuration(meta.durationSeconds)}
+            value={formatDuration(durationSeconds)}
             sub="제한 10분"
           />
           <StatCard label="대화 턴" value={`${meta.turns}회`} />

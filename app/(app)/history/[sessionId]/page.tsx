@@ -17,18 +17,48 @@ import {
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
-
-// TODO(Stage D-?): backend doesn't expose scenario meta on a session listing yet.
-const SESSION_LABEL = "COPD · 3회차";
+import { sessionKeys, sessionsApi } from "@/lib/api/sessions";
+import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
+import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
 
 export default function HistorySessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
 
+  const sessionQuery = useQuery({
+    queryKey: sessionKeys.detail(numericSessionId),
+    queryFn: () => sessionsApi.detail(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+
+  const scenarioId = sessionQuery.data?.scenario_id;
+  const scenarioQuery = useQuery({
+    queryKey: scenarioId != null ? scenarioKeys.detail(scenarioId) : ["scenario", "wait"],
+    queryFn: () => scenariosApi.detail(scenarioId as number),
+    enabled: scenarioId != null,
+  });
+
+  const documentId = scenarioQuery.data?.document_id;
+  const documentQuery = useQuery({
+    queryKey: documentId != null ? documentKeys.detail(documentId) : ["doc", "wait"],
+    queryFn: () => documentsApi.detail(documentId as number),
+    enabled: documentId != null,
+  });
+
+  const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
+
+  const toolsQuery = useQuery({
+    queryKey: toolKeys.all,
+    queryFn: toolsApi.list,
+    staleTime: Infinity,
+  });
+  if (toolsQuery.data) setToolsCache(toolsQuery.data);
+
   const evaluationQuery = useQuery({
     queryKey: evaluationKeys.list(numericSessionId),
     queryFn: () => evaluationApi.list(numericSessionId),
-    enabled: Number.isFinite(numericSessionId),
+    enabled: Number.isFinite(numericSessionId) && !!toolsQuery.data,
   });
 
   if (evaluationQuery.isLoading) {
@@ -73,7 +103,7 @@ export default function HistorySessionPage() {
         <Breadcrumb
           items={[
             { label: "학습 이력", href: "/history" },
-            { label: SESSION_LABEL },
+            { label: diseaseName },
           ]}
         />
 
@@ -93,7 +123,7 @@ export default function HistorySessionPage() {
 
           <aside className="flex flex-col gap-3">
             <Card className="flex flex-col gap-2">
-              <Meta label="소요 시간" value={formatDuration(meta.durationSeconds)} />
+              <Meta label="소요 시간" value={formatDuration(sessionQuery.data?.simulation_duration_seconds ?? meta.durationSeconds)} />
               <Meta label="대화 턴" value={`${meta.turns}회`} />
               <Meta label="제한 시간" value="10분" />
             </Card>
