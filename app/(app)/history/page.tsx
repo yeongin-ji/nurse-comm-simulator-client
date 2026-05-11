@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -10,6 +11,7 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { PageShell } from "@/components/layout/page-shell";
 import {
   formatSessionDate,
+  isDoneSession,
   learnerKeys,
   learnersApi,
 } from "@/lib/api/learners";
@@ -24,7 +26,10 @@ export default function HistoryPage() {
     enabled: !!user,
   });
 
-  const sessions = sessionsQuery.data ?? [];
+  const [showAll, setShowAll] = useState(false);
+
+  const allSessions = sessionsQuery.data ?? [];
+  const sessions = showAll ? allSessions : allSessions.filter(isDoneSession);
   const totalSessions = sessions.length;
   const scored = sessions.filter((s) => s.total_score != null);
   const avgScore =
@@ -53,6 +58,16 @@ export default function HistoryPage() {
           <StatCard label="평균 점수" value={avgScore != null ? `${avgScore}점` : "—"} />
           <StatCard label="시나리오" value={`${uniqueScenarios}종`} />
         </div>
+
+        <label className="inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showAll}
+            onChange={(e) => setShowAll(e.target.checked)}
+            className="accent-accent h-3.5 w-3.5"
+          />
+          미완료 세션 포함
+        </label>
 
         {sessionsQuery.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-fg-muted">

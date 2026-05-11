@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -12,11 +13,13 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
 import {
   formatSessionDate,
+  formatStatus,
+  isDoneSession,
   learnerKeys,
   learnersApi,
 } from "@/lib/api/learners";
 
-const COLUMN_WIDTHS = [undefined, "150px", "70px", "80px", "80px", "96px"];
+const COLUMN_WIDTHS = [undefined, "150px", "80px", "80px", "80px", "96px"];
 
 export default function StudentHistoryPage() {
   const { learnerId } = useParams<{ learnerId: string }>();
@@ -56,8 +59,11 @@ export default function StudentHistoryPage() {
     );
   }
 
+  const [showAll, setShowAll] = useState(false);
+
   const learner = learnerQuery.data;
-  const sessions = sessionsQuery.data ?? [];
+  const allSessions = sessionsQuery.data ?? [];
+  const sessions = showAll ? allSessions : allSessions.filter(isDoneSession);
   const scored = sessions.filter((s) => s.total_score != null);
   const avgScore =
     scored.length > 0
@@ -96,6 +102,16 @@ export default function StudentHistoryPage() {
           <StatCard label="내 코멘트" value={`${myComments}건`} />
         </div>
 
+        <label className="inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showAll}
+            onChange={(e) => setShowAll(e.target.checked)}
+            className="accent-accent h-3.5 w-3.5"
+          />
+          미완료 세션 포함
+        </label>
+
         <Card className="p-0 overflow-hidden">
           {sessionsQuery.isLoading ? (
             <div className="flex items-center gap-2 px-5 py-6 text-body-md text-fg-muted">
@@ -130,9 +146,12 @@ export default function StudentHistoryPage() {
                       width: COLUMN_WIDTHS[1],
                     },
                     {
-                      content: s.session_status ?? "—",
+                      content: formatStatus(s.session_status),
                       width: COLUMN_WIDTHS[2],
-                      className: "text-success",
+                      className:
+                        s.session_status === "DONE"
+                          ? "text-success"
+                          : "text-fg-subtle",
                     },
                     {
                       content:

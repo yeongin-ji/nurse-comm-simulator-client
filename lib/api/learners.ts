@@ -33,6 +33,22 @@ export const learnerKeys = {
     [...learnerKeys.all, "sessions", id] as const,
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  DONE: "완료",
+  ACTIVE: "진행 중",
+  IN_PROGRESS: "진행 중",
+  ABANDONED: "중단",
+};
+
+export function formatStatus(status: string | undefined | null): string {
+  if (!status) return "—";
+  return STATUS_LABEL[status] ?? status;
+}
+
+export function isDoneSession(s: LearnerSession): boolean {
+  return s.session_status === "DONE";
+}
+
 export function formatSessionDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
