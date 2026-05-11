@@ -37,6 +37,8 @@ export default function StudentHistoryPage() {
     enabled: Number.isFinite(numericLearnerId),
   });
 
+  const [showAll, setShowAll] = useState(false);
+
   if (learnerQuery.isLoading) {
     return <LoadingScreen title="학생 정보를 불러오고 있어요" />;
   }
@@ -58,8 +60,6 @@ export default function StudentHistoryPage() {
       </main>
     );
   }
-
-  const [showAll, setShowAll] = useState(false);
 
   const learner = learnerQuery.data;
   const allSessions = sessionsQuery.data ?? [];
