@@ -25,6 +25,7 @@ import {
 import { scenarioKeys, scenariosApi } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
+import { useAuthStore } from "@/lib/stores/auth";
 import {
   ConversationLog,
   type ConversationMessage,
@@ -41,6 +42,7 @@ function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
 export default function HistorySessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
+  const userName = useAuthStore((s) => s.user?.name);
 
   const sessionQuery = useQuery({
     queryKey: sessionKeys.detail(numericSessionId),
@@ -145,6 +147,7 @@ export default function HistorySessionPage() {
             <ConversationLog
               pbl={toMessages(messagesQuery.data?.pbl)}
               simulation={toMessages(messagesQuery.data?.simulation)}
+              userName={userName}
             />
           </div>
 

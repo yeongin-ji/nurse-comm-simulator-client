@@ -27,6 +27,7 @@ import {
   ConversationLog,
   type ConversationMessage,
 } from "@/components/educator/conversation-log";
+import { useAuthStore } from "@/lib/stores/auth";
 
 function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
   if (!raw) return [];
@@ -39,6 +40,7 @@ function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
 export default function SimResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
+  const userName = useAuthStore((s) => s.user?.name);
 
   const toolsQuery = useQuery({
     queryKey: toolKeys.all,
@@ -154,6 +156,7 @@ export default function SimResultPage() {
         <ConversationLog
           pbl={toMessages(messagesQuery.data?.pbl)}
           simulation={toMessages(messagesQuery.data?.simulation)}
+          userName={userName}
         />
       </PageShell>
     </main>

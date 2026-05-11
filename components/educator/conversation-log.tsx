@@ -15,6 +15,8 @@ type Tab = "pbl" | "simulation";
 export type ConversationLogProps = {
   pbl: ConversationMessage[];
   simulation: ConversationMessage[];
+  /** Display name for the "user" role (defaults to "간호학생"). */
+  userName?: string;
   initialVisible?: number;
 };
 
@@ -26,6 +28,7 @@ const TAB_LABEL: Record<Tab, string> = {
 export function ConversationLog({
   pbl,
   simulation,
+  userName,
   initialVisible = 4,
 }: ConversationLogProps) {
   const [tab, setTab] = useState<Tab>("simulation");
@@ -89,7 +92,7 @@ export function ConversationLog({
       ) : (
         <div className="flex flex-col gap-2.5">
           {visible.map((m, i) => (
-            <ChatBubble key={`${tab}-${i}`} role={m.role} text={m.text} />
+            <ChatBubble key={`${tab}-${i}`} role={m.role} text={m.text} userName={userName} />
           ))}
         </div>
       )}

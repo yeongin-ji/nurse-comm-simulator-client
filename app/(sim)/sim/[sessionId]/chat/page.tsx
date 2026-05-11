@@ -29,6 +29,7 @@ import {
   scenariosApi,
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { useAuthStore } from "@/lib/stores/auth";
 
 type Message = { role: Extract<ChatRole, "user" | "patient">; text: string };
 
@@ -45,6 +46,7 @@ export default function ChatPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId: string }>();
+  const userName = useAuthStore((s) => s.user?.name);
   const numericSessionId = Number(sessionId);
 
   /* ── fetch session → scenario → document chain ── */
@@ -212,7 +214,7 @@ export default function ChatPage() {
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
-                  <ChatBubble key={i} role={m.role} text={m.text} />
+                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} />
                 ))}
                 {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (

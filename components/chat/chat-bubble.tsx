@@ -11,11 +11,14 @@ const ROLE_LABEL: Record<ChatRole, string> = {
 export type ChatBubbleProps = {
   role: ChatRole;
   text: string;
+  /** Override the display name for the "user" role (defaults to "간호학생"). */
+  userName?: string;
   className?: string;
 };
 
-export function ChatBubble({ role, text, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, className }: ChatBubbleProps) {
   const isUser = role === "user";
+  const label = isUser && userName ? userName : ROLE_LABEL[role];
   return (
     <div
       className={cn(
@@ -24,7 +27,7 @@ export function ChatBubble({ role, text, className }: ChatBubbleProps) {
         className
       )}
     >
-      <span className="text-[11px] text-fg-subtle">{ROLE_LABEL[role]}</span>
+      <span className="text-[11px] text-fg-subtle">{label}</span>
       <div
         className={cn(
           "max-w-[78%] px-3.5 py-2.5 text-[13px] leading-5",

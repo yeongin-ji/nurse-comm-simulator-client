@@ -154,6 +154,7 @@ export default function StudentSessionDetailPage() {
             <ConversationLog
               pbl={toMessages(messagesQuery.data?.pbl)}
               simulation={toMessages(messagesQuery.data?.simulation)}
+              userName={learnerName}
             />
           </div>
 
