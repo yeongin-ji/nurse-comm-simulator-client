@@ -4,11 +4,18 @@ import type { components } from "@/types/api";
 export type EvaluationToolResponse =
   components["schemas"]["handler.EvaluationToolResponse"];
 
+export type EvaluationToolItem = {
+  name: string;
+  criteria?: string;
+};
+
 export type EvaluationTool = {
   id: number;
   name: string;
   description: string;
   items: string[];
+  /** items with criteria info */
+  itemDetails: EvaluationToolItem[];
   maxScore: number;
 };
 
@@ -20,16 +27,20 @@ function projectTool(raw: EvaluationToolResponse): EvaluationTool {
     ? Math.max(...schema.scale.map((s) => s.score))
     : 5;
 
-  const items =
-    (raw.evaluation_items as { item_name: string }[] | undefined)?.map(
-      (i) => i.item_name,
-    ) ?? [];
+  const rawItems =
+    (raw.evaluation_items as { item_name: string; criteria?: string }[] | undefined) ?? [];
+  const items = rawItems.map((i) => i.item_name);
+  const itemDetails: EvaluationToolItem[] = rawItems.map((i) => ({
+    name: i.item_name,
+    criteria: i.criteria,
+  }));
 
   return {
     id: raw.id ?? 0,
     name: raw.tool_name ?? "—",
     description: raw.tool_description ?? "",
     items,
+    itemDetails,
     maxScore,
   };
 }

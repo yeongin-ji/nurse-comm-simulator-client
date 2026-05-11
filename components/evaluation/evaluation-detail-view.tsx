@@ -84,28 +84,33 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="flex flex-col gap-3.5">
-          <h3 className="text-[15px] font-semibold text-foreground">
-            항목별 점수
-          </h3>
-          <div className="h-px bg-border" />
-          <div className="flex flex-col gap-3">
-            {evaluation.items.map((item) => (
-              <Gauge key={item.label} label={item.label} value={item.value} maxValue={item.maxScore} />
-            ))}
-          </div>
-        </Card>
-        <Card className="flex flex-col gap-3.5">
-          <h3 className="text-[15px] font-semibold text-foreground">
-            디브리핑
-          </h3>
-          <div className="h-px bg-border" />
-          <div className="prose prose-sm max-w-none text-fg-muted prose-headings:text-foreground prose-strong:text-foreground">
-            <Markdown>{evaluation.debriefing}</Markdown>
-          </div>
-        </Card>
-      </div>
+      <Card className="flex flex-col gap-3.5">
+        <h3 className="text-[15px] font-semibold text-foreground">
+          항목별 점수
+        </h3>
+        <div className="h-px bg-border" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {evaluation.items.map((item) => (
+            <Gauge
+              key={item.label}
+              label={item.label}
+              subtitle={item.criteria}
+              value={item.value}
+              maxValue={item.maxScore}
+            />
+          ))}
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-3.5">
+        <h3 className="text-[15px] font-semibold text-foreground">
+          디브리핑
+        </h3>
+        <div className="h-px bg-border" />
+        <div className="prose prose-sm max-w-none text-fg-muted prose-headings:text-foreground prose-strong:text-foreground">
+          <Markdown>{evaluation.debriefing}</Markdown>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils/cn";
 
 export type GaugeProps = {
   label: string;
+  /** Optional description shown below the label in muted text. */
+  subtitle?: string;
   /** Raw score (0 = N/A when maxValue is provided) */
   value: number;
   /** Maximum possible score. When provided, renders "value / maxValue" instead of "%". */
@@ -19,6 +21,7 @@ const colorClass: Record<NonNullable<GaugeProps["color"]>, string> = {
 
 export function Gauge({
   label,
+  subtitle,
   value,
   maxValue,
   color = "accent",
@@ -32,8 +35,13 @@ export function Gauge({
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <div className="flex items-baseline justify-between">
-        <span className="text-[13px] text-foreground">{label}</span>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-[13px] text-foreground">{label}</span>
+          {subtitle && (
+            <span className="text-[11px] leading-[16px] text-fg-subtle">{subtitle}</span>
+          )}
+        </div>
         <span
           className={cn(
             "text-[13px] font-medium tabular-nums",

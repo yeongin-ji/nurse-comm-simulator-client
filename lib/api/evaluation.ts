@@ -26,6 +26,8 @@ export type EvaluationItem = {
   value: number;
   /** Maximum possible score for this tool (e.g. 5, 3) */
   maxScore: number;
+  /** Criteria description from the evaluation tool definition */
+  criteria?: string;
 };
 
 export type ProjectedEvaluation = {
@@ -57,11 +59,15 @@ export function projectEvaluation(
 
   const raw = (res.item_scores as RawScores | null) ?? {};
   const rawItems = Array.isArray(raw.items) ? raw.items : [];
-  const items: EvaluationItem[] = rawItems.map((item) => ({
-    label: item.label,
-    value: item.value,
-    maxScore,
-  }));
+  const items: EvaluationItem[] = rawItems.map((item) => {
+    const detail = tool?.itemDetails.find((d) => d.name === item.label);
+    return {
+      label: item.label,
+      value: item.value,
+      maxScore,
+      criteria: detail?.criteria,
+    };
+  });
 
   const scored = items.filter((i) => i.value > 0);
   const totalScore = scored.reduce((acc, i) => acc + i.value, 0);
