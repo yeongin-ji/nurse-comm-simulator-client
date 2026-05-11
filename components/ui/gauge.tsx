@@ -35,16 +35,16 @@ export function Gauge({
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-[13px] text-foreground">{label}</span>
           {subtitle && (
-            <span className="text-[11px] leading-[16px] text-fg-subtle">{subtitle}</span>
+            <span className="text-[11px] leading-[16px] text-fg-subtle line-clamp-2">{subtitle}</span>
           )}
         </div>
         <span
           className={cn(
-            "text-[13px] font-medium tabular-nums",
+            "text-[13px] font-medium tabular-nums shrink-0 whitespace-nowrap",
             isNA ? "text-fg-subtle" : "text-foreground",
           )}
         >
