@@ -46,6 +46,8 @@ export type MedicalRecord = {
   name?: string;
   age?: number;
   sex?: string;
+  patient_age?: number;
+  patient_gender?: string;
   difficulty?: string;
 };
 

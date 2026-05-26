@@ -88,13 +88,16 @@ export default function ChatPage() {
   const initial = scenario ? projectInitialState(scenario.initial_state) : null;
   const disease = documentQuery.data?.disease_name ?? "시나리오";
   const patientName = record.name ?? "환자";
-  const patientMeta = [record.sex, record.age && `${record.age}세`]
+  const patientMeta = [
+    record.patient_gender ?? record.sex,
+    (record.patient_age ?? record.age) && `${record.patient_age ?? record.age}세`,
+  ]
     .filter(Boolean)
     .join("/");
 
   // Keep refs in sync for TTS calls (avoids stale closures in mutation)
-  patientAgeRef.current = record.age;
-  patientGenderRef.current = record.sex;
+  patientAgeRef.current = record.patient_age ?? record.age;
+  patientGenderRef.current = record.patient_gender ?? record.sex;
 
   /* ── chat + patient state ── */
   const [messages, setMessages] = useState<Message[]>([]);
