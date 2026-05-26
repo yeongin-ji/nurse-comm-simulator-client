@@ -1,4 +1,4 @@
-import { Volume2 } from "lucide-react";
+import { Loader, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { replayAudio } from "@/lib/api/tts";
 
@@ -10,6 +10,11 @@ const ROLE_LABEL: Record<ChatRole, string> = {
   "ai-peer": "AI 동료",
 };
 
+/** Strip SSML / XML-like tags (e.g. <break>, <prosody>) from text for display. */
+function stripSsml(raw: string): string {
+  return raw.replace(/<[^>]+>/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 export type ChatBubbleProps = {
   role: ChatRole;
   text: string;
@@ -19,14 +24,17 @@ export type ChatBubbleProps = {
   patientName?: string;
   /** Object URL of audio for replay (patient messages only). */
   audioUrl?: string;
+  /** Whether TTS audio is currently being generated. */
+  ttsLoading?: boolean;
   className?: string;
 };
 
-export function ChatBubble({ role, text, userName, patientName, audioUrl, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, className }: ChatBubbleProps) {
   const isUser = role === "user";
   let label = ROLE_LABEL[role];
   if (isUser && userName) label = userName;
   if (role === "patient" && patientName) label = `${patientName} 환자`;
+  const displayText = isUser ? text : stripSsml(text);
   return (
     <div
       className={cn(
@@ -44,9 +52,15 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, classN
             : "bg-surface-muted text-foreground rounded-[14px_14px_14px_4px]"
         )}
       >
-        {text}
+        {displayText}
       </div>
-      {audioUrl && (
+      {ttsLoading && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle">
+          <Loader className="h-3 w-3 animate-spin" />
+          음성 생성 중
+        </span>
+      )}
+      {!ttsLoading && audioUrl && (
         <button
           type="button"
           onClick={() => replayAudio(audioUrl)}

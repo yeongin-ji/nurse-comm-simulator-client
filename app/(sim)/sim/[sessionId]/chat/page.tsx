@@ -30,10 +30,17 @@ import {
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { fetchTts, playAudioBlob } from "@/lib/api/tts";
+import { Volume2, VolumeOff } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
 
-type Message = { role: Extract<ChatRole, "user" | "patient">; text: string; audioUrl?: string };
+type Message = {
+  role: Extract<ChatRole, "user" | "patient">;
+  text: string;
+  audioUrl?: string;
+  ttsLoading?: boolean;
+};
 
 const TOTAL_SECONDS = 600;
 
@@ -50,6 +57,7 @@ export default function ChatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const userName = useAuthStore((s) => s.user?.name);
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled);
+  const setTtsEnabled = useSettingsStore((s) => s.setTtsEnabled);
   const numericSessionId = Number(sessionId);
   const patientAgeRef = useRef<number | undefined>(undefined);
   const patientGenderRef = useRef<string | undefined>(undefined);
@@ -131,7 +139,11 @@ export default function ChatPage() {
       simulationApi.sendTurn(numericSessionId, { message: text }),
     onSuccess: (res) => {
       const reply = res.reply ?? "(응답을 받지 못했어요)";
-      setMessages((prev) => [...prev, { role: "patient", text: reply }]);
+      const wantTts = ttsEnabled && !!reply;
+      setMessages((prev) => [
+        ...prev,
+        { role: "patient", text: reply, ttsLoading: wantTts },
+      ]);
       const projected = projectPatientState(res.current_state);
       if (projected) {
         if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
@@ -140,7 +152,7 @@ export default function ChatPage() {
           setPsychological(projected.psychological);
       }
       // TTS: play patient voice if enabled
-      if (ttsEnabled && reply) {
+      if (wantTts) {
         fetchTts({
           text: reply,
           speech_direction: res.speech_direction ?? undefined,
@@ -149,18 +161,23 @@ export default function ChatPage() {
         })
           .then((blob) => {
             const audioUrl = playAudioBlob(blob);
-            // Attach audioUrl to the last patient message for replay
-            setMessages((prev) => {
-              const updated = [...prev];
-              const lastIdx = updated.length - 1;
-              if (lastIdx >= 0 && updated[lastIdx].role === "patient") {
-                updated[lastIdx] = { ...updated[lastIdx], audioUrl };
-              }
-              return updated;
-            });
+            setMessages((prev) =>
+              prev.map((m, i) =>
+                i === prev.length - 1 && m.role === "patient"
+                  ? { ...m, audioUrl, ttsLoading: false }
+                  : m
+              )
+            );
           })
           .catch(() => {
-            // TTS failure is non-critical — silently ignore
+            // TTS failure — clear loading state silently
+            setMessages((prev) =>
+              prev.map((m, i) =>
+                i === prev.length - 1 && m.role === "patient"
+                  ? { ...m, ttsLoading: false }
+                  : m
+              )
+            );
           });
       }
     },
@@ -239,6 +256,24 @@ export default function ChatPage() {
                 </Badge>
                 <ScenarioTooltip description={scenario?.scenario_text ?? ""} />
                 <span className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setTtsEnabled(!ttsEnabled)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] transition-colors",
+                    ttsEnabled
+                      ? "bg-accent/10 text-accent"
+                      : "bg-surface-muted text-fg-subtle"
+                  )}
+                  aria-label={ttsEnabled ? "음성 끄기" : "음성 켜기"}
+                >
+                  {ttsEnabled ? (
+                    <Volume2 className="h-3 w-3" />
+                  ) : (
+                    <VolumeOff className="h-3 w-3" />
+                  )}
+                  {ttsEnabled ? "음성 ON" : "음성 OFF"}
+                </button>
                 <Timer
                   startedAt={startedAt}
                   totalSeconds={TOTAL_SECONDS}
@@ -247,7 +282,7 @@ export default function ChatPage() {
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
-                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} audioUrl={m.audioUrl} />
+                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} audioUrl={m.audioUrl} ttsLoading={m.ttsLoading} />
                 ))}
                 {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (
