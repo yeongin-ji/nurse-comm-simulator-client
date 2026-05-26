@@ -58,7 +58,44 @@ function decay(prev: MockPatientState): MockPatientState {
   };
 }
 
+// Minimal WAV header (44 bytes) + 0.5s of silence at 16kHz mono 16-bit
+function emptyWav(): ArrayBuffer {
+  const sampleRate = 16000;
+  const duration = 0.5;
+  const numSamples = sampleRate * duration;
+  const dataSize = numSamples * 2; // 16-bit = 2 bytes
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  // RIFF header
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+  // data bytes are zero-initialized (silence)
+  return buffer;
+}
+
 export const simulateHandlers = [
+  // TTS mock: return a short silent WAV
+  http.post("/api/v1/tts", async () => {
+    await new Promise((r) => setTimeout(r, 200));
+    return new HttpResponse(emptyWav(), {
+      headers: { "Content-Type": "audio/wav" },
+    });
+  }),
+
   http.post("/api/v1/sessions/:id/simulate", async ({ params, request }) => {
     const id = Number(params.id);
     await request.json();
@@ -69,7 +106,11 @@ export const simulateHandlers = [
     states.set(id, next);
 
     const reply = REPLIES[Math.floor(Math.random() * REPLIES.length)];
-    const payload: SimulateResponse = { reply, current_state: next };
+    const payload: SimulateResponse = {
+      reply,
+      speech_direction: "차분하고 부드러운 톤으로, 살짝 안도하는 듯한 감정을 담아 말한다.",
+      current_state: next,
+    };
     return HttpResponse.json(payload);
   }),
 ];

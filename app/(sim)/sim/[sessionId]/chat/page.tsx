@@ -29,9 +29,11 @@ import {
   scenariosApi,
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { fetchTts, playAudioBlob } from "@/lib/api/tts";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useSettingsStore } from "@/lib/stores/settings";
 
-type Message = { role: Extract<ChatRole, "user" | "patient">; text: string };
+type Message = { role: Extract<ChatRole, "user" | "patient">; text: string; audioUrl?: string };
 
 const TOTAL_SECONDS = 600;
 
@@ -47,7 +49,10 @@ export default function ChatPage() {
   const queryClient = useQueryClient();
   const { sessionId } = useParams<{ sessionId: string }>();
   const userName = useAuthStore((s) => s.user?.name);
+  const ttsEnabled = useSettingsStore((s) => s.ttsEnabled);
   const numericSessionId = Number(sessionId);
+  const patientAgeRef = useRef<number | undefined>(undefined);
+  const patientGenderRef = useRef<string | undefined>(undefined);
 
   /* ── fetch session → scenario → document chain ── */
   const sessionQuery = useQuery({
@@ -78,6 +83,10 @@ export default function ChatPage() {
   const patientMeta = [record.sex, record.age && `${record.age}세`]
     .filter(Boolean)
     .join("/");
+
+  // Keep refs in sync for TTS calls (avoids stale closures in mutation)
+  patientAgeRef.current = record.age;
+  patientGenderRef.current = record.sex;
 
   /* ── chat + patient state ── */
   const [messages, setMessages] = useState<Message[]>([]);
@@ -129,6 +138,30 @@ export default function ChatPage() {
         if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
         if (projected.psychological.length > 0)
           setPsychological(projected.psychological);
+      }
+      // TTS: play patient voice if enabled
+      if (ttsEnabled && reply) {
+        fetchTts({
+          text: reply,
+          speech_direction: res.speech_direction ?? undefined,
+          patient_age: patientAgeRef.current,
+          patient_gender: patientGenderRef.current,
+        })
+          .then((blob) => {
+            const audioUrl = playAudioBlob(blob);
+            // Attach audioUrl to the last patient message for replay
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastIdx = updated.length - 1;
+              if (lastIdx >= 0 && updated[lastIdx].role === "patient") {
+                updated[lastIdx] = { ...updated[lastIdx], audioUrl };
+              }
+              return updated;
+            });
+          })
+          .catch(() => {
+            // TTS failure is non-critical — silently ignore
+          });
       }
     },
   });
@@ -214,7 +247,7 @@ export default function ChatPage() {
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
-                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} />
+                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} audioUrl={m.audioUrl} />
                 ))}
                 {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (

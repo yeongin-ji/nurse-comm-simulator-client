@@ -1435,6 +1435,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 텍스트 음성 변환 (TTS)
+         * @description 텍스트를 음성으로 변환합니다. speech_direction이 제공되면 감정·톤·호흡 등을 반영한 연기 음성을 생성합니다.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description TTS 요청 */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["handler.ttsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "audio/wav": string;
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "audio/wav": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "audio/wav": components["schemas"]["handler.ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1579,6 +1641,7 @@ export interface components {
         "handler.SimulateTurnResponse": {
             current_state?: unknown;
             reply?: string;
+            speech_direction?: string;
         };
         "handler.addCommentRequest": {
             content: string;
@@ -1614,6 +1677,13 @@ export interface components {
         };
         "handler.simTurnRequest": {
             message: string;
+        };
+        "handler.ttsRequest": {
+            patient_age?: number;
+            patient_gender?: string;
+            speech_direction?: string;
+            text: string;
+            voice?: string;
         };
     };
     responses: never;

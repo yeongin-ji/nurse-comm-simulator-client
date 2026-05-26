@@ -1,4 +1,6 @@
+import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { replayAudio } from "@/lib/api/tts";
 
 export type ChatRole = "user" | "patient" | "ai-peer";
 
@@ -15,10 +17,12 @@ export type ChatBubbleProps = {
   userName?: string;
   /** Override the display name for the "patient" role (defaults to "가상 환자"). */
   patientName?: string;
+  /** Object URL of audio for replay (patient messages only). */
+  audioUrl?: string;
   className?: string;
 };
 
-export function ChatBubble({ role, text, userName, patientName, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, patientName, audioUrl, className }: ChatBubbleProps) {
   const isUser = role === "user";
   let label = ROLE_LABEL[role];
   if (isUser && userName) label = userName;
@@ -42,6 +46,17 @@ export function ChatBubble({ role, text, userName, patientName, className }: Cha
       >
         {text}
       </div>
+      {audioUrl && (
+        <button
+          type="button"
+          onClick={() => replayAudio(audioUrl)}
+          className="inline-flex items-center gap-1 text-[11px] text-fg-subtle hover:text-accent transition-colors"
+          aria-label="음성 다시 듣기"
+        >
+          <Volume2 className="h-3 w-3" />
+          다시 듣기
+        </button>
+      )}
     </div>
   );
 }
