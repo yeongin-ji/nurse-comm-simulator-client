@@ -21,11 +21,16 @@ const DEBRIEFING_BY_TOOL: Record<number, string> = {
 
 function buildItemScores(toolId: number, items: string[], maxScore: number) {
   // Deterministic per-tool/per-item score within the tool's scale.
-  // 0 = N/A (해당 없음), 1..maxScore = actual score.
-  return items.map((label, idx) => ({
-    label,
-    value: 1 + ((toolId * 3 + idx * 2) % maxScore), // 1..maxScore
-  }));
+  // Scale now starts at 0: value is 0..maxScore (0 = 미수행, a real score).
+  // N/A (해당 없음) is `null`, not 0 — exercised on a subset of items.
+  return items.map((label, idx) => {
+    const seed = toolId * 3 + idx * 2;
+    const isNA = idx !== 0 && seed % 5 === 0;
+    return {
+      label,
+      value: isNA ? null : seed % (maxScore + 1), // null = N/A, else 0..maxScore
+    };
+  });
 }
 
 function buildEvaluationsFor(sessionId: number): EvaluationResponse[] {

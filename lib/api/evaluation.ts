@@ -22,9 +22,12 @@ export const evaluationKeys = {
 
 export type EvaluationItem = {
   label: string;
-  /** Raw score (0 = N/A) */
-  value: number;
-  /** Maximum possible score for this tool (e.g. 5, 3) */
+  /**
+   * Raw score for the item. `null` means N/A (the item does not apply to this
+   * scenario). `0` is a real score ("미수행" / not done) — distinct from N/A.
+   */
+  value: number | null;
+  /** Maximum possible score for this tool (e.g. KCC=2, GITCS=4) */
   maxScore: number;
   /** Criteria description from the evaluation tool definition */
   criteria?: string;
@@ -32,9 +35,9 @@ export type EvaluationItem = {
 
 export type ProjectedEvaluation = {
   toolId: number;
-  /** Sum of scored items (excluding 0/N/A) */
+  /** Sum of scored items (excluding N/A) */
   totalScore: number;
-  /** Sum of maxScore for scored items (excluding 0/N/A) */
+  /** Sum of maxScore for scored items (excluding N/A) */
   totalMaxScore: number;
   durationSeconds: number;
   turns: number;
@@ -43,7 +46,8 @@ export type ProjectedEvaluation = {
 };
 
 type RawScores = {
-  items?: { label: string; value: number }[];
+  /** value is `null` for N/A items, an integer otherwise (0 = not done). */
+  items?: { label: string; value: number | null }[];
   total?: number;
   duration_seconds?: number;
   turns?: number;
@@ -69,8 +73,9 @@ export function projectEvaluation(
     };
   });
 
-  const scored = items.filter((i) => i.value > 0);
-  const totalScore = scored.reduce((acc, i) => acc + i.value, 0);
+  // Exclude N/A (null) items from the aggregate; 0 is a real score and stays in.
+  const scored = items.filter((i) => i.value !== null);
+  const totalScore = scored.reduce((acc, i) => acc + (i.value ?? 0), 0);
   const totalMaxScore = scored.length * maxScore;
 
   return {

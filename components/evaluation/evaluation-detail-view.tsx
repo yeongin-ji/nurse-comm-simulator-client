@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Gauge } from "@/components/ui/gauge";
-import { type ProjectedEvaluation } from "@/lib/api/evaluation";
+import { type EvaluationItem, type ProjectedEvaluation } from "@/lib/api/evaluation";
 import { getToolById } from "@/lib/tools";
 
 export type EvaluationDetailViewProps = {
@@ -15,7 +15,9 @@ export type EvaluationDetailViewProps = {
  */
 export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) {
   const tool = getToolById(evaluation.toolId);
-  const top3 = [...evaluation.items]
+  // N/A (null) items are excluded — only scored items can be a "top" item.
+  const top3 = evaluation.items
+    .filter((i): i is EvaluationItem & { value: number } => i.value !== null)
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
 

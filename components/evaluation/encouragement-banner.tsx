@@ -14,7 +14,8 @@ function findTopItem(evaluations: ProjectedEvaluation[]): TopItem | null {
   let topRatio = 0;
   for (const evaluation of evaluations) {
     for (const item of evaluation.items) {
-      if (item.value === 0 || item.maxScore === 0) continue;
+      // Skip N/A items; 0 is a real score and stays eligible.
+      if (item.value === null || item.maxScore === 0) continue;
       const ratio = item.value / item.maxScore;
       if (!top || ratio > topRatio) {
         top = {

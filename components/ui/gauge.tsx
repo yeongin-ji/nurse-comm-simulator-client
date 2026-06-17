@@ -4,8 +4,12 @@ export type GaugeProps = {
   label: string;
   /** Optional description shown below the label in muted text. */
   subtitle?: string;
-  /** Raw score (0 = N/A when maxValue is provided) */
-  value: number;
+  /**
+   * Raw score, or a percent (0–100) when `maxValue` is omitted.
+   * `null` means N/A (해당 없음) and renders as "N/A" with an empty bar.
+   * `0` is a real score and renders as a normal "0 / max".
+   */
+  value: number | null;
   /** Maximum possible score. When provided, renders "value / maxValue" instead of "%". */
   maxValue?: number;
   color?: "accent" | "success" | "warning" | "danger";
@@ -27,9 +31,10 @@ export function Gauge({
   color = "accent",
   className,
 }: GaugeProps) {
-  const isNA = maxValue != null && value === 0;
-  const percent =
-    maxValue != null && maxValue > 0
+  const isNA = value === null;
+  const percent = isNA
+    ? 0
+    : maxValue != null && maxValue > 0
       ? Math.max(0, Math.min(100, (value / maxValue) * 100))
       : Math.max(0, Math.min(100, value));
 

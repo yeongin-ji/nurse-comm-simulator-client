@@ -3,6 +3,7 @@
 import { Send } from "lucide-react";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -10,6 +11,9 @@ import {
 } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
+
+// 한 줄 높이(24px line-height) 기준, 약 6줄까지 늘어난 뒤 스크롤됩니다.
+const MAX_TEXTAREA_HEIGHT = 144;
 
 export type ChatInputProps = {
   placeholder?: string;
@@ -27,7 +31,7 @@ export function ChatInput({
   className,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const trimmed = value.trim();
   const canSubmit = !disabled && trimmed.length > 0;
 
@@ -35,6 +39,14 @@ export function ChatInput({
   useEffect(() => {
     if (!disabled) inputRef.current?.focus();
   }, [disabled]);
+
+  // 입력 내용에 맞춰 높이를 자동으로 조절합니다 (최대 높이까지).
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+  }, [value]);
 
   const submit = (e?: FormEvent) => {
     e?.preventDefault();
@@ -44,33 +56,33 @@ export function ChatInput({
     inputRef.current?.focus();
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) submit();
   };
 
   return (
     <form
       onSubmit={submit}
-      className={cn("flex items-center gap-2", className)}
+      className={cn("flex items-end gap-2", className)}
     >
       <div
         className={cn(
-          "flex-1 h-10 px-3.5 flex items-center rounded border bg-background transition-colors",
+          "flex-1 min-h-10 px-3.5 py-2 flex items-center rounded border bg-background transition-colors",
           disabled
             ? "border-border bg-surface-muted opacity-60"
             : "border-border focus-within:border-focus-ring focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
         )}
       >
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
+          rows={1}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={disabled && disabledHint ? disabledHint : placeholder}
           disabled={disabled}
           aria-label="메시지 입력"
-          className="flex-1 w-full bg-transparent border-none outline-none text-body-md text-foreground placeholder:text-fg-subtle disabled:cursor-not-allowed"
+          className="flex-1 w-full resize-none bg-transparent border-none outline-none text-body-md leading-6 text-foreground placeholder:text-fg-subtle disabled:cursor-not-allowed"
         />
       </div>
       <Button
