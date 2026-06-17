@@ -24,8 +24,6 @@ import { useAuthStore } from "@/lib/stores/auth";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
 
-const MAX_TURNS = 5;
-
 export default function PblPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -79,24 +77,20 @@ export default function PblPage() {
   }, [numericSessionId]);
 
   const userTurns = messages.filter((m) => m.role === "user").length;
-  const exhausted = userTurns >= MAX_TURNS;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length, exhausted]);
+  }, [messages.length]);
 
   const turnMutation = useMutation({
     mutationFn: (text: string) =>
       pblApi.sendTurn(numericSessionId, { message: text }),
     onSuccess: (res) => {
       const reply = res.reply ?? "(응답을 받지 못했어요)";
-      // By the time the AI reply lands, the user message is already in `messages`,
-      // so userTurns reflects the just-completed turn — no +1 needed.
       setMessages((prev) => [...prev, { role: "ai-peer", text: reply }]);
-      if (userTurns >= MAX_TURNS) setCompleteOpen(true);
     },
   });
 
@@ -166,17 +160,9 @@ export default function PblPage() {
                 </span>
                 <Badge>의사소통 방향 논의</Badge>
                 <div className="ml-auto flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 bg-surface-muted rounded-full overflow-hidden">
-                      <div
-                        style={{ width: `${Math.min(1, userTurns / MAX_TURNS) * 100}%` }}
-                        className="h-full bg-foreground rounded-full transition-[width] duration-300"
-                      />
-                    </div>
-                    <span className="text-label-sm font-medium text-fg-muted tracking-normal">
-                      {userTurns}/{MAX_TURNS}턴
-                    </span>
-                  </div>
+                  <span className="text-label-sm font-medium text-fg-muted tracking-normal">
+                    {userTurns}턴
+                  </span>
                   <Button
                     variant="primary"
                     size="sm"
@@ -203,12 +189,8 @@ export default function PblPage() {
 
           <ChatInput
             onSubmit={onSend}
-            disabled={waiting || exhausted}
-            disabledHint={
-              exhausted
-                ? "5턴을 모두 사용했어요. 요약을 확인해 주세요."
-                : "AI 동료가 응답하고 있어요..."
-            }
+            disabled={waiting}
+            disabledHint="AI 동료가 응답하고 있어요..."
             placeholder="AI 동료에게 의사소통 계획을 이야기하세요..."
           />
         </section>
@@ -220,7 +202,7 @@ export default function PblPage() {
           if (summarizing) return;
           setCompleteOpen(next);
         }}
-        title={exhausted ? "5턴을 모두 사용했어요" : "PBL을 마칠까요?"}
+        title="PBL을 마칠까요?"
         description="지금까지의 대화를 분석해 의사소통 방향 요약을 만들어요"
         footer={
           <>
@@ -229,7 +211,7 @@ export default function PblPage() {
               onClick={() => setCompleteOpen(false)}
               disabled={summarizing}
             >
-              {exhausted ? "잠시 더 보기" : "취소"}
+              취소
             </Button>
             <Button
               variant="primary"

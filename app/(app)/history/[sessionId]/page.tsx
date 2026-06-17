@@ -159,7 +159,7 @@ export default function HistorySessionPage() {
             <Card className="flex flex-col gap-2">
               <Meta label="소요 시간" value={formatDuration(sessionQuery.data?.simulation_duration_seconds ?? meta.durationSeconds)} />
               <Meta label="대화 턴" value={`${meta.turns}회`} />
-              <Meta label="제한 시간" value="10분" />
+              <Meta label="제한 시간" value="15분" />
             </Card>
 
             <CommentCard sessionId={numericSessionId} readOnly />

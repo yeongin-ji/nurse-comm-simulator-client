@@ -152,7 +152,7 @@ export default function SimResultPage() {
           <StatCard
             label="소요 시간"
             value={formatDuration(durationSeconds)}
-            sub="제한 10분"
+            sub="제한 15분"
           />
           <StatCard label="대화 턴" value={`${meta.turns}회`} />
         </div>

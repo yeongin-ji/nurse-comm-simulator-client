@@ -236,7 +236,7 @@ export default function ScenarioDetailPage() {
                   aria-hidden
                 />
                 <span className="text-label-sm font-normal text-fg-muted tracking-normal">
-                  PBL: 최대 5턴 · 대화: 10분 제한
+                  PBL: 턴 제한 없음 · 대화: 15분 제한
                 </span>
               </div>
               <StartSessionButton scenarioId={numericScenarioId} />

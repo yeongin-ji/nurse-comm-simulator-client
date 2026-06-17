@@ -42,7 +42,7 @@ type Message = {
   ttsLoading?: boolean;
 };
 
-const TOTAL_SECONDS = 600;
+const TOTAL_SECONDS = 900;
 
 function formatTotal() {
   const m = Math.floor(TOTAL_SECONDS / 60)
