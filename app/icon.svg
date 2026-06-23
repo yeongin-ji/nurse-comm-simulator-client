@@ -1,0 +1,17 @@
+<svg width="48" height="48" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NurCoSim mark">
+  <defs>
+    <linearGradient id="ncsGrad" x1="40" y1="30" x2="160" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDBA74"></stop><stop offset="0.5" stop-color="#F97316"></stop><stop offset="1" stop-color="#EA580C"></stop>
+    </linearGradient>
+    <radialGradient id="ncsSheen" cx="0.34" cy="0.28" r="0.62">
+      <stop stop-color="#fff" stop-opacity="0.45"></stop><stop offset="0.55" stop-color="#fff" stop-opacity="0.05"></stop><stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+    </radialGradient>
+    <clipPath id="ncsClip">
+      <path d="M100 22C140 20 178 48 180 92C182 128 162 160 124 170C112 173 108 176 96 184C86 190 80 184 82 172C83 165 78 164 68 160C36 147 18 118 22 84C26 46 62 24 100 22Z"></path>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#ncsClip)">
+    <rect width="200" height="200" fill="url(#ncsGrad)"></rect>
+    <rect width="200" height="200" fill="url(#ncsSheen)"></rect>
+  </g>
+</svg>

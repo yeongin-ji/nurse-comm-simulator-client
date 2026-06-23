@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NurseComm",
+  title: "NurCoSim",
   description: "간호학생 의사소통 시뮬레이션 프로그램",
 };
 
