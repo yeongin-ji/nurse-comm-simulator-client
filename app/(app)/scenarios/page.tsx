@@ -120,7 +120,7 @@ export default function ScenariosPage() {
                   </div>
                   <button
                     type="button"
-                    className="p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-danger hover:bg-danger/10 transition-all"
                     onClick={(e) =>
                       handleDeleteClick(
                         e,

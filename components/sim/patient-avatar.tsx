@@ -1,24 +1,27 @@
 import { cn } from "@/lib/utils/cn";
 
-const PASTEL_COLORS = [
-  "#DBEAFE",
-  "#FCE7F3",
-  "#D1FAE5",
-  "#FEF3C7",
-  "#E0E7FF",
+/** Deterministic soft brand tints, cycled by name hash. */
+const TINTS = [
+  { bg: "var(--navy-50)", ink: "var(--navy-800)" },
+  { bg: "var(--orange-50)", ink: "var(--orange-700)" },
+  { bg: "var(--slate-100)", ink: "var(--slate-600)" },
+  { bg: "#EAF2FB", ink: "var(--navy-700)" },
+  { bg: "#FFF1E8", ink: "var(--orange-600)" },
 ] as const;
 
-function bgFromName(name: string) {
+function tintFromName(name: string) {
   const hash = name
     .split("")
     .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return PASTEL_COLORS[hash % PASTEL_COLORS.length];
+  return TINTS[hash % TINTS.length];
 }
 
 export type PatientAvatarProps = {
   name: string;
   size?: number;
   rounded?: boolean;
+  /** Real (mock) photo URL — fills the frame via object-fit:cover. */
+  src?: string;
   className?: string;
 };
 
@@ -26,56 +29,63 @@ export function PatientAvatar({
   name,
   size = 48,
   rounded,
+  src,
   className,
 }: PatientAvatarProps) {
-  const bg = bgFromName(name);
-  const initial = name.charAt(0) || "?";
+  const t = tintFromName(name);
+  const initial = (name.trim()[0] || "?").toUpperCase();
+  const height = rounded ? size : Math.round(size * 1.12);
   const radius = rounded ? 9999 : size > 60 ? 12 : 8;
 
   return (
     <div
-      style={{
-        width: size,
-        height: rounded ? size : size * 1.15,
-        borderRadius: radius,
-        background: bg,
-      }}
+      style={{ width: size, height, borderRadius: radius, background: t.bg }}
       className={cn(
-        "relative shrink-0 overflow-hidden flex flex-col items-center justify-center gap-0.5",
+        "relative shrink-0 overflow-hidden flex items-center justify-center",
         className
       )}
       role="img"
       aria-label={`${name} 아바타`}
     >
-      <svg
-        width={size * 0.5}
-        height={size * 0.5}
-        viewBox="0 0 40 40"
-        fill="none"
-        aria-hidden
-      >
-        <circle cx="20" cy="15" r="10" fill="rgba(0,0,0,0.08)" />
-        <circle cx="16" cy="13" r="1.5" fill="rgba(0,0,0,0.3)" />
-        <circle cx="24" cy="13" r="1.5" fill="rgba(0,0,0,0.3)" />
-        <path
-          d="M16 18c2 2 6 2 8 0"
-          stroke="rgba(0,0,0,0.2)"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          fill="none"
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={name}
+          className="h-full w-full object-cover block"
         />
-        <path
-          d="M8 38c0-6.627 5.373-12 12-12s12 5.373 12 38"
-          fill="rgba(0,0,0,0.06)"
-        />
-      </svg>
-      {!rounded && (
-        <span
-          style={{ fontSize: Math.max(9, size * 0.18) }}
-          className="absolute bottom-1 font-semibold text-black/35"
-        >
-          {initial}
-        </span>
+      ) : (
+        <>
+          <svg
+            width={size * 0.46}
+            height={size * 0.46}
+            viewBox="0 0 40 40"
+            fill="none"
+            style={{ opacity: 0.55 }}
+            aria-hidden
+          >
+            <circle cx="20" cy="15" r="9" stroke={t.ink} strokeWidth="1.5" fill="none" />
+            <path
+              d="M7 37c0-7.18 5.82-13 13-13s13 5.82 13 13"
+              stroke={t.ink}
+              strokeWidth="1.5"
+              fill="none"
+            />
+          </svg>
+          {!rounded && (
+            <span
+              style={{
+                color: t.ink,
+                fontSize: Math.max(10, size * 0.2),
+                bottom: Math.max(3, size * 0.06),
+                opacity: 0.7,
+              }}
+              className="absolute font-bold"
+            >
+              {initial}
+            </span>
+          )}
+        </>
       )}
     </div>
   );

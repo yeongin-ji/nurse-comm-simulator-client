@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/layout/logo";
 import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -39,11 +40,8 @@ export function Nav({ role, userName }: NavProps) {
   return (
     <header className="h-[52px] bg-surface border-b border-border flex items-center justify-between px-6 relative">
       <div className="flex items-center gap-5">
-        <Link
-          href={role === "learner" ? "/scenarios" : "/students"}
-          className="text-[15px] font-semibold tracking-[-0.02em] text-foreground"
-        >
-          NurseComm
+        <Link href={role === "learner" ? "/scenarios" : "/students"}>
+          <Logo />
         </Link>
         <span className="block w-px h-5 bg-border" aria-hidden />
         {links.map((link) => {
@@ -77,7 +75,9 @@ export function Nav({ role, userName }: NavProps) {
           <span className="text-[13px] font-medium text-foreground">
             {displayName}
           </span>
-          <Badge>{role === "learner" ? "학습자" : "교육자"}</Badge>
+          <Badge variant={role === "learner" ? "navy" : "accent"}>
+            {role === "learner" ? "학습자" : "교육자"}
+          </Badge>
         </Link>
         <button
           type="button"

@@ -26,10 +26,12 @@ export type ChatBubbleProps = {
   audioUrl?: string;
   /** Whether TTS audio is currently being generated. */
   ttsLoading?: boolean;
+  /** Render partial text with a live blinking caret while tokens stream in. */
+  streaming?: boolean;
   className?: string;
 };
 
-export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, streaming, className }: ChatBubbleProps) {
   const isUser = role === "user";
   let label = ROLE_LABEL[role];
   if (isUser && userName) label = userName;
@@ -53,6 +55,15 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoa
         )}
       >
         {displayText}
+        {streaming && (
+          <span
+            aria-hidden
+            className="inline-block w-0.5 h-[1em] ml-0.5 align-[-0.15em] animate-[ncs-caret_1s_steps(1)_infinite]"
+            style={{
+              background: isUser ? "var(--on-primary)" : "var(--accent)",
+            }}
+          />
+        )}
       </div>
       {ttsLoading && (
         <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle">

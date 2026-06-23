@@ -23,6 +23,8 @@ import {
   scenarioKeys,
   scenariosApi,
 } from "@/lib/api/scenarios";
+import { useSettingsStore } from "@/lib/stores/settings";
+import { patientPhotoByGender } from "@/lib/utils/patient-photo";
 
 const STATUS_LABEL: Record<string, string> = {
   PBL: "PBL 진행 중",
@@ -35,6 +37,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();
   const numericScenarioId = Number(id);
+  const profileImageEnabled = useSettingsStore((s) => s.profileImageEnabled);
 
   const scenarioQuery = useQuery({
     queryKey: scenarioKeys.detail(numericScenarioId),
@@ -101,7 +104,14 @@ export default function ScenarioDetailPage() {
           <div className="flex flex-col gap-4">
             <Card className="flex flex-col gap-5">
               <div className="flex gap-5 items-start">
-                <PatientAvatar size={100} name={patientName} />
+                <PatientAvatar
+                  size={100}
+                  name={patientName}
+                  src={patientPhotoByGender(
+                    record.patient_gender ?? record.sex,
+                    profileImageEnabled,
+                  )}
+                />
                 <div className="flex-1 flex flex-col gap-2.5">
                   <div className="flex items-center gap-2">
                     <h1 className="text-title-lg font-semibold text-foreground">

@@ -278,7 +278,7 @@ export function ScenarioCreateModal({
                       i < filteredDocuments.length - 1 &&
                         "border-b border-border",
                       selected
-                        ? "bg-[rgba(37,99,235,0.05)]"
+                        ? "bg-accent-surface"
                         : "bg-background hover:bg-surface",
                     )}
                   >

@@ -38,7 +38,7 @@ export function Modal({
           className={cn(
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "max-w-[calc(100vw-32px)] max-h-[calc(100vh-64px)] overflow-auto",
-            "rounded-lg border border-border bg-surface-elevated shadow-lg",
+            "rounded-xl border border-border bg-surface-elevated shadow-lg",
             "p-6 flex flex-col gap-5",
             "focus:outline-none",
             className

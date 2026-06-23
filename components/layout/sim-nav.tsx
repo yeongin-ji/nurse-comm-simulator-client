@@ -2,6 +2,7 @@
 
 import { User } from "lucide-react";
 import { Fragment } from "react";
+import { Logo } from "@/components/layout/logo";
 import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -17,9 +18,7 @@ export function SimNav({ current, userName }: SimNavProps) {
   const displayName = userName ?? authName ?? "사용자";
   return (
     <header className="h-[52px] bg-surface border-b border-border flex items-center justify-between px-6">
-      <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">
-        NurseComm
-      </span>
+      <Logo />
 
       <div className="flex items-center gap-1.5">
         {STEPS.map((step, i) => {
@@ -31,7 +30,7 @@ export function SimNav({ current, userName }: SimNavProps) {
                 <span
                   className={cn(
                     "block w-5 h-px",
-                    i <= current ? "bg-foreground" : "bg-border"
+                    i <= current ? "bg-primary" : "bg-border"
                   )}
                   aria-hidden
                 />
@@ -42,7 +41,7 @@ export function SimNav({ current, userName }: SimNavProps) {
                   className={cn(
                     "block h-2 w-2 shrink-0 rounded-full border-[1.5px]",
                     isDone && "bg-success border-success",
-                    isCurrent && "bg-foreground border-foreground",
+                    isCurrent && "bg-primary border-primary",
                     !isDone &&
                       !isCurrent &&
                       "bg-surface-muted border-border-strong"

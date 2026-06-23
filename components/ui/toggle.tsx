@@ -23,7 +23,7 @@ export function Toggle({ on, onChange, disabled, label, className }: ToggleProps
         "group relative inline-flex h-[22px] w-10 shrink-0 items-center rounded-full px-[3px]",
         "transition-colors duration-150 cursor-pointer",
         "disabled:cursor-default disabled:opacity-40",
-        on ? "bg-foreground" : "bg-border-strong",
+        on ? "bg-primary" : "bg-border-strong",
         !disabled && "hover:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]",
         className
       )}

@@ -325,6 +325,9 @@ export default function ComponentsCatalog() {
             <PatientAvatar name="박준호" size={64} />
             <PatientAvatar name="OOO" size={80} />
             <PatientAvatar name="OOO" size={28} rounded />
+            <PatientAvatar name="이영수" size={64} src="/patients/vp-man.png" />
+            <PatientAvatar name="김미래" size={64} src="/patients/vp-woman.png" />
+            <PatientAvatar name="이영수" size={64} rounded src="/patients/vp-man.png" />
           </div>
         </Section>
 
@@ -392,16 +395,29 @@ export default function ComponentsCatalog() {
 
         <Section title="PblProgress">
           <div className="max-w-[260px]">
-            <PblProgress current={2} max={5} onComplete={() => {}} />
+            <PblProgress current={2} onComplete={() => {}} />
           </div>
         </Section>
 
         <Section title="LoadingScreen">
-          <div className="rounded-md border border-border bg-background min-h-[280px] flex flex-col">
-            <LoadingScreen
-              title="시나리오를 만들고 있어요"
-              subtitle="가상 환자 정보, 딜레마 케이스, 시나리오를 순서대로 만들어요"
-            />
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-border bg-background min-h-[280px] flex flex-col">
+              <LoadingScreen
+                title="시나리오를 만들고 있어요"
+                subtitle="가상 환자 정보, 딜레마 케이스, 시나리오를 순서대로 만들어요"
+              />
+            </div>
+            <div className="rounded-xl border border-border bg-background min-h-[280px] flex flex-col">
+              <LoadingScreen
+                title="대화를 평가하고 있어요"
+                steps={[
+                  "대화 기록을 불러오고 있어요",
+                  "의사소통 항목별로 채점 중이에요",
+                  "근거 문장을 찾아 표시하고 있어요",
+                  "피드백 리포트를 작성하고 있어요",
+                ]}
+              />
+            </div>
           </div>
         </Section>
 

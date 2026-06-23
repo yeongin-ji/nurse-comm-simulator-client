@@ -70,7 +70,7 @@ export function ChatInput({
           "flex-1 min-h-10 px-3.5 py-2 flex items-center rounded border bg-background transition-colors",
           disabled
             ? "border-border bg-surface-muted opacity-60"
-            : "border-border focus-within:border-focus-ring focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
+            : "border-border focus-within:border-focus-ring focus-within:shadow-[var(--focus-glow)]"
         )}
       >
         <textarea

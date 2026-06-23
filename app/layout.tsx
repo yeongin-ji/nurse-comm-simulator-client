@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/query/provider";
 import { MockProvider } from "@/lib/mocks/init";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
+// Pretendard (UI sans) is loaded via @font-face in globals.css.
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
@@ -28,10 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
-    >
+    <html lang="ko" className={`${jetbrainsMono.variable} h-full`}>
       <body className="min-h-full flex flex-col">
         <MockProvider>
           <QueryProvider>{children}</QueryProvider>

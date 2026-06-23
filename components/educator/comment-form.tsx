@@ -39,7 +39,7 @@ export function CommentForm({ onSubmit, className }: CommentFormProps) {
           "min-h-[88px] resize-none rounded border bg-background px-3 py-2.5",
           "text-[13px] text-foreground placeholder:text-fg-subtle leading-5",
           "outline-none transition-[border-color,box-shadow] duration-150",
-          "border-border focus:border-focus-ring focus:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
+          "border-border focus:border-focus-ring focus:shadow-[var(--focus-glow)]"
         )}
       />
       <Button type="submit" variant="primary" full disabled={!canSubmit}>

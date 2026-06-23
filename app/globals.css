@@ -1,40 +1,175 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ─── Webfonts ───────────────────────────────────────────────────────────────
+   Pretendard (UI, Korean-optimized) via @font-face from jsDelivr CDN.
+   JetBrains Mono (numerics/vitals) loaded via next/font (see app/layout.tsx). */
+@font-face {
+  font-family: "Pretendard";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Pretendard";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2") format("woff2");
+}
+
+/* ─── DS raw tokens ──────────────────────────────────────────────────────────
+   NurCoSim palette base scales + semantic aliases (from design system
+   tokens/colors.css). Ported components reference these via var(--…) directly. */
+:root {
+  /* Navy — brand & primary */
+  --navy-50:  #EEF3FA;
+  --navy-100: #D9E3F2;
+  --navy-200: #B3C6E3;
+  --navy-300: #7E9BCB;
+  --navy-500: #2E5DA0;
+  --navy-700: #1E4480;
+  --navy-800: #173A6A;
+  --navy-900: #15315B;
+  --navy-950: #0F2444;
+
+  /* Orange — accent & emphasis */
+  --orange-50:  #FFF4ED;
+  --orange-100: #FFE5D4;
+  --orange-200: #FFC9A6;
+  --orange-400: #FB923C;
+  --orange-500: #F97316;
+  --orange-600: #EA580C;
+  --orange-700: #C2410C;
+
+  /* Slate — neutrals */
+  --slate-50:  #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-300: #CBD5E1;
+  --slate-400: #94A3B8;
+  --slate-500: #64748B;
+  --slate-600: #475569;
+  --slate-900: #0F172A;
+
+  /* Feedback */
+  --green-600:  #1E9E5C;
+  --amber-500:  #E8930F;
+  --amber-700:  #B06A0C;
+  --red-600:    #D43F38;
+  --red-700:    #B83229;
+
+  /* ── Semantic aliases ── */
+  --bg: #FFFFFF;
+  --surface: var(--slate-50);
+  --surface-muted: var(--slate-100);
+  --surface-elevated: #FFFFFF;
+  --border: var(--slate-200);
+  --border-strong: var(--slate-300);
+
+  --fg: var(--slate-900);
+  --text-heading: var(--slate-900);
+  --text-body: var(--slate-900);
+  --text-muted: var(--slate-600);
+  --text-subtle: var(--slate-400);
+
+  --primary: var(--navy-900);
+  --primary-hover: var(--navy-700);
+  --on-primary: #FFFFFF;
+
+  --accent: var(--orange-500);
+  --accent-hover: var(--orange-600);
+  --accent-text: var(--orange-700);
+  --on-accent: #FFFFFF;
+  --accent-surface: var(--orange-50);
+
+  --success: var(--green-600);
+  --warning: var(--amber-500);
+  --warning-text: var(--amber-700);
+  --danger: var(--red-600);
+  --danger-hover: var(--red-700);
+
+  --focus-ring: var(--navy-500);
+  --focus-glow: 0 0 0 3px rgba(46, 93, 160, 0.18);
+  --error-glow: 0 0 0 3px rgba(220, 38, 38, 0.10);
+}
+
 @theme {
   --color-background: #FFFFFF;
-  --color-surface: #FAFAFA;
-  --color-surface-muted: #F4F4F5;
+  --color-surface: #F8FAFC;
+  --color-surface-muted: #F1F5F9;
   --color-surface-elevated: #FFFFFF;
 
-  --color-border: #E4E4E7;
-  --color-border-strong: #D4D4D8;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
 
-  --color-foreground: #09090B;
-  --color-fg-muted: #52525B;
-  --color-fg-subtle: #A1A1AA;
+  --color-foreground: #0F172A;
+  --color-fg-muted: #475569;
+  --color-fg-subtle: #94A3B8;
 
-  --color-primary: #18181B;
-  --color-on-primary: #FAFAFA;
+  --color-primary: #15315B;
+  --color-primary-hover: #1E4480;
+  --color-on-primary: #FFFFFF;
 
-  --color-accent: #2563EB;
+  --color-accent: #F97316;
+  --color-accent-hover: #EA580C;
+  --color-accent-text: #C2410C;
+  --color-accent-surface: #FFF4ED;
   --color-on-accent: #FFFFFF;
 
-  --color-success: #16A34A;
-  --color-warning: #F59E0B;
-  --color-danger: #DC2626;
-  --color-focus-ring: #2563EB;
+  --color-success: #1E9E5C;
+  --color-warning: #E8930F;
+  --color-warning-text: #B06A0C;
+  --color-danger: #D43F38;
+  --color-danger-hover: #B83229;
+  --color-focus-ring: #2E5DA0;
+
+  /* Navy scale (for direct utility use) */
+  --color-navy-50: #EEF3FA;
+  --color-navy-100: #D9E3F2;
+  --color-navy-200: #B3C6E3;
+  --color-navy-300: #7E9BCB;
+  --color-navy-500: #2E5DA0;
+  --color-navy-700: #1E4480;
+  --color-navy-800: #173A6A;
+  --color-navy-900: #15315B;
+  --color-navy-950: #0F2444;
+
+  /* Orange scale */
+  --color-orange-50: #FFF4ED;
+  --color-orange-100: #FFE5D4;
+  --color-orange-200: #FFC9A6;
+  --color-orange-400: #FB923C;
+  --color-orange-500: #F97316;
+  --color-orange-600: #EA580C;
+  --color-orange-700: #C2410C;
 
   --radius-sm: 4px;
   --radius: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-full: 9999px;
 
-  --shadow-xs: 0 1px 1px 0 rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.06), 0 1px 1px -1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 4px 8px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xs: 0 1px 1px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 1px 1px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(15, 23, 42, 0.04);
 
   --text-display-lg: 56px;
   --text-display-lg--line-height: 60px;
@@ -48,12 +183,13 @@
 
   --text-headline-md: 24px;
   --text-headline-md--line-height: 32px;
-  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-md--letter-spacing: -0.015em;
   --text-headline-md--font-weight: 600;
 
   --text-title-lg: 18px;
   --text-title-lg--line-height: 28px;
-  --text-title-lg--font-weight: 500;
+  --text-title-lg--letter-spacing: -0.01em;
+  --text-title-lg--font-weight: 600;
 
   --text-body-lg: 16px;
   --text-body-lg--line-height: 24px;
@@ -68,11 +204,12 @@
 
   --text-mono-md: 13px;
   --text-mono-md--line-height: 20px;
+  --text-mono-md--font-weight: 500;
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Pretendard", "Pretendard Variable", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo,
     Consolas, "Liberation Mono", monospace;
 }
@@ -105,5 +242,48 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Spinner — organic blob petals rotate as one */
+@keyframes ncs-petal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Chat typing — the gooey metaball loader (TypingBubble) animates its
+   geometry via SMIL <animate> for cross-browser support (incl. Safari). */
+
+/* Streaming text — blinking caret */
+@keyframes ncs-caret {
+  0%, 50% {
+    opacity: 1;
+  }
+  50.01%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Loading screen — active step pulses, and each new step slides up from below */
+@keyframes ncs-step-pulse {
+  0%, 100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes ncs-step-slide {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

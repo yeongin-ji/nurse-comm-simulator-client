@@ -41,11 +41,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
       <div
         className={cn(
-          "h-9 px-3 rounded flex items-center gap-2 border bg-background",
+          "h-9 px-3.5 rounded-full flex items-center gap-2 border bg-background",
           "transition-[border-color,box-shadow] duration-[120ms]",
           hasError
-            ? "border-danger shadow-[0_0_0_3px_rgba(220,38,38,0.08)]"
-            : "border-border focus-within:border-focus-ring focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.12)]",
+            ? "border-danger shadow-[var(--error-glow)]"
+            : "border-border focus-within:border-focus-ring focus-within:shadow-[var(--focus-glow)]",
           readOnly && "bg-surface-muted"
         )}
       >

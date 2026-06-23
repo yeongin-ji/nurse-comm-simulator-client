@@ -1,0 +1,20 @@
+<svg width="198" height="48" viewBox="0 0 198 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NurCoSim">
+  <svg x="3" y="0" width="46" height="48" viewBox="0 0 200 200">
+    <defs>
+      <linearGradient id="ncsWmGrad" x1="44" y1="34" x2="156" y2="168" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FDBA74"></stop><stop offset="0.5" stop-color="#F97316"></stop><stop offset="1" stop-color="#EA580C"></stop>
+      </linearGradient>
+      <radialGradient id="ncsWmSheen" cx="0.36" cy="0.3" r="0.6">
+        <stop stop-color="#fff" stop-opacity="0.5"></stop><stop offset="0.55" stop-color="#fff" stop-opacity="0.06"></stop><stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+      </radialGradient>
+      <clipPath id="ncsWmClip"><path d="M100 22C140 20 178 48 180 92C182 128 162 160 124 170C112 173 108 176 96 184C86 190 80 184 82 172C83 165 78 164 68 160C36 147 18 118 22 84C26 46 62 24 100 22Z"></path></clipPath>
+    </defs>
+    <g clip-path="url(#ncsWmClip)">
+      <rect width="200" height="200" fill="url(#ncsWmGrad)"></rect>
+      <rect width="200" height="200" fill="url(#ncsWmSheen)"></rect>
+    </g>
+  </svg>
+  <text x="50" y="31" font-family="&#39;Helvetica Neue&#39;, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.02em">
+    <tspan fill="#15315B">Nur</tspan><tspan fill="#F97316">Co</tspan><tspan fill="#15315B">Sim</tspan>
+  </text>
+</svg>

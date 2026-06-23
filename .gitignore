@@ -42,3 +42,5 @@ next-env.d.ts
 
 # openapi-typescript intermediate
 types/.openapi3.tmp.json
+
+/NurCoSim Design System

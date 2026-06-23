@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, Hash, Lock, Mail, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthIllustration } from "@/components/auth/auth-illustration";
+import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -95,12 +96,10 @@ export default function SignupPage() {
           className="w-[340px] flex flex-col gap-6"
           noValidate
         >
-          <header className="flex flex-col gap-1.5">
-            <h1 className="text-headline-md text-foreground">
-              학습자 계정 만들기
-            </h1>
+          <header className="flex flex-col gap-2.5">
+            <Logo size={40} />
             <p className="text-body-md text-fg-muted">
-              시뮬레이션을 시작하려면 계정이 필요해요
+              Nurse Communication Simulator
             </p>
           </header>
 

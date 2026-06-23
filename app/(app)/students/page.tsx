@@ -69,6 +69,7 @@ export default function StudentsPage() {
             label="피드백 필요"
             value={`${feedbackNeededTotal}건`}
             sub="코멘트 미작성"
+            emphasis
           />
         </div>
 

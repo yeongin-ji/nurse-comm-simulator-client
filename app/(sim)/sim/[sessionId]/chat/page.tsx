@@ -34,6 +34,7 @@ import { Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
+import { patientPhotoByGender } from "@/lib/utils/patient-photo";
 
 type Message = {
   role: Extract<ChatRole, "user" | "patient">;
@@ -58,6 +59,7 @@ export default function ChatPage() {
   const userName = useAuthStore((s) => s.user?.name);
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled);
   const setTtsEnabled = useSettingsStore((s) => s.setTtsEnabled);
+  const profileImageEnabled = useSettingsStore((s) => s.profileImageEnabled);
   const numericSessionId = Number(sessionId);
   const patientAgeRef = useRef<number | undefined>(undefined);
   const patientGenderRef = useRef<string | undefined>(undefined);
@@ -229,7 +231,14 @@ export default function ChatPage() {
     return (
       <LoadingScreen
         title="대화를 평가하고 있어요"
-        subtitle="지금까지의 대화를 분석해 평가 결과를 만들고 있어요"
+        steps={[
+          "대화 기록을 불러오고 있어요",
+          "의사소통 항목별로 채점 중이에요",
+          "근거 문장을 찾아 표시하고 있어요",
+          "피드백 리포트를 작성하고 있어요",
+        ]}
+        // TODO: 백엔드가 현재 평가 단계를 내려주면 currentStep={...}로 제어.
+        // 지금은 currentStep 미지정 → 단계가 타이머로 자동 진행됩니다.
       />
     );
   }
@@ -248,7 +257,15 @@ export default function ChatPage() {
           <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
               <header className="sticky top-0 z-10 bg-surface-elevated px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
-                <PatientAvatar size={28} name={patientName} rounded />
+                <PatientAvatar
+                  size={28}
+                  name={patientName}
+                  rounded
+                  src={patientPhotoByGender(
+                    record.patient_gender ?? record.sex,
+                    profileImageEnabled,
+                  )}
+                />
                 <span className="text-body-md font-medium text-foreground">
                   가상 환자
                 </span>

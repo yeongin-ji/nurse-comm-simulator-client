@@ -20,6 +20,7 @@ import {
   projectInitialState,
 } from "@/lib/api/scenarios";
 import { PatientStatePanel } from "@/components/sim/patient-state-panel";
+import { Logo } from "@/components/layout/logo";
 import { useAuthStore } from "@/lib/stores/auth";
 
 type Message = { role: Extract<ChatRole, "user" | "ai-peer">; text: string };
@@ -149,12 +150,7 @@ export default function PblPage() {
           <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
               <header className="sticky top-0 z-10 bg-surface-elevated px-5 py-3 border-b border-border flex items-center gap-2">
-                <span
-                  className="h-7 w-7 rounded-full bg-surface-muted border border-dashed border-border-strong flex items-center justify-center text-[10px] text-fg-subtle"
-                  aria-hidden
-                >
-                  AI
-                </span>
+                <Logo markOnly size={28} />
                 <span className="text-body-md font-medium text-foreground">
                   AI 동료
                 </span>

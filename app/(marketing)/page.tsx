@@ -8,6 +8,7 @@ import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { AuthIllustration } from "@/components/auth/auth-illustration";
 import { LoginErrorModal } from "@/components/auth/login-error-modal";
+import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -88,12 +89,10 @@ export default function LoginPage() {
           className="w-[340px] flex flex-col gap-7"
           noValidate
         >
-          <header className="flex flex-col gap-1.5">
-            <h1 className="text-headline-md text-foreground">
-              다시 만나서 반가워요
-            </h1>
+          <header className="flex flex-col gap-2.5">
+            <Logo size={40} />
             <p className="text-body-md text-fg-muted">
-              이메일과 비밀번호를 입력해 주세요
+              Nurse Communication Simulator
             </p>
           </header>
 
