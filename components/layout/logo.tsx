@@ -5,11 +5,18 @@ export type LogoProps = {
   size?: number;
   /** Hide the wordmark, showing only the brand mark. */
   markOnly?: boolean;
+  /** Render the wordmark for dark backgrounds (navy parts become white). */
+  onDark?: boolean;
   className?: string;
 };
 
 /** NurCoSim brand lockup: gradient mark + navy/orange/navy wordmark. */
-export function Logo({ size = 24, markOnly = false, className }: LogoProps) {
+export function Logo({
+  size = 24,
+  markOnly = false,
+  onDark = false,
+  className,
+}: LogoProps) {
   // Wordmark scales with the mark so the lockup enlarges as one.
   const fontSize = Math.round(size * 0.62);
   const gap = Math.round(size * 0.37);
@@ -31,9 +38,9 @@ export function Logo({ size = 24, markOnly = false, className }: LogoProps) {
           className="font-bold tracking-[-0.02em] leading-none"
           style={{ fontSize }}
         >
-          <span className="text-navy-900">Nur</span>
+          <span className={onDark ? "text-white" : "text-navy-900"}>Nur</span>
           <span className="text-accent">Co</span>
-          <span className="text-navy-900">Sim</span>
+          <span className={onDark ? "text-white" : "text-navy-900"}>Sim</span>
         </span>
       )}
     </span>

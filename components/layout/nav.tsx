@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/layout/logo";
+import { NavTexture } from "@/components/layout/nav-texture";
 import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -38,12 +39,13 @@ export function Nav({ role, userName }: NavProps) {
   };
 
   return (
-    <header className="h-[52px] bg-surface border-b border-border flex items-center justify-between px-6 relative">
-      <div className="flex items-center gap-5">
+    <header className="h-[52px] bg-[linear-gradient(285deg,var(--color-navy-700),var(--color-navy-900)_48%,var(--color-navy-950))] border-b border-navy-950 flex items-center justify-between px-6 relative">
+      <NavTexture />
+      <div className="relative flex items-center gap-5">
         <Link href={role === "learner" ? "/scenarios" : "/students"}>
-          <Logo />
+          <Logo onDark />
         </Link>
-        <span className="block w-px h-5 bg-border" aria-hidden />
+        <span className="block w-px h-5 bg-white/15" aria-hidden />
         {links.map((link) => {
           const active =
             pathname === link.href || pathname.startsWith(link.href + "/");
@@ -52,10 +54,10 @@ export function Nav({ role, userName }: NavProps) {
               key={link.href}
               href={link.href}
               className={cn(
-                "text-[13px] px-2.5 py-1.5 rounded transition-colors duration-[120ms]",
+                "text-[13px] px-3 py-1.5 rounded-md transition-colors duration-[120ms]",
                 active
-                  ? "font-medium text-foreground bg-surface-muted"
-                  : "font-normal text-fg-muted hover:text-foreground hover:bg-black/[0.03]"
+                  ? "font-semibold text-navy-900 bg-white shadow-sm"
+                  : "font-normal text-navy-100 hover:text-white hover:bg-white/10"
               )}
             >
               {link.label}
@@ -64,15 +66,15 @@ export function Nav({ role, userName }: NavProps) {
         })}
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="relative flex items-center gap-1.5">
         <Link
           href="/profile"
-          className="flex items-center gap-2.5 px-2 py-1 rounded transition-colors hover:bg-surface-muted"
+          className="flex items-center gap-2.5 px-2 py-1 rounded transition-colors hover:bg-white/10"
         >
-          <span className="h-7 w-7 rounded-full bg-surface-muted border border-border flex items-center justify-center">
-            <User className="h-3.5 w-3.5 text-fg-muted" aria-hidden />
+          <span className="h-7 w-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+            <User className="h-3.5 w-3.5 text-navy-100" aria-hidden />
           </span>
-          <span className="text-[13px] font-medium text-foreground">
+          <span className="text-[13px] font-medium text-white">
             {displayName}
           </span>
           <Badge variant={role === "learner" ? "navy" : "accent"}>
@@ -83,7 +85,7 @@ export function Nav({ role, userName }: NavProps) {
           type="button"
           onClick={onLogout}
           aria-label="로그아웃"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[13px] text-fg-muted hover:text-foreground hover:bg-surface-muted transition-colors duration-[120ms]"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-[13px] text-navy-100 hover:text-white hover:bg-white/10 transition-colors duration-[120ms]"
         >
           <LogOut className="h-3.5 w-3.5" aria-hidden />
           <span>로그아웃</span>
