@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
 import { LoginErrorModal } from "@/components/auth/login-error-modal";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
@@ -82,11 +81,11 @@ export default function LoginPage() {
 
   return (
     <>
-      <AuthIllustration variant="login" />
       <section className="flex flex-1 items-center justify-center p-12">
         <form
           onSubmit={loginAs("learner")}
           className="w-[340px] flex flex-col gap-7"
+          style={{ zoom: 1.2 }}
           noValidate
         >
           <header className="flex flex-col gap-2.5">

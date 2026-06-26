@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, Hash, Lock, Mail, User } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { AuthIllustration } from "@/components/auth/auth-illustration";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,11 +88,11 @@ export default function SignupPage() {
 
   return (
     <>
-      <AuthIllustration variant="signup" />
-      <section className="flex flex-1 items-center justify-center p-12">
+      <section className="flex flex-1 items-center justify-center p-12 overflow-y-auto">
         <form
           onSubmit={onSubmit}
           className="w-[340px] flex flex-col gap-6"
+          style={{ zoom: 1.2 }}
           noValidate
         >
           <header className="flex flex-col gap-2.5">
