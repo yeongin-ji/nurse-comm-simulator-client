@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { QuotedText } from "@/components/ui/quoted-text";
 
 export type ScenarioTooltipProps = {
   title?: string;
@@ -58,7 +59,7 @@ export function ScenarioTooltip({
             {title}
           </span>
           <span className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-            {description}
+            <QuotedText>{description}</QuotedText>
           </span>
         </div>
       )}

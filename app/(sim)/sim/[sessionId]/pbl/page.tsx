@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { QuotedText } from "@/components/ui/quoted-text";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
@@ -130,7 +131,11 @@ export default function PblPage() {
               </p>
               <div className="h-px bg-border" />
               <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-                {scenario?.scenario_text ?? "시나리오를 불러오고 있어요..."}
+                {scenario?.scenario_text ? (
+                  <QuotedText>{scenario.scenario_text}</QuotedText>
+                ) : (
+                  "시나리오를 불러오고 있어요..."
+                )}
               </p>
             </Card>
 

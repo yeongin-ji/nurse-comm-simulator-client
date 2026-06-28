@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { QuotedText } from "@/components/ui/quoted-text";
 import { Table, TableRow } from "@/components/ui/table";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
@@ -136,7 +137,11 @@ export default function ScenarioDetailPage() {
                   시나리오
                 </h2>
                 <p className="text-body-md leading-6 text-foreground">
-                  {scenario.scenario_text ?? "시나리오 본문이 비어 있어요."}
+                  {scenario.scenario_text ? (
+                    <QuotedText>{scenario.scenario_text}</QuotedText>
+                  ) : (
+                    "시나리오 본문이 비어 있어요."
+                  )}
                 </p>
               </section>
 

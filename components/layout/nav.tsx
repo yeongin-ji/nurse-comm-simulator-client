@@ -39,7 +39,7 @@ export function Nav({ role, userName }: NavProps) {
   };
 
   return (
-    <header className="h-[52px] bg-[linear-gradient(285deg,var(--color-navy-700),var(--color-navy-900)_48%,var(--color-navy-950))] border-b border-navy-950 flex items-center justify-between px-6 relative">
+    <header className="sticky top-0 z-50 h-[52px] bg-[linear-gradient(285deg,color-mix(in_srgb,var(--color-navy-700)_82%,transparent),color-mix(in_srgb,var(--color-navy-900)_82%,transparent)_48%,color-mix(in_srgb,var(--color-navy-950)_82%,transparent))] backdrop-blur-md border-b border-navy-950 flex items-center justify-between px-6">
       <NavTexture />
       <div className="relative flex items-center gap-5">
         <Link href={role === "learner" ? "/scenarios" : "/students"}>

@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
+import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import type { DocumentResponse } from "@/lib/api/documents";
 import { scenariosApi } from "@/lib/api/scenarios";
@@ -18,6 +19,13 @@ const DIFFICULTIES = [
   { value: "중", label: "중" },
   { value: "하", label: "하" },
 ] as const;
+
+/** 선택한 난이도가 환자 응대에서 의미하는 바 안내 */
+const DIFFICULTY_HINTS: Record<string, string> = {
+  하: "환자가 비교적 협조적이고 감정 기복이 적어요. 기본적인 의사소통을 연습하기 좋아요.",
+  중: "환자가 때때로 불안이나 저항을 보여요. 상황에 맞춰 유연하게 대응해야 해요.",
+  상: "환자의 감정 변화가 크고 딜레마도 복잡해요. 높은 수준의 의사소통 역량이 필요해요.",
+};
 
 /** category_path에서 unique한 값 목록을 depth별로 추출 */
 function getOptionsAtDepth(
@@ -62,6 +70,8 @@ export function ScenarioCreateModal({
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [pickedId, setPickedId] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState<string>("중");
+  // 생성 성공 후 상세 페이지로 이동이 끝날 때까지 로딩 화면을 유지 (chat 평가 패턴과 동일)
+  const [redirecting, setRedirecting] = useState(false);
 
   const documentsQuery = useQuery({
     queryKey: documentKeys.list(),
@@ -72,9 +82,14 @@ export function ScenarioCreateModal({
   const createMutation = useMutation({
     mutationFn: scenariosApi.create,
     onSuccess: (res) => {
-      onOpenChange(false);
       const id = res.scenario?.id;
-      if (id) router.push(`/scenarios/${id}`);
+      if (id) {
+        // 모달을 닫지 않고 로딩 화면을 유지한 채 이동 — 닫으면 한 프레임 깜빡임 발생
+        setRedirecting(true);
+        router.push(`/scenarios/${id}`);
+      } else {
+        onOpenChange(false);
+      }
     },
   });
 
@@ -141,6 +156,23 @@ export function ScenarioCreateModal({
     });
   };
 
+  // 시나리오 생성은 10~20초 걸리므로, 평가 화면처럼 풀스크린 로딩으로 전환한다.
+  if (createMutation.isPending || redirecting) {
+    return (
+      <div className="fixed inset-0 z-[60] flex bg-background">
+        <LoadingScreen
+          title="시나리오를 만들고 있어요"
+          steps={[
+            "가상환자 정보를 만들고 있어요",
+            "딜레마 케이스를 구성하고 있어요",
+            "시나리오를 작성하고 있어요",
+          ]}
+          // TODO: 백엔드가 현재 생성 단계를 내려주면 currentStep={...}로 제어.
+        />
+      </div>
+    );
+  }
+
   return (
     <Modal
       open={open}
@@ -163,16 +195,9 @@ export function ScenarioCreateModal({
           <Button
             variant="primary"
             onClick={onCreate}
-            disabled={
-              pickedId == null ||
-              documentsQuery.isLoading ||
-              createMutation.isPending
-            }
-            icon={
-              createMutation.isPending ? <Spinner size={14} /> : undefined
-            }
+            disabled={pickedId == null || documentsQuery.isLoading}
           >
-            {createMutation.isPending ? "만드는 중..." : "만들기"}
+            만들기
           </Button>
         </>
       }
@@ -182,7 +207,7 @@ export function ScenarioCreateModal({
           <div className="flex items-center justify-between">
             <h3 className="text-body-md font-medium text-foreground">질환 선택</h3>
             <Button
-              variant="secondary"
+              variant="accent"
               size="sm"
               icon={<Shuffle className="h-3.5 w-3.5" />}
               onClick={handleRandom}
@@ -194,7 +219,7 @@ export function ScenarioCreateModal({
 
           {/* 브레드크럼 네비게이션 */}
           {selectedPath.length > 0 && (
-            <div className="flex items-center gap-1 rounded bg-surface-muted px-3 py-2 text-label-sm tracking-normal flex-wrap">
+            <div className="flex items-center gap-1 rounded-lg bg-surface-muted px-3 py-2 text-label-sm tracking-normal flex-wrap">
               {selectedPath.map((crumb, i) => (
                 <span key={`${crumb}-${i}`} className="flex items-center gap-1">
                   {i > 0 && (
@@ -234,16 +259,16 @@ export function ScenarioCreateModal({
           )}
 
           {documentsQuery.isLoading ? (
-            <div className="flex items-center gap-2 rounded border border-border px-3.5 py-3 text-body-md text-fg-muted">
+            <div className="flex items-center gap-2 rounded-lg border border-border px-3.5 py-3 text-body-md text-fg-muted">
               <Spinner size={14} /> 질환 목록을 불러오고 있어요
             </div>
           ) : documentsQuery.isError ? (
-            <div className="rounded border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
+            <div className="rounded-lg border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
               질환 목록을 불러오지 못했어요. 다시 시도해 주세요.
             </div>
           ) : !isAtDiseaseLevel ? (
             /* 카테고리 선택 단계 */
-            <div className="rounded border border-border overflow-hidden">
+            <div className="rounded-lg border border-border overflow-hidden">
               {categoryOptions.map((option, i) => (
                 <button
                   key={option}
@@ -265,7 +290,7 @@ export function ScenarioCreateModal({
             </div>
           ) : (
             /* 질환 선택 단계 (라디오) */
-            <div className="rounded border border-border overflow-hidden">
+            <div className="rounded-lg border border-border overflow-hidden">
               {filteredDocuments.map((d, i) => {
                 const selected = d.id === pickedId;
                 return (
@@ -332,7 +357,7 @@ export function ScenarioCreateModal({
                   type="button"
                   onClick={() => setDifficulty(d.value)}
                   className={cn(
-                    "flex-1 h-9 rounded border text-body-md font-medium transition-colors duration-[120ms]",
+                    "flex-1 h-9 rounded-full border text-body-md font-medium transition-colors duration-[120ms]",
                     selected
                       ? "border-primary bg-primary text-on-primary"
                       : "border-border bg-background text-fg-muted hover:bg-surface",
@@ -346,19 +371,19 @@ export function ScenarioCreateModal({
         </section>
 
         {createMutation.isError && (
-          <div className="rounded border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
+          <div className="rounded-lg border border-danger/40 bg-danger/[0.04] px-3.5 py-2.5 text-body-md text-danger">
             시나리오 생성에 실패했어요. 잠시 후 다시 시도해 주세요.
           </div>
         )}
 
-        <div className="flex items-start gap-2 rounded bg-surface-muted px-3.5 py-2.5">
+        <div className="flex items-start gap-2 rounded-lg bg-surface-muted px-3.5 py-2.5">
           <AlertCircle
             className="h-3.5 w-3.5 text-fg-subtle mt-0.5 shrink-0"
             aria-hidden
           />
           <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-            가상환자 정보, 딜레마 케이스, 시나리오를 순서대로 만들어요 (약
-            10~20초)
+            <span className="font-medium text-foreground">난이도 {difficulty}</span>{" "}
+            · {DIFFICULTY_HINTS[difficulty]}
           </p>
         </div>
       </div>
