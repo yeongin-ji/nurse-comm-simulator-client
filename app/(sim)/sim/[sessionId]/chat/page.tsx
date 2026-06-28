@@ -29,6 +29,7 @@ import {
   scenariosApi,
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
+import { pblApi, pblKeys, projectCategories } from "@/lib/api/pbl";
 import { fetchTts, playAudioBlob } from "@/lib/api/tts";
 import { Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -84,6 +85,14 @@ export default function ChatPage() {
     queryFn: () => documentsApi.detail(documentId as number),
     enabled: documentId != null,
   });
+
+  /* ── PBL 요약 — summary 화면에서 캐싱된 데이터를 사이드바 참고 카드로 재사용 ── */
+  const pblSummaryQuery = useQuery({
+    queryKey: pblKeys.summary(numericSessionId),
+    queryFn: () => pblApi.getSummary(numericSessionId),
+    enabled: Number.isFinite(numericSessionId),
+  });
+  const pblSummary = projectCategories(pblSummaryQuery.data);
 
   const scenario = scenarioQuery.data;
   const record = scenario ? projectMedicalRecord(scenario.medical_record) : {};
@@ -254,6 +263,7 @@ export default function ChatPage() {
           vitalSigns={vitalSigns}
           otherSigns={otherSigns}
           psychological={psychological}
+          pblSummary={pblSummary}
           onEnd={() => setEndOpen(true)}
         />
 

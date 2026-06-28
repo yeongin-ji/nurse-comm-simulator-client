@@ -1,6 +1,10 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useState } from "react";
+import { ChevronDown, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
+import type { PblSummaryCategory } from "@/lib/api/pbl";
 
 export type VitalSign = { label: string; value: string };
 
@@ -14,6 +18,8 @@ export type PatientStatePanelProps = {
   vitalSigns: VitalSign[];
   otherSigns?: string[];
   psychological: Psychological[];
+  /** PBL 요약 — 있으면 사이드바에 접이식 참고 카드로 노출 */
+  pblSummary?: PblSummaryCategory[];
   onEnd?: () => void;
   className?: string;
 };
@@ -28,6 +34,7 @@ export function PatientStatePanel({
   vitalSigns,
   otherSigns,
   psychological,
+  pblSummary,
   onEnd,
   className,
 }: PatientStatePanelProps) {
@@ -106,12 +113,69 @@ export function PatientStatePanel({
         </div>
       </Card>
 
+      {pblSummary && pblSummary.length > 0 && (
+        <PblSummaryCard categories={pblSummary} />
+      )}
+
       {onEnd && (
-        <Button variant="danger" full onClick={onEnd}>
+        <button
+          onClick={onEnd}
+          className="self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
+        >
           대화 종료
-        </Button>
+        </button>
       )}
     </aside>
+  );
+}
+
+function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="p-0 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-muted"
+      >
+        <span className="flex items-center gap-1.5 text-label-sm font-medium text-accent tracking-normal">
+          <ClipboardList className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          의사소통 방향 요약
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-fg-subtle transition-transform duration-200",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <div className="border-t border-border px-4 py-3 flex flex-col gap-3">
+          {categories.map((cat) => (
+            <div key={cat.name}>
+              <h4 className="text-[11px] font-medium text-foreground mb-1">
+                {cat.name}
+              </h4>
+              <ul className="flex flex-col gap-0.5 pl-3.5">
+                {cat.items.map((item, i) => (
+                  <li
+                    key={i}
+                    className="text-[11px] text-fg-muted leading-[18px] list-disc"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <span className="text-[10px] text-fg-subtle">
+            참고용이에요. 환자 반응에 따라 유연하게 대응하세요.
+          </span>
+        </div>
+      )}
+    </Card>
   );
 }
 
