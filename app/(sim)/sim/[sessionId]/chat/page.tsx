@@ -252,6 +252,7 @@ export default function ChatPage() {
           "의사소통 항목별로 채점 중이에요",
           "근거 문장을 찾아 표시하고 있어요",
           "피드백 리포트를 작성하고 있어요",
+          "마무리하고 있어요",
         ]}
         tips={REFLECTION_TIPS}
         tipsLabel="되돌아보기"

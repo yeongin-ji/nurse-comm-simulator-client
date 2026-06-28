@@ -40,7 +40,7 @@ export function LoadingScreen({
   subtitle,
   steps,
   currentStep,
-  stepIntervalMs = 900,
+  stepIntervalMs = 5000,
   spinnerSize = 60,
   tips,
   tipIntervalMs = 4500,
@@ -58,7 +58,7 @@ export function LoadingScreen({
       role="status"
       aria-live="polite"
     >
-      <div className="flex w-[380px] max-w-full flex-col items-center gap-[22px]">
+      <div className="flex w-[460px] max-w-full flex-col items-center gap-[22px]">
         <Spinner size={spinnerSize} />
         <h1 className="text-body-lg font-semibold text-foreground text-center">
           {title}
@@ -110,7 +110,7 @@ function TipCard({
       {/* key={idx} restarts the fade-in each time the tip changes */}
       <p
         key={idx}
-        className="mb-3 text-body-md italic leading-[1.65] text-foreground animate-[ncs-tip-in_0.42s_cubic-bezier(0.22,1,0.36,1)]"
+        className="mb-3 min-h-[53px] text-body-md italic leading-[1.65] text-foreground animate-[ncs-tip-in_0.42s_cubic-bezier(0.22,1,0.36,1)]"
       >
         {tips[idx]}
       </p>
@@ -156,7 +156,6 @@ function StepProgress({
   const cur = controlled
     ? Math.min(Math.max(currentStep, 0), stepCount - 1)
     : autoCur;
-  const finished = cur >= stepCount - 1;
 
   return (
     <div className="flex h-6 w-full items-center justify-center overflow-hidden">
@@ -164,12 +163,7 @@ function StepProgress({
         key={cur}
         className="flex items-center gap-[9px] animate-[ncs-step-slide_0.42s_cubic-bezier(0.22,1,0.36,1)]"
       >
-        <span
-          className={cn(
-            "h-[7px] w-[7px] shrink-0 rounded-full bg-accent",
-            !finished && "animate-[ncs-step-pulse_1s_ease-in-out_infinite]"
-          )}
-        />
+        <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-accent animate-[ncs-step-pulse_1s_ease-in-out_infinite]" />
         <span className="whitespace-nowrap text-body-md font-medium leading-5 text-foreground">
           {steps[cur]}
         </span>

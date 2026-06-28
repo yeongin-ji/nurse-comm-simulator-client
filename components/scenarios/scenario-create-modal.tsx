@@ -167,6 +167,7 @@ export function ScenarioCreateModal({
             "가상환자 정보를 만들고 있어요",
             "딜레마 케이스를 구성하고 있어요",
             "시나리오를 작성하고 있어요",
+            "마무리하고 있어요",
           ]}
           tips={COMMUNICATION_TIPS}
           // TODO: 백엔드가 현재 생성 단계를 내려주면 currentStep={...}로 제어.
