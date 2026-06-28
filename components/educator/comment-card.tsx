@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, MessageSquareDashed } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { CommentForm } from "@/components/educator/comment-form";
@@ -58,7 +59,15 @@ export function CommentCard({
 
   return (
     <Card className="flex flex-col gap-3.5">
-      <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
+      <div className="flex items-center gap-1.5">
+        <MessageSquare className="h-4 w-4 shrink-0 text-navy-700" aria-hidden />
+        <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
+        {comments.length > 0 && (
+          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-surface-muted px-1.5 text-label-sm font-medium text-fg-muted">
+            {comments.length}
+          </span>
+        )}
+      </div>
       <div className="h-px bg-border" />
 
       {commentsQuery.isLoading ? (
@@ -70,25 +79,39 @@ export function CommentCard({
           코멘트를 불러오지 못했어요.
         </p>
       ) : comments.length === 0 ? (
-        <p className="text-[13px] text-fg-subtle">
-          아직 등록된 코멘트가 없어요
-        </p>
+        <div className="flex flex-col items-center gap-2 py-4 text-center text-fg-subtle">
+          <MessageSquareDashed className="h-6 w-6" aria-hidden />
+          <p className="text-[13px]">아직 등록된 코멘트가 없어요</p>
+        </div>
       ) : (
-        comments.map((c) => (
-          <div key={c.id} className="flex flex-col gap-1">
-            <div className="flex justify-between">
-              <span className="text-[13px] font-medium text-foreground">
-                {c.educator_name || educatorName(c.educator_id)}
-              </span>
-              <span className="text-label-sm font-normal text-fg-subtle tracking-normal">
-                {formatCommentDate(c.created_at)}
-              </span>
-            </div>
-            <p className="text-[13px] text-fg-muted leading-5 whitespace-pre-wrap">
-              {c.content}
-            </p>
-          </div>
-        ))
+        <div className="flex flex-col gap-4">
+          {comments.map((c) => {
+            const name = c.educator_name || educatorName(c.educator_id);
+            return (
+              <div key={c.id} className="flex gap-2.5">
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy-50 text-[12px] font-semibold text-navy-800"
+                >
+                  {(name.trim()[0] || "교").toUpperCase()}
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[13px] font-medium text-foreground">
+                      {name}
+                    </span>
+                    <span className="text-label-sm font-normal text-fg-subtle tracking-normal">
+                      · {formatCommentDate(c.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-fg-muted leading-5 whitespace-pre-wrap">
+                    {c.content}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {!readOnly && (

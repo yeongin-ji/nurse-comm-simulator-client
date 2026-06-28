@@ -15,7 +15,7 @@ export type SessionSummaryHeaderProps = {
 };
 
 /** Maps an overall percentage to a tone band so the score frames "what to do next". */
-function scoreBand(percent: number): { label: string; value: string; chip: string } {
+export function scoreBand(percent: number): { label: string; value: string; chip: string } {
   if (percent >= 70) {
     return {
       label: "우수",
@@ -76,12 +76,7 @@ export function SessionSummaryHeader({
           <span className="text-label-sm font-normal uppercase tracking-[0.04em] text-fg-subtle">
             종합 점수
           </span>
-          <span
-            className={cn(
-              "text-headline-lg leading-none tracking-[-0.03em] tabular-nums",
-              band.value
-            )}
-          >
+          <span className="text-headline-lg leading-none tracking-[-0.03em] tabular-nums text-navy-800">
             {scorePercent}
             <span className="text-headline-md font-medium">%</span>
           </span>

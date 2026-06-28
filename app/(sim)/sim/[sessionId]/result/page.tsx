@@ -5,10 +5,9 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { StatCard } from "@/components/ui/stat-card";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
-import { EncouragementBanner } from "@/components/evaluation/encouragement-banner";
+import { EvaluationResultHero } from "@/components/evaluation/evaluation-result-hero";
 import { EvaluationSummaryCard } from "@/components/evaluation/evaluation-summary-card";
 import {
   evaluationApi,
@@ -146,16 +145,12 @@ export default function SimResultPage() {
           </div>
         </header>
 
-        <EncouragementBanner evaluations={evaluations} />
-
-        <div className="flex gap-3">
-          <StatCard
-            label="소요 시간"
-            value={formatDuration(durationSeconds)}
-            sub="제한 15분"
-          />
-          <StatCard label="대화 턴" value={`${meta.turns}회`} />
-        </div>
+        <EvaluationResultHero
+          evaluations={evaluations}
+          duration={formatDuration(durationSeconds)}
+          turns={meta.turns}
+          timeLimit="15분"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {evaluations.map((evaluation) => (
