@@ -26,17 +26,12 @@ export function NursingEthicsCard({
   const [openSection, setOpenSection] = useState<number | null>(null);
 
   return (
-    <Card
-      className={cn(
-        "p-0 overflow-hidden border-navy-200 bg-navy-50",
-        className
-      )}
-    >
+    <Card className={cn("p-0 overflow-hidden", className)}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-navy-100"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left bg-navy-50 transition-colors hover:bg-navy-100"
       >
         <BookOpen className="h-4 w-4 text-navy-700 shrink-0" aria-hidden />
         <span className="text-[13px] font-semibold text-navy-900">

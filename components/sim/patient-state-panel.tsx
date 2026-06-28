@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ClipboardList, FileText } from "lucide-react";
+import { Activity, ChevronDown, ClipboardList, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Collapse } from "@/components/ui/collapse";
 import { QuotedText } from "@/components/ui/quoted-text";
@@ -44,71 +44,91 @@ export function PatientStatePanel({
   className,
 }: PatientStatePanelProps) {
   const stateCard = (
-      <Card className="flex flex-col gap-3 p-4 shrink-0">
-        <SectionLabel>환자 현재 상태</SectionLabel>
-
-        <div className="flex flex-col gap-1 px-2.5 py-2 bg-surface-muted rounded">
-          <span className="text-label-sm font-medium text-foreground tracking-normal mb-0.5">
-            활력징후
+      <Card className="p-0 overflow-hidden shrink-0">
+        <div className="flex items-center gap-1.5 bg-navy-50 px-4 py-2 border-b border-navy-100">
+          <Activity className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
+          <span className="text-[13px] font-semibold text-navy-900">
+            환자 현재 상태
           </span>
-          {vitalSigns.map((v) => (
-            <div key={v.label} className="flex justify-between">
-              <span className="text-[11px] text-fg-muted">{v.label}</span>
-              <span className="font-mono text-[11px] font-medium text-foreground">
-                {v.value}
-              </span>
-            </div>
-          ))}
         </div>
 
-        {otherSigns && otherSigns.length > 0 && (
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex flex-col gap-1.5">
             <SectionLabel as="span" small>
-              기타 징후
+              활력징후
             </SectionLabel>
-            <ul className="flex flex-col gap-0.5">
-              {otherSigns.map((sign, i) => (
-                <li
-                  key={i}
-                  className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal"
-                >
-                  {sign}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="h-px bg-border" />
-
-        <div className="flex flex-col gap-1.5">
-          <SectionLabel as="span" small>
-            심리적 상태
-          </SectionLabel>
-          {psychological.map((g) => (
-            <div key={g.label} className="flex items-center gap-1.5">
-              <span className="w-[26px] shrink-0 text-[11px] text-fg-muted">
-                {g.label}
-              </span>
-              <div className="flex-1 h-1 bg-surface-muted rounded-full overflow-hidden">
-                <div
-                  style={{ width: `${Math.max(0, Math.min(100, g.value))}%` }}
-                  className={cn(
-                    "h-full rounded-full",
-                    "transition-[width] duration-500 ease-out",
-                    "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
-                    toneClass[g.tone]
-                  )}
-                />
-              </div>
-              <span className="w-[30px] shrink-0 text-right text-[11px] font-medium text-foreground tabular-nums">
-                {g.value}%
-              </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {vitalSigns.map((v) => {
+                const { num, unit } = splitUnit(v.value);
+                return (
+                  <div
+                    key={v.label}
+                    className="rounded-lg bg-surface-muted px-2.5 py-2"
+                  >
+                    <div className="text-[10px] text-fg-subtle mb-0.5">
+                      {v.label}
+                    </div>
+                    <div className="font-mono text-[13px] font-medium text-foreground leading-none">
+                      {num}
+                      {unit && (
+                        <span className="text-[9px] text-fg-subtle"> {unit}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-          <span className="text-[10px] text-fg-subtle">
-            대화에 따라 실시간 갱신돼요
-          </span>
+          </div>
+
+          {otherSigns && otherSigns.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <SectionLabel as="span" small>
+                기타 징후
+              </SectionLabel>
+              <ul className="flex flex-col gap-0.5">
+                {otherSigns.map((sign, i) => (
+                  <li
+                    key={i}
+                    className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal"
+                  >
+                    {sign}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="h-px bg-border" />
+
+          <div className="flex flex-col gap-1.5">
+            <SectionLabel as="span" small>
+              심리적 상태
+            </SectionLabel>
+            {psychological.map((g) => (
+              <div key={g.label} className="flex items-center gap-1.5">
+                <span className="w-[26px] shrink-0 text-[11px] text-fg-muted">
+                  {g.label}
+                </span>
+                <div className="flex-1 h-1 bg-surface-muted rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${Math.max(0, Math.min(100, g.value))}%` }}
+                    className={cn(
+                      "h-full rounded-full",
+                      "transition-[width] duration-500 ease-out",
+                      "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
+                      toneClass[g.tone]
+                    )}
+                  />
+                </div>
+                <span className="w-[30px] shrink-0 text-right text-[11px] font-medium text-foreground tabular-nums">
+                  {g.value}%
+                </span>
+              </div>
+            ))}
+            <span className="text-[10px] text-fg-subtle">
+              대화에 따라 실시간 갱신돼요
+            </span>
+          </div>
         </div>
       </Card>
   );
@@ -155,6 +175,13 @@ export function PatientStatePanel({
   );
 }
 
+/** 활력징후 값("136/88 mmHg")을 수치/단위로 분리. 공백이 없으면 통째로 둔다. */
+function splitUnit(value: string): { num: string; unit?: string } {
+  const idx = value.indexOf(" ");
+  if (idx === -1) return { num: value };
+  return { num: value.slice(0, idx), unit: value.slice(idx + 1) };
+}
+
 /** AI가 생성한 요약 텍스트에 섞여 들어오는 이모지를 제거한다. */
 function stripEmoji(text: string): string {
   return text
@@ -166,12 +193,12 @@ function stripEmoji(text: string): string {
 function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50 shrink-0">
+    <Card className="p-0 overflow-hidden shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-navy-100"
+        className="w-full flex items-center justify-between gap-2 px-4 py-2 text-left bg-navy-50 transition-colors hover:bg-navy-100"
       >
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-navy-900 tracking-normal">
           <ClipboardList className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
@@ -216,12 +243,12 @@ function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
 function ScenarioCard({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50 shrink-0">
+    <Card className="p-0 overflow-hidden shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-navy-100"
+        className="w-full flex items-center justify-between gap-2 px-4 py-2 text-left bg-navy-50 transition-colors hover:bg-navy-100"
       >
         <span className="flex items-center gap-1.5 text-[13px] font-semibold text-navy-900 tracking-normal">
           <FileText className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
