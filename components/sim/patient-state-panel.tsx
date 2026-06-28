@@ -20,6 +20,8 @@ export type PatientStatePanelProps = {
   vitalSigns: VitalSign[];
   otherSigns?: string[];
   psychological: Psychological[];
+  /** 심리 상태가 턴마다 갱신되는 화면인지(=실시간 갱신 안내 노출 여부). 기본 true. */
+  realtime?: boolean;
   /** PBL 요약 — 있으면 사이드바에 접이식 참고 카드로 노출 */
   pblSummary?: PblSummaryCategory[];
   /** 시나리오 본문 — 있으면 사이드바 최하단에 접이식 참고 카드로 노출 */
@@ -38,6 +40,7 @@ export function PatientStatePanel({
   vitalSigns,
   otherSigns,
   psychological,
+  realtime = true,
   pblSummary,
   scenarioText,
   onEnd,
@@ -125,9 +128,11 @@ export function PatientStatePanel({
                 </span>
               </div>
             ))}
-            <span className="text-[10px] text-fg-subtle">
-              대화에 따라 실시간 갱신돼요
-            </span>
+            {realtime && (
+              <span className="text-[10px] text-fg-subtle">
+                대화에 따라 실시간 갱신돼요
+              </span>
+            )}
           </div>
         </div>
       </Card>

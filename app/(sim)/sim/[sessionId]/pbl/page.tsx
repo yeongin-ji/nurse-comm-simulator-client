@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Collapse } from "@/components/ui/collapse";
 import { Modal } from "@/components/ui/modal";
 import { QuotedText } from "@/components/ui/quoted-text";
+import { cn } from "@/lib/utils/cn";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
@@ -51,9 +54,7 @@ export default function PblPage() {
   const record = scenario ? projectMedicalRecord(scenario.medical_record) : null;
   const initial = scenario ? projectInitialState(scenario.initial_state) : null;
   const patientMeta = record
-    ? [record.name, [record.sex, record.age && `${record.age}세`].filter(Boolean).join("/")]
-        .filter(Boolean)
-        .join(" (") + (record.name && record.sex ? ")" : "")
+    ? buildPatientMeta(record.name, record.sex ?? record.patient_gender, record.age)
     : null;
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -120,33 +121,22 @@ export default function PblPage() {
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <aside className="w-[250px] shrink-0 flex flex-col gap-2.5 min-h-0">
           <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-2.5">
-            <NursingEthicsCard defaultOpen={false} className="shrink-0" />
-
-            <Card className="flex flex-col gap-2.5 p-4">
-              <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
-                환자 정보
-              </h2>
-              <p className="text-[13px] font-medium text-foreground">
-                {patientMeta ?? "불러오는 중..."}
-              </p>
-              <div className="h-px bg-border" />
-              <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-                {scenario?.scenario_text ? (
-                  <QuotedText>{scenario.scenario_text}</QuotedText>
-                ) : (
-                  "시나리오를 불러오고 있어요..."
-                )}
-              </p>
-            </Card>
-
             {initial && (
               <PatientStatePanel
                 className="w-full"
                 vitalSigns={initial.vitalSigns}
                 otherSigns={initial.otherSigns}
                 psychological={initial.psychological}
+                realtime={false}
               />
             )}
+
+            <ScenarioCard
+              patientMeta={patientMeta}
+              scenarioText={scenario?.scenario_text}
+            />
+
+            <NursingEthicsCard defaultOpen={false} className="shrink-0" />
           </div>
 
           <Link
@@ -167,9 +157,6 @@ export default function PblPage() {
                 </span>
                 <Badge>의사소통 방향 논의</Badge>
                 <div className="ml-auto flex items-center gap-3">
-                  <span className="text-label-sm font-medium text-fg-muted tracking-normal">
-                    {userTurns}턴
-                  </span>
                   <Button
                     variant="primary"
                     size="sm"
@@ -235,5 +222,72 @@ export default function PblPage() {
         </p>
       </Modal>
     </>
+  );
+}
+
+/** 성별 값을 M/F 약어로 정규화. 알 수 없으면 원본을 그대로 둔다. */
+function shortSex(sex?: string): string | undefined {
+  if (!sex) return undefined;
+  const v = sex.trim();
+  if (v.startsWith("남") || /^m(ale)?$/i.test(v)) return "M";
+  if (v.startsWith("여") || /^f(emale)?$/i.test(v)) return "F";
+  return v;
+}
+
+/** "김민수 (M/48)" 형식의 환자 메타 문자열을 만든다. */
+function buildPatientMeta(
+  name?: string,
+  sex?: string,
+  age?: number
+): string | null {
+  const detail = [shortSex(sex), age].filter(Boolean).join("/");
+  return [name, detail && `(${detail})`].filter(Boolean).join(" ") || null;
+}
+
+/** 시나리오 참고 카드 (환자 메타 + 본문). 윤리강령 카드와 동일하게 기본 닫힘. */
+function ScenarioCard({
+  patientMeta,
+  scenarioText,
+}: {
+  patientMeta: string | null;
+  scenarioText?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="p-0 overflow-hidden shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 px-4 py-2 text-left bg-navy-50 transition-colors hover:bg-navy-100"
+      >
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-navy-900 tracking-normal">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
+          시나리오
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-navy-500 transition-transform duration-200",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </button>
+      <Collapse open={open}>
+        <div className="border-t border-navy-100 px-4 py-3 flex flex-col gap-2.5">
+          <p className="text-[13px] font-medium text-foreground">
+            {patientMeta ?? "불러오는 중..."}
+          </p>
+          <div className="h-px bg-border" />
+          <p className="text-[11px] leading-[18px] text-fg-muted">
+            {scenarioText ? (
+              <QuotedText>{scenarioText}</QuotedText>
+            ) : (
+              "시나리오를 불러오고 있어요..."
+            )}
+          </p>
+        </div>
+      </Collapse>
+    </Card>
   );
 }

@@ -134,3 +134,16 @@ export function topScoringToolId(
   }
   return best.toolId;
 }
+
+/**
+ * Overall percentage across every evaluation tool, weighted by available points
+ * (sum of scored points / sum of scorable points). Returns 0 when nothing is
+ * scorable so the hero header always renders a number.
+ */
+export function overallScorePercent(
+  evaluations: ProjectedEvaluation[],
+): number {
+  const totalScore = evaluations.reduce((acc, e) => acc + e.totalScore, 0);
+  const totalMax = evaluations.reduce((acc, e) => acc + e.totalMaxScore, 0);
+  return totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+}

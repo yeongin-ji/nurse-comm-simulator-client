@@ -84,7 +84,7 @@ export function TypingBubble({ role = "patient", className }: TypingBubbleProps)
       aria-label={`${ROLE_LABEL[role]}이 응답하고 있어요`}
     >
       <span className="text-[11px] text-fg-subtle">{ROLE_LABEL[role]}</span>
-      <div className="bg-surface-muted rounded-[14px_14px_14px_4px] px-4 py-2 flex items-center">
+      <div className="bg-navy-50 rounded-[14px_14px_14px_4px] px-4 py-2 flex items-center">
         <GooLoader />
       </div>
     </div>

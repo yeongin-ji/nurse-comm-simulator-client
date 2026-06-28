@@ -32,7 +32,7 @@ import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { pblApi, pblKeys, projectCategories } from "@/lib/api/pbl";
 import { fetchTts, playAudioBlob } from "@/lib/api/tts";
 import { Volume2, VolumeOff } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { Toggle } from "@/components/ui/toggle";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
 import { patientPhotoByGender } from "@/lib/utils/patient-photo";
@@ -276,7 +276,7 @@ export default function ChatPage() {
         <section className="flex-1 flex flex-col gap-2.5 min-w-0 min-h-0">
           <Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
-              <header className="sticky top-0 z-10 bg-surface-elevated px-5 pt-5 pb-3 border-b border-border flex items-center gap-2">
+              <header className="sticky top-0 z-10 bg-surface-elevated px-5 py-2.5 border-b border-border flex items-center gap-2">
                 <PatientAvatar
                   size={28}
                   name={patientName}
@@ -291,25 +291,23 @@ export default function ChatPage() {
                 </span>
                 <Badge>{patientMeta}</Badge>
                 <span className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() => setTtsEnabled(!ttsEnabled)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] transition-colors",
-                    ttsEnabled
-                      ? "bg-accent/10 text-accent"
-                      : "bg-surface-muted text-fg-subtle"
-                  )}
-                  aria-label={ttsEnabled ? "음성 끄기" : "음성 켜기"}
-                >
+                <div className="inline-flex items-center gap-2">
                   {ttsEnabled ? (
-                    <Volume2 className="h-3 w-3" />
+                    <Volume2 className="h-4 w-4 text-primary" aria-hidden />
                   ) : (
-                    <VolumeOff className="h-3 w-3" />
+                    <VolumeOff className="h-4 w-4 text-fg-subtle" aria-hidden />
                   )}
-                  {ttsEnabled ? "음성 ON" : "음성 OFF"}
-                </button>
+                  <span className="text-[12px] font-medium text-fg-muted">
+                    음성
+                  </span>
+                  <Toggle
+                    on={ttsEnabled}
+                    onChange={setTtsEnabled}
+                    label={ttsEnabled ? "음성 끄기" : "음성 켜기"}
+                  />
+                </div>
                 <Timer
+                  className="ml-4"
                   startedAt={startedAt}
                   totalSeconds={TOTAL_SECONDS}
                   onTimeout={onTimeout}

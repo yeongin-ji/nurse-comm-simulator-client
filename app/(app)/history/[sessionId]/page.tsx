@@ -10,10 +10,12 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { PageShell } from "@/components/layout/page-shell";
 import { CommentCard } from "@/components/educator/comment-card";
 import { EvaluationSummaryCard } from "@/components/evaluation/evaluation-summary-card";
+import { SessionSummaryHeader } from "@/components/evaluation/session-summary-header";
 import {
   evaluationApi,
   evaluationKeys,
   formatDuration,
+  overallScorePercent,
   projectEvaluations,
   topScoringToolId,
 } from "@/lib/api/evaluation";
@@ -25,7 +27,9 @@ import {
 import { scenarioKeys, scenariosApi, projectMedicalRecord } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { setToolsCache, toolKeys, toolsApi } from "@/lib/tools";
+import { patientPhotoByGender } from "@/lib/utils/patient-photo";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useSettingsStore } from "@/lib/stores/settings";
 import {
   ConversationLog,
   type ConversationMessage,
@@ -43,6 +47,7 @@ export default function HistorySessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
   const userName = useAuthStore((s) => s.user?.name);
+  const profileImageEnabled = useSettingsStore((s) => s.profileImageEnabled);
 
   const sessionQuery = useQuery({
     queryKey: sessionKeys.detail(numericSessionId),
@@ -65,9 +70,14 @@ export default function HistorySessionPage() {
   });
 
   const diseaseName = documentQuery.data?.disease_name ?? "세션 상세";
-  const patientName = scenarioQuery.data
-    ? (projectMedicalRecord(scenarioQuery.data.medical_record).name ?? undefined)
+  const record = scenarioQuery.data
+    ? projectMedicalRecord(scenarioQuery.data.medical_record)
     : undefined;
+  const patientName = record?.name ?? undefined;
+  const patientPhoto = patientPhotoByGender(
+    record?.patient_gender ?? record?.sex,
+    profileImageEnabled,
+  );
 
   const messagesQuery = useQuery({
     queryKey: sessionKeys.messages(numericSessionId),
@@ -134,7 +144,18 @@ export default function HistorySessionPage() {
           ]}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">
+        <SessionSummaryHeader
+          diseaseName={diseaseName}
+          patientName={patientName}
+          photoSrc={patientPhoto}
+          scorePercent={overallScorePercent(evaluations)}
+          duration={formatDuration(
+            sessionQuery.data?.simulation_duration_seconds ?? meta.durationSeconds
+          )}
+          turns={meta.turns}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {evaluations.map((evaluation) => (
@@ -156,25 +177,10 @@ export default function HistorySessionPage() {
           </div>
 
           <aside className="flex flex-col gap-3">
-            <Card className="flex flex-col gap-2">
-              <Meta label="소요 시간" value={formatDuration(sessionQuery.data?.simulation_duration_seconds ?? meta.durationSeconds)} />
-              <Meta label="대화 턴" value={`${meta.turns}회`} />
-              <Meta label="제한 시간" value="15분" />
-            </Card>
-
             <CommentCard sessionId={numericSessionId} readOnly />
           </aside>
         </div>
       </PageShell>
     </main>
-  );
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-[13px] text-fg-muted">{label}</span>
-      <span className="text-[13px] font-medium text-foreground">{value}</span>
-    </div>
   );
 }

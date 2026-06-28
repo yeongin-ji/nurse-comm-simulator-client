@@ -51,7 +51,7 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoa
           "max-w-[78%] px-3.5 py-2.5 text-[13px] leading-5",
           isUser
             ? "bg-primary text-on-primary rounded-[14px_14px_4px_14px]"
-            : "bg-surface-muted text-foreground rounded-[14px_14px_14px_4px]"
+            : "bg-navy-50 text-navy-900 rounded-[14px_14px_14px_4px]"
         )}
       >
         {displayText}
@@ -60,7 +60,7 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoa
             aria-hidden
             className="inline-block w-0.5 h-[1em] ml-0.5 align-[-0.15em] animate-[ncs-caret_1s_steps(1)_infinite]"
             style={{
-              background: isUser ? "var(--on-primary)" : "var(--accent)",
+              background: isUser ? "var(--on-primary)" : "var(--navy-500)",
             }}
           />
         )}
