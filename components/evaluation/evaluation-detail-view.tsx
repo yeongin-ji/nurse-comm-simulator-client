@@ -1,10 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import Markdown from "react-markdown";
-import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Gauge } from "@/components/ui/gauge";
-import { type EvaluationItem, type ProjectedEvaluation } from "@/lib/api/evaluation";
-import { getToolById } from "@/lib/tools";
+import { ScoreDistribution } from "@/components/evaluation/score-distribution";
+import { type ProjectedEvaluation } from "@/lib/api/evaluation";
+import { getToolById, toolShortDescription } from "@/lib/tools";
+import { cn } from "@/lib/utils/cn";
+
+type DetailTab = "debrief" | "items";
 
 export type EvaluationDetailViewProps = {
   evaluation: ProjectedEvaluation;
@@ -14,12 +20,13 @@ export type EvaluationDetailViewProps = {
  * Full per-tool layout used by the *.../tools/[toolId] sub pages.
  */
 export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) {
+  const [tab, setTab] = useState<DetailTab>("debrief");
   const tool = getToolById(evaluation.toolId);
-  // N/A (null) items are excluded — only scored items can be a "top" item.
-  const top3 = evaluation.items
-    .filter((i): i is EvaluationItem & { value: number } => i.value !== null)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 3);
+  const percent =
+    evaluation.totalMaxScore > 0
+      ? Math.round((evaluation.totalScore / evaluation.totalMaxScore) * 100)
+      : 0;
+  const shortDescription = toolShortDescription(tool);
 
   return (
     <div className="flex flex-col gap-5">
@@ -30,89 +37,79 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
           </h2>
           <Badge variant="accent">평가 도구</Badge>
         </div>
-        {tool?.description && (
-          <p className="text-body-md text-fg-muted">{tool.description}</p>
+        {shortDescription && (
+          <p className="text-body-md text-fg-muted">{shortDescription}</p>
         )}
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 items-stretch">
-        <Card className="flex flex-col items-center justify-center gap-2 p-6">
-          <span className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
+      <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5">
+        <div className="flex shrink-0 flex-col items-start gap-0.5 sm:border-r sm:border-border sm:pr-5">
+          <span className="text-label-sm font-medium uppercase tracking-[0.04em] text-fg-subtle">
             총점
           </span>
-          <p className="text-foreground tracking-[-0.03em] flex items-baseline gap-1">
-            <span className="text-[44px] font-semibold leading-none text-accent">
-              {evaluation.totalMaxScore > 0
-                ? Math.round((evaluation.totalScore / evaluation.totalMaxScore) * 100)
-                : 0}
-              <span className="text-[28px] font-medium">%</span>
-            </span>
-          </p>
-          <span className="text-body-md font-normal text-fg-subtle tabular-nums">
+          <span className="text-[28px] font-semibold leading-none tracking-[-0.02em] text-navy-800 tabular-nums">
+            {percent}
+            <span className="text-[18px] font-medium">%</span>
+          </span>
+          <span className="text-label-sm font-normal text-fg-subtle tabular-nums">
             {evaluation.totalScore} / {evaluation.totalMaxScore}
           </span>
-        </Card>
-        {top3.length > 0 && (
-          <div className="rounded-lg border border-accent/30 bg-accent/[0.05] p-5 flex items-start gap-3">
-            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/[0.12] text-accent">
-              <Sparkles className="h-4 w-4" aria-hidden />
-            </span>
-            <div className="flex-1 flex flex-col gap-3 min-w-0">
-              <div className="flex flex-col gap-0.5">
-                <p className="text-label-sm font-medium uppercase tracking-[0.04em] text-accent">
-                  잘한 항목 Top {top3.length}
-                </p>
-                <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-                  이 평가 도구에서 가장 높은 점수를 받은 항목들이에요.
-                </p>
-              </div>
-              <ol className="flex flex-col gap-2">
-                {top3.map((item, i) => (
-                  <li key={item.label} className="flex items-center gap-2.5">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold bg-accent text-on-accent">
-                      {i + 1}
-                    </span>
-                    <span className="text-body-md text-foreground flex-1 truncate">
-                      {item.label}
-                    </span>
-                    <span className="text-body-md font-semibold text-foreground tabular-nums">
-                      {item.value} / {item.maxScore}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+        </div>
+        <ScoreDistribution items={evaluation.items} className="min-w-0 flex-1" />
+      </Card>
+
+      <section className="mt-4 flex flex-col gap-3.5">
+        <div
+          role="tablist"
+          aria-label="평가 상세 보기"
+          className="flex gap-0.5 self-start rounded-md bg-surface-muted p-0.5"
+        >
+          {(
+            [
+              { key: "debrief", label: "디브리핑" },
+              { key: "items", label: `항목별 점수 ${evaluation.items.length}` },
+            ] as const
+          ).map(({ key, label }) => {
+            const active = key === tab;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(key)}
+                className={cn(
+                  "rounded px-3 py-1 text-label-sm font-medium leading-[18px] tracking-normal whitespace-nowrap transition-colors duration-150",
+                  active
+                    ? "bg-primary text-on-primary"
+                    : "text-fg-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="h-px bg-border" />
+
+        {tab === "debrief" ? (
+          <div className="prose prose-sm max-w-none text-fg-muted prose-headings:text-foreground prose-strong:text-foreground">
+            <Markdown>{evaluation.debriefing}</Markdown>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
+            {evaluation.items.map((item) => (
+              <Gauge
+                key={item.label}
+                label={item.label}
+                subtitle={item.criteria}
+                value={item.value}
+                maxValue={item.maxScore}
+              />
+            ))}
           </div>
         )}
-      </div>
-
-      <Card className="flex flex-col gap-3.5">
-        <h3 className="text-[15px] font-semibold text-foreground">
-          디브리핑
-        </h3>
-        <div className="h-px bg-border" />
-        <div className="prose prose-sm max-w-none text-fg-muted prose-headings:text-foreground prose-strong:text-foreground">
-          <Markdown>{evaluation.debriefing}</Markdown>
-        </div>
-      </Card>
-
-      <Card className="flex flex-col gap-3.5">
-        <h3 className="text-[15px] font-semibold text-foreground">
-          항목별 점수
-        </h3>
-        <div className="h-px bg-border" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-          {evaluation.items.map((item) => (
-            <Gauge
-              key={item.label}
-              label={item.label}
-              subtitle={item.criteria}
-              value={item.value}
-              maxValue={item.maxScore}
-            />
-          ))}
-        </div>
-      </Card>
+      </section>
     </div>
   );
 }

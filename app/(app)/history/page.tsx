@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { PageShell } from "@/components/layout/page-shell";
@@ -34,12 +33,18 @@ export default function HistoryPage() {
   const allSessions = sessionsQuery.data ?? [];
   const sessions = showAll ? allSessions : allSessions.filter(isDoneSession);
   const totalSessions = sessions.length;
-  const scored = sessions.filter((s) => s.total_score != null);
-  const avgScore =
+  // Average as a percentage — raw scores aren't comparable across tools whose
+  // max scores differ (e.g. 6/80 vs 68/122).
+  const scored = sessions.filter(
+    (s) => s.total_score != null && (s.total_max_score ?? 0) > 0,
+  );
+  const avgPercent =
     scored.length > 0
       ? Math.round(
-          scored.reduce((acc, s) => acc + (s.total_score ?? 0), 0) /
-            scored.length,
+          scored.reduce(
+            (acc, s) => acc + (s.total_score! / s.total_max_score!) * 100,
+            0,
+          ) / scored.length,
         )
       : null;
   const uniqueScenarios = new Set(sessions.map((s) => s.scenario_id)).size;
@@ -56,21 +61,20 @@ export default function HistoryPage() {
           </p>
         </header>
 
-        <div className="flex gap-3">
-          <StatCard label="총 세션" value={`${totalSessions}회`} />
-          <StatCard label="평균 점수" value={avgScore != null ? `${avgScore}점` : "—"} />
-          <StatCard label="시나리오" value={`${uniqueScenarios}종`} />
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border pb-4">
+          <Metric value={`${totalSessions}`} unit="세션" />
+          <Metric value={avgPercent != null ? `${avgPercent}%` : "—"} unit="평균 점수" />
+          <Metric value={`${uniqueScenarios}`} unit="시나리오" />
+          <label className="ml-auto inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="accent-accent h-3.5 w-3.5"
+            />
+            미완료 세션 포함
+          </label>
         </div>
-
-        <label className="inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={showAll}
-            onChange={(e) => setShowAll(e.target.checked)}
-            className="accent-accent h-3.5 w-3.5"
-          />
-          미완료 세션 포함
-        </label>
 
         {sessionsQuery.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-fg-muted">
@@ -92,22 +96,28 @@ export default function HistoryPage() {
                   { content: "시나리오 (질환)" },
                   { content: "수행일시" },
                   { content: "상태", width: "80px" },
-                  { content: "총점", width: "80px" },
+                  { content: "총점", width: "120px" },
                   { content: "코멘트", width: "80px" },
                   { content: "", width: "96px" },
                 ]}
               />
               {sessions.map((s) => {
                 const commentCount = s.comment_count ?? 0;
+                const percent =
+                  s.total_score != null && (s.total_max_score ?? 0) > 0
+                    ? Math.round((s.total_score / s.total_max_score!) * 100)
+                    : null;
                 return (
                   <TableRow
                     key={s.id}
+                    className="transition-colors hover:bg-surface"
                     cells={[
-                      { content: s.disease ?? "—" },
+                      { content: s.disease ?? "—", className: "font-medium" },
                       {
                         content: s.start_time
                           ? formatSessionDate(s.start_time)
                           : "—",
+                        className: "text-fg-muted",
                       },
                       {
                         content: (
@@ -119,12 +129,19 @@ export default function HistoryPage() {
                       },
                       {
                         content:
-                          s.total_score != null
-                            ? `${s.total_score}/${s.total_max_score ?? "?"}`
-                            : "—",
-                        width: "80px",
-                        className:
-                          s.total_score != null ? "font-medium" : undefined,
+                          percent != null ? (
+                            <span className="tabular-nums">
+                              <span className="font-medium text-navy-800">
+                                {percent}%
+                              </span>{" "}
+                              <span className="text-fg-subtle">
+                                {s.total_score}/{s.total_max_score}
+                              </span>
+                            </span>
+                          ) : (
+                            "—"
+                          ),
+                        width: "120px",
                       },
                       {
                         content:
@@ -155,5 +172,16 @@ export default function HistoryPage() {
         )}
       </PageShell>
     </main>
+  );
+}
+
+function Metric({ value, unit }: { value: string; unit: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5">
+      <span className="text-[20px] font-semibold tracking-[-0.02em] text-foreground tabular-nums">
+        {value}
+      </span>
+      <span className="text-[13px] text-fg-muted">{unit}</span>
+    </span>
   );
 }
