@@ -34,7 +34,7 @@ export function PatientStatePanel({
   return (
     <aside
       className={cn(
-        "w-[210px] shrink-0 flex flex-col gap-2.5",
+        "w-[312px] shrink-0 flex flex-col gap-2.5",
         className
       )}
     >

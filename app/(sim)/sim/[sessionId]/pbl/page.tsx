@@ -20,6 +20,7 @@ import {
   projectInitialState,
 } from "@/lib/api/scenarios";
 import { PatientStatePanel } from "@/components/sim/patient-state-panel";
+import { NursingEthicsCard } from "@/components/sim/nursing-ethics-card";
 import { Logo } from "@/components/layout/logo";
 import { useAuthStore } from "@/lib/stores/auth";
 
@@ -116,33 +117,38 @@ export default function PblPage() {
   return (
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
-        <aside className="w-[210px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
-          <Card className="flex flex-col gap-2.5 p-4">
-            <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
-              환자 정보
-            </h2>
-            <p className="text-[13px] font-medium text-foreground">
-              {patientMeta ?? "불러오는 중..."}
-            </p>
-            <div className="h-px bg-border" />
-            <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-              {scenario?.scenario_text ?? "시나리오를 불러오고 있어요..."}
-            </p>
-          </Card>
+        <aside className="w-[312px] shrink-0 flex flex-col gap-2.5 min-h-0">
+          <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-2.5">
+            <NursingEthicsCard defaultOpen={false} className="shrink-0" />
 
-          {initial && (
-            <PatientStatePanel
-              className="w-full"
-              vitalSigns={initial.vitalSigns}
-              otherSigns={initial.otherSigns}
-              psychological={initial.psychological}
-            />
-          )}
+            <Card className="flex flex-col gap-2.5 p-4">
+              <h2 className="text-label-sm font-medium text-fg-subtle uppercase tracking-[0.04em]">
+                환자 정보
+              </h2>
+              <p className="text-[13px] font-medium text-foreground">
+                {patientMeta ?? "불러오는 중..."}
+              </p>
+              <div className="h-px bg-border" />
+              <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
+                {scenario?.scenario_text ?? "시나리오를 불러오고 있어요..."}
+              </p>
+            </Card>
 
-          <Link href="/scenarios" className="block">
-            <Button variant="ghost" full size="sm">
-              나가기
-            </Button>
+            {initial && (
+              <PatientStatePanel
+                className="w-full"
+                vitalSigns={initial.vitalSigns}
+                otherSigns={initial.otherSigns}
+                psychological={initial.psychological}
+              />
+            )}
+          </div>
+
+          <Link
+            href="/scenarios"
+            className="shrink-0 self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
+          >
+            나가기
           </Link>
         </aside>
 

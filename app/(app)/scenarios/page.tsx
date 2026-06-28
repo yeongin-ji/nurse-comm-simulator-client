@@ -1,22 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { ScenarioCreateModal } from "@/components/scenarios/scenario-create-modal";
 import { scenariosApi, scenarioKeys } from "@/lib/api/scenarios";
 import { formatSessionDate } from "@/lib/api/learners";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToast } from "@/lib/stores/toast";
+
+/** 난이도(하/중/상) → 코너 탭 배경색. 미지정 시 중립 색. */
+const DIFFICULTY_COLOR: Record<string, string> = {
+  하: "var(--success)",
+  중: "var(--warning)",
+  상: "var(--danger)",
+};
 
 export default function ScenariosPage() {
   const user = useAuthStore((s) => s.user);
@@ -100,27 +105,73 @@ export default function ScenariosPage() {
                 href={`/scenarios/${s.id}`}
                 className="group block"
               >
-                <Card className="flex items-center gap-4 px-5 py-4 transition-[box-shadow,border-color] duration-150 group-hover:border-border-strong group-hover:shadow-md cursor-pointer">
-                  <PatientAvatar size={44} name={s.patient_name ?? "환자"} />
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[15px] font-medium text-foreground">
-                        {s.disease_name ?? "시나리오"}
+                <Card className="relative flex items-stretch p-0 min-h-28 overflow-hidden transition-[box-shadow,border-color] duration-150 group-hover:border-border-strong group-hover:shadow-md cursor-pointer">
+                  {/* Cinematic media panel: image fills the left edge-to-edge.
+                      MOCK: patient photo isn't on ScenarioListItem yet, so we
+                      hardcode the sample female-patient asset. Swap for the
+                      server-provided URL once the API exposes it (see note). */}
+                  <div className="relative w-32 shrink-0 self-stretch bg-navy-50 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/patients/vp-woman.png"
+                      alt={`${s.patient_name ?? "환자"} 프로필`}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    {/* Difficulty corner tab. */}
+                    {s.difficulty && (
+                      <span
+                        className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-[0.02em] text-white shadow-sm"
+                        style={{
+                          background:
+                            DIFFICULTY_COLOR[s.difficulty] ??
+                            "var(--border-strong)",
+                        }}
+                      >
+                        {s.difficulty}
                       </span>
-                      <span className="text-body-md text-fg-muted">
-                        {s.patient_name}
-                      </span>
-                      {s.difficulty && <Badge>난이도 {s.difficulty}</Badge>}
-                    </div>
-                    <span className="text-[13px] text-fg-muted">
-                      {s.last_session_at
-                        ? `최근 시뮬레이션: ${formatSessionDate(s.last_session_at)} · ${s.session_count ?? 0}회 수행`
-                        : "아직 시뮬레이션을 시작하지 않았어요"}
-                    </span>
+                    )}
                   </div>
+
+                  <div className="flex flex-1 flex-col p-[18px] min-w-0">
+                    <div className="flex items-baseline gap-2 min-w-0">
+                      <span className="text-[19px] font-semibold leading-tight tracking-[-0.01em] text-foreground truncate">
+                        {s.patient_name ?? "환자"}
+                      </span>
+                      {/* MOCK: 나이/성별은 ScenarioListItem에 아직 없어 임시값.
+                          서버가 patient_age/patient_gender를 내려주면
+                          `${s.patient_age}/${s.patient_gender}`로 교체. */}
+                      <span className="font-mono shrink-0 self-center rounded-[5px] bg-navy-50 px-1.5 py-0.5 text-[12px] text-navy-800">
+                        47/M
+                      </span>
+                    </div>
+                    <span className="mt-0.5 text-[13px] text-fg-muted truncate">
+                      {s.disease_name ? `${s.disease_name} 시나리오` : "시나리오"}
+                    </span>
+
+                    <div className="mt-auto pt-3 border-t border-surface-muted flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {s.last_session_at ? (
+                          <span className="text-[12px] text-fg-subtle truncate">
+                            {s.session_count ?? 0}회 수행
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-fg-subtle truncate">
+                            아직 시작 안 함
+                          </span>
+                        )}
+                      </div>
+                      {s.last_session_at && (
+                        <span className="text-[12px] text-fg-subtle shrink-0">
+                          {formatSessionDate(s.last_session_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    className="p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-danger hover:bg-danger/10 transition-all"
+                    aria-label="시나리오 삭제"
+                    className="absolute top-2 right-2 p-1.5 rounded-md text-fg-subtle opacity-0 group-hover:opacity-100 hover:text-danger hover:bg-danger/10 transition-all"
                     onClick={(e) =>
                       handleDeleteClick(
                         e,
@@ -131,10 +182,6 @@ export default function ScenariosPage() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                  <ChevronRight
-                    className="h-4 w-4 text-fg-subtle"
-                    aria-hidden
-                  />
                 </Card>
               </Link>
             ))}

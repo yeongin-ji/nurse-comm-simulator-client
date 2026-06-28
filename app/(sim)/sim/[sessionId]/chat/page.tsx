@@ -97,9 +97,12 @@ export default function ChatPage() {
     .filter(Boolean)
     .join("/");
 
-  // Keep refs in sync for TTS calls (avoids stale closures in mutation)
-  patientAgeRef.current = record.patient_age ?? record.age;
-  patientGenderRef.current = record.patient_gender ?? record.sex;
+  // Keep refs in sync for TTS calls (avoids stale closures in mutation).
+  // Done in an effect — writing refs during render is impure (lint-blocked).
+  useEffect(() => {
+    patientAgeRef.current = record.patient_age ?? record.age;
+    patientGenderRef.current = record.patient_gender ?? record.sex;
+  });
 
   /* ── chat + patient state ── */
   const [messages, setMessages] = useState<Message[]>([]);
@@ -247,6 +250,7 @@ export default function ChatPage() {
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <PatientStatePanel
+          className="overflow-y-auto min-h-0"
           vitalSigns={vitalSigns}
           otherSigns={otherSigns}
           psychological={psychological}

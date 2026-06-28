@@ -24,7 +24,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${jetbrainsMono.variable} h-full`}>
-      <body className="min-h-full flex flex-col">
+      {/* App-wide proportional scale-up (~+2pt on base text): zoom enlarges
+          type, spacing, and icons together. Set inline so Tailwind v4's
+          Lightning CSS doesn't strip the non-standard `zoom` property.
+          Factor lives in --app-zoom (globals.css) so full-viewport layouts
+          can compensate; tune it there. */}
+      <body className="min-h-full flex flex-col" style={{ zoom: "var(--app-zoom)" }}>
         <MockProvider>
           <QueryProvider>{children}</QueryProvider>
           <Toaster />

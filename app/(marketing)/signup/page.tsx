@@ -92,7 +92,6 @@ export default function SignupPage() {
         <form
           onSubmit={onSubmit}
           className="w-[340px] flex flex-col gap-6"
-          style={{ zoom: 1.2 }}
           noValidate
         >
           <header className="flex flex-col gap-2.5">

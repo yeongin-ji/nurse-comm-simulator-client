@@ -85,7 +85,6 @@ export default function LoginPage() {
         <form
           onSubmit={loginAs("learner")}
           className="w-[340px] flex flex-col gap-7"
-          style={{ zoom: 1.2 }}
           noValidate
         >
           <header className="flex flex-col gap-2.5">

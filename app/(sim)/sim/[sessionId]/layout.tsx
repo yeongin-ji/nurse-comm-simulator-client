@@ -16,7 +16,12 @@ export default function SimLayout({ children }: { children: ReactNode }) {
   const current = pickStep(pathname);
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden">
+    <div
+      className="flex flex-col bg-background overflow-hidden"
+      /* Divide by --app-zoom so the body zoom doesn't inflate 100dvh past
+         the real viewport (which would clip the chat input at the bottom). */
+      style={{ height: "calc(100dvh / var(--app-zoom))" }}
+    >
       <SimNav current={current} />
       {children}
     </div>

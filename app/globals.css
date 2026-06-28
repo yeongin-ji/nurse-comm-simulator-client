@@ -107,6 +107,11 @@
   --focus-ring: var(--navy-500);
   --focus-glow: 0 0 0 3px rgba(46, 93, 160, 0.18);
   --error-glow: 0 0 0 3px rgba(220, 38, 38, 0.10);
+
+  /* App-wide proportional scale-up factor. Applied as `zoom` on <body>
+     (inline, so Lightning CSS keeps it). Full-viewport layouts must divide
+     viewport units by this so they still fit the real screen after zoom. */
+  --app-zoom: 1.2;
 }
 
 @theme {
@@ -214,12 +219,19 @@
     Consolas, "Liberation Mono", monospace;
 }
 
+html {
+  /* Kill the rubber-band overscroll bounce (top & bottom) so the white
+     canvas no longer peeks above the navy nav when scrolled to the edge. */
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 @keyframes hf-spin {
