@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { sessionsApi } from "@/lib/api/sessions";
@@ -33,6 +34,9 @@ export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
         icon={mutation.isPending ? <Spinner size={14} /> : undefined}
+        iconRight={
+          mutation.isPending ? undefined : <ArrowRight className="h-4 w-4" />
+        }
       >
         {mutation.isPending ? "세션 만드는 중..." : "시뮬레이션 시작하기"}
       </Button>

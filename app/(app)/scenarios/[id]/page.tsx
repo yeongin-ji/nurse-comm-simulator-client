@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Settings } from "lucide-react";
+import { Clock, Infinity as InfinityIcon, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/scenarios";
 import { useSettingsStore } from "@/lib/stores/settings";
 import { patientPhotoByGender } from "@/lib/utils/patient-photo";
+import { formatGenderAge } from "@/lib/utils/patient";
 
 const STATUS_LABEL: Record<string, string> = {
   PBL: "PBL 진행 중",
@@ -34,6 +35,20 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: "평가 완료",
   DONE: "평가 완료",
 };
+
+/** 난이도(하/중/상) → 배지 색상. scenarios 목록의 색 컨벤션과 동일. */
+const DIFFICULTY_VARIANT: Record<string, "success" | "warning" | "danger"> = {
+  하: "success",
+  중: "warning",
+  상: "danger",
+};
+
+/** 시뮬레이션 시작 카드의 3단계 플로우 미리보기. */
+const SIM_STEPS = [
+  { title: "PBL 논의", desc: "AI 동료와 간호 방향 정리" },
+  { title: "환자 대화", desc: "가상 환자와 시뮬레이션" },
+  { title: "디브리핑", desc: "AI 평가 리포트 확인" },
+];
 
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -86,9 +101,7 @@ export default function ScenarioDetailPage() {
   const disease = document?.disease_name ?? "시나리오";
   const category = document?.category_path?.join(" > ") ?? "";
   const patientName = record.name ?? "OOO";
-  const patientMeta = [record.sex, record.age && `${record.age}세`]
-    .filter(Boolean)
-    .join("/");
+  const patientMeta = formatGenderAge(record.sex, record.age);
   const objectives = scenario.objectives ?? [];
 
   return (
@@ -119,7 +132,9 @@ export default function ScenarioDetailPage() {
                       {disease} 시나리오
                     </h1>
                     {record.difficulty && (
-                      <Badge>난이도 {record.difficulty}</Badge>
+                      <Badge variant={DIFFICULTY_VARIANT[record.difficulty]}>
+                        난이도 {record.difficulty}
+                      </Badge>
                     )}
                   </div>
                   <p className="text-[13px] text-fg-muted">
@@ -237,24 +252,57 @@ export default function ScenarioDetailPage() {
           </div>
 
           <aside className="flex flex-col gap-3">
-            <Card className="flex flex-col gap-3.5">
-              <h2 className="text-[15px] font-semibold text-foreground">
-                시뮬레이션
-              </h2>
-              <p className="text-[13px] text-fg-muted leading-5">
-                AI 동료와 의사소통 방향을 논의한 뒤 가상 환자와 대화를 시작해요.
-              </p>
-              <div className="h-px bg-border" />
-              <div className="flex items-center gap-1.5">
-                <Settings
-                  className="h-3.5 w-3.5 text-fg-subtle"
-                  aria-hidden
-                />
-                <span className="text-label-sm font-normal text-fg-muted tracking-normal">
-                  PBL: 턴 제한 없음 · 대화: 15분 제한
+            <Card className="p-0 overflow-hidden">
+              <div className="flex items-center gap-1.5 bg-navy-50 px-4 py-2 border-b border-navy-100">
+                <Play className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
+                <span className="text-[13px] font-semibold text-navy-900">
+                  시뮬레이션 시작
                 </span>
               </div>
-              <StartSessionButton scenarioId={numericScenarioId} />
+
+              <div className="flex flex-col gap-4 p-4">
+                <ol className="flex flex-col">
+                  {SIM_STEPS.map((step, i) => (
+                    <li key={step.title} className="flex gap-2.5">
+                      <div className="flex flex-col items-center">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-navy-50 font-mono text-[12px] text-navy-700">
+                          {i + 1}
+                        </span>
+                        {i < SIM_STEPS.length - 1 && (
+                          <span className="my-0.5 w-px flex-1 bg-border" />
+                        )}
+                      </div>
+                      <div className={i < SIM_STEPS.length - 1 ? "pb-3" : ""}>
+                        <div className="text-[13px] text-foreground">
+                          {step.title}
+                        </div>
+                        <div className="text-[11px] text-fg-subtle">
+                          {step.desc}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="flex gap-1.5">
+                  <span className="flex flex-1 items-center gap-1.5 rounded-lg bg-surface-muted px-2.5 py-1.5 text-[11px] text-fg-muted">
+                    <InfinityIcon
+                      className="h-3.5 w-3.5 shrink-0 text-fg-subtle"
+                      aria-hidden
+                    />
+                    PBL 제한 없음
+                  </span>
+                  <span className="flex flex-1 items-center gap-1.5 rounded-lg bg-surface-muted px-2.5 py-1.5 text-[11px] text-fg-muted">
+                    <Clock
+                      className="h-3.5 w-3.5 shrink-0 text-fg-subtle"
+                      aria-hidden
+                    />
+                    대화 15분
+                  </span>
+                </div>
+
+                <StartSessionButton scenarioId={numericScenarioId} />
+              </div>
             </Card>
 
             {initial && (

@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
 import { patientPhotoByGender } from "@/lib/utils/patient-photo";
+import { formatGenderAge } from "@/lib/utils/patient";
 
 type Message = {
   role: Extract<ChatRole, "user" | "patient">;
@@ -53,14 +54,6 @@ function formatTotal() {
   return `${m}:00 / ${m}:00`;
 }
 
-/** 성별 표기를 헤더용 약자(M/F)로 변환. 알 수 없으면 원문 유지. */
-function toGenderShort(gender: string | undefined): string | undefined {
-  if (!gender) return undefined;
-  const v = gender.trim().toLowerCase();
-  if (["남", "남성", "남자", "m", "male"].includes(v)) return "M";
-  if (["여", "여성", "여자", "f", "female"].includes(v)) return "F";
-  return gender;
-}
 
 export default function ChatPage() {
   const router = useRouter();
@@ -109,12 +102,11 @@ export default function ChatPage() {
   const disease = documentQuery.data?.disease_name ?? "시나리오";
   const patientName = record.name ?? "환자";
   // 헤더 서브 텍스트: "M/48 · 급성신부전" 형식
-  const patientAge = record.patient_age ?? record.age;
-  const genderShort = toGenderShort(record.patient_gender ?? record.sex);
-  const patientMeta = [
-    [genderShort, patientAge].filter(Boolean).join("/") || undefined,
-    disease,
-  ]
+  const genderAge = formatGenderAge(
+    record.patient_gender ?? record.sex,
+    record.patient_age ?? record.age
+  );
+  const patientMeta = [genderAge || undefined, disease]
     .filter(Boolean)
     .join(" · ");
 
