@@ -118,7 +118,7 @@ export default function PblPage() {
   return (
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
-        <aside className="w-[312px] shrink-0 flex flex-col gap-2.5 min-h-0">
+        <aside className="w-[250px] shrink-0 flex flex-col gap-2.5 min-h-0">
           <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-2.5">
             <NursingEthicsCard defaultOpen={false} className="shrink-0" />
 

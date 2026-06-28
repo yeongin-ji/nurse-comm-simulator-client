@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Collapse } from "@/components/ui/collapse";
 import { cn } from "@/lib/utils/cn";
 import type { PblSummaryCategory } from "@/lib/api/pbl";
 
@@ -41,7 +42,7 @@ export function PatientStatePanel({
   return (
     <aside
       className={cn(
-        "w-[312px] shrink-0 flex flex-col gap-2.5",
+        "w-[250px] shrink-0 flex flex-col gap-2.5",
         className
       )}
     >
@@ -129,34 +130,42 @@ export function PatientStatePanel({
   );
 }
 
+/** AI가 생성한 요약 텍스트에 섞여 들어오는 이모지를 제거한다. */
+function stripEmoji(text: string): string {
+  return text
+    .replace(/[\p{Extended_Pictographic}‍️]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="p-0 overflow-hidden">
+    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-surface-muted"
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-navy-100"
       >
-        <span className="flex items-center gap-1.5 text-label-sm font-medium text-accent tracking-normal">
-          <ClipboardList className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-navy-900 tracking-normal">
+          <ClipboardList className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
           의사소통 방향 요약
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-fg-subtle transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-navy-500 transition-transform duration-200",
             open && "rotate-180"
           )}
           aria-hidden
         />
       </button>
-      {open && (
-        <div className="border-t border-border px-4 py-3 flex flex-col gap-3">
+      <Collapse open={open}>
+        <div className="border-t border-navy-100 px-4 py-3 flex flex-col gap-3">
           {categories.map((cat) => (
             <div key={cat.name}>
-              <h4 className="text-[11px] font-medium text-foreground mb-1">
-                {cat.name}
+              <h4 className="text-[11px] font-medium text-navy-900 mb-1">
+                {stripEmoji(cat.name)}
               </h4>
               <ul className="flex flex-col gap-0.5 pl-3.5">
                 {cat.items.map((item, i) => (
@@ -164,17 +173,17 @@ function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
                     key={i}
                     className="text-[11px] text-fg-muted leading-[18px] list-disc"
                   >
-                    {item}
+                    {stripEmoji(item)}
                   </li>
                 ))}
               </ul>
             </div>
           ))}
-          <span className="text-[10px] text-fg-subtle">
+          <span className="text-[10px] text-navy-500">
             참고용이에요. 환자 반응에 따라 유연하게 대응하세요.
           </span>
         </div>
-      )}
+      </Collapse>
     </Card>
   );
 }

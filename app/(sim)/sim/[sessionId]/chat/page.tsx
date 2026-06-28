@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { REFLECTION_TIPS } from "@/lib/constants/communication-tips";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingBubble } from "@/components/chat/typing-bubble";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
@@ -51,6 +52,15 @@ function formatTotal() {
     .toString()
     .padStart(2, "0");
   return `${m}:00 / ${m}:00`;
+}
+
+/** 성별 표기를 헤더용 약자(M/F)로 변환. 알 수 없으면 원문 유지. */
+function toGenderShort(gender: string | undefined): string | undefined {
+  if (!gender) return undefined;
+  const v = gender.trim().toLowerCase();
+  if (["남", "남성", "남자", "m", "male"].includes(v)) return "M";
+  if (["여", "여성", "여자", "f", "female"].includes(v)) return "F";
+  return gender;
 }
 
 export default function ChatPage() {
@@ -99,12 +109,15 @@ export default function ChatPage() {
   const initial = scenario ? projectInitialState(scenario.initial_state) : null;
   const disease = documentQuery.data?.disease_name ?? "시나리오";
   const patientName = record.name ?? "환자";
+  // 헤더 서브 텍스트: "M/48 · 급성신부전" 형식
+  const patientAge = record.patient_age ?? record.age;
+  const genderShort = toGenderShort(record.patient_gender ?? record.sex);
   const patientMeta = [
-    record.patient_gender ?? record.sex,
-    (record.patient_age ?? record.age) && `${record.patient_age ?? record.age}세`,
+    [genderShort, patientAge].filter(Boolean).join("/") || undefined,
+    disease,
   ]
     .filter(Boolean)
-    .join("/");
+    .join(" · ");
 
   // Keep refs in sync for TTS calls (avoids stale closures in mutation).
   // Done in an effect — writing refs during render is impure (lint-blocked).
@@ -249,6 +262,8 @@ export default function ChatPage() {
           "근거 문장을 찾아 표시하고 있어요",
           "피드백 리포트를 작성하고 있어요",
         ]}
+        tips={REFLECTION_TIPS}
+        tipsLabel="되돌아보기"
         // TODO: 백엔드가 현재 평가 단계를 내려주면 currentStep={...}로 제어.
         // 지금은 currentStep 미지정 → 단계가 타이머로 자동 진행됩니다.
       />
@@ -281,13 +296,9 @@ export default function ChatPage() {
                   )}
                 />
                 <span className="text-body-md font-medium text-foreground">
-                  가상 환자
+                  {patientName !== "환자" ? patientName : "가상 환자"}
                 </span>
-                <Badge>
-                  {disease}
-                  {patientName !== "환자" && ` · ${patientName}`}
-                  {patientMeta && ` (${patientMeta})`}
-                </Badge>
+                <Badge>{patientMeta}</Badge>
                 <ScenarioTooltip description={scenario?.scenario_text ?? ""} />
                 <span className="flex-1" />
                 <button

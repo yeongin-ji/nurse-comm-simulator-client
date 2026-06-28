@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Collapse } from "@/components/ui/collapse";
 import { NURSING_ETHICS } from "@/lib/constants/nursing-ethics";
 import { cn } from "@/lib/utils/cn";
 
@@ -11,23 +12,6 @@ export type NursingEthicsCardProps = {
   defaultOpen?: boolean;
   className?: string;
 };
-
-/**
- * 부드러운 높이 전환을 위한 콜랩서.
- * grid-template-rows 0fr↔1fr 트랜지션으로 내용을 DOM에 둔 채 펼치고 접는다.
- */
-function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "grid transition-[grid-template-rows] duration-200 ease-out",
-        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-      )}
-    >
-      <div className="overflow-hidden">{children}</div>
-    </div>
-  );
-}
 
 /**
  * 한국간호사 윤리강령 참고 카드 (중첩 아코디언, navy 포인트).

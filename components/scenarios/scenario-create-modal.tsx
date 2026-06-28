@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Spinner } from "@/components/ui/spinner";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
+import { COMMUNICATION_TIPS } from "@/lib/constants/communication-tips";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import type { DocumentResponse } from "@/lib/api/documents";
 import { scenariosApi } from "@/lib/api/scenarios";
@@ -167,6 +168,7 @@ export function ScenarioCreateModal({
             "딜레마 케이스를 구성하고 있어요",
             "시나리오를 작성하고 있어요",
           ]}
+          tips={COMMUNICATION_TIPS}
           // TODO: 백엔드가 현재 생성 단계를 내려주면 currentStep={...}로 제어.
         />
       </div>

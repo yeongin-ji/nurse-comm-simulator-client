@@ -23,6 +23,15 @@ export type LoadingScreenProps = {
   stepIntervalMs?: number;
   /** Spinner diameter in px. */
   spinnerSize?: number;
+  /**
+   * Optional learning tips shown in a card below the stepper, rotating one at a
+   * time. Use to make long AI waits (시나리오 생성 등) feel productive.
+   */
+  tips?: string[];
+  /** ms each tip stays before rotating to the next. */
+  tipIntervalMs?: number;
+  /** Label shown above the rotating tip (e.g. "의사소통 팁" / "되돌아보기"). */
+  tipsLabel?: string;
   className?: string;
 };
 
@@ -33,6 +42,9 @@ export function LoadingScreen({
   currentStep,
   stepIntervalMs = 900,
   spinnerSize = 60,
+  tips,
+  tipIntervalMs = 4500,
+  tipsLabel = "의사소통 팁",
   className,
 }: LoadingScreenProps) {
   const list =
@@ -58,6 +70,60 @@ export function LoadingScreen({
           currentStep={currentStep}
           intervalMs={stepIntervalMs}
         />
+        {tips && tips.length > 0 && (
+          <TipCard tips={tips} intervalMs={tipIntervalMs} label={tipsLabel} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TipCard({
+  tips,
+  intervalMs,
+  label,
+}: {
+  tips: string[];
+  intervalMs: number;
+  label: string;
+}) {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (tips.length <= 1) return;
+    // Async timer (not a synchronous set-state in effect) rotates the tips.
+    const id = setInterval(
+      () => setIdx((prev) => (prev + 1) % tips.length),
+      intervalMs
+    );
+    return () => clearInterval(id);
+  }, [tips.length, intervalMs]);
+
+  return (
+    <div className="mt-10 w-full px-2 text-left">
+      <div
+        className="font-serif text-[34px] leading-[0.7] text-accent/40 select-none"
+        aria-hidden
+      >
+        “
+      </div>
+      {/* key={idx} restarts the fade-in each time the tip changes */}
+      <p
+        key={idx}
+        className="mb-3 text-body-md italic leading-[1.65] text-foreground animate-[ncs-tip-in_0.42s_cubic-bezier(0.22,1,0.36,1)]"
+      >
+        {tips[idx]}
+      </p>
+      <div className="flex items-center gap-2.5">
+        <span className="text-label-sm font-medium text-accent-text">
+          {label}
+        </span>
+        <span className="h-px flex-1 bg-border" />
+        {tips.length > 1 && (
+          <span className="text-label-sm tabular-nums text-fg-subtle">
+            {idx + 1} / {tips.length}
+          </span>
+        )}
       </div>
     </div>
   );
