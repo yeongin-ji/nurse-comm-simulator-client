@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChatBubble, type ChatRole } from "@/components/chat/chat-bubble";
+import { type ChatRole } from "@/components/chat/chat-bubble";
 import { cn } from "@/lib/utils/cn";
 
 export type ConversationMessage = {
@@ -12,6 +12,21 @@ export type ConversationMessage = {
 
 type Tab = "pbl" | "simulation";
 
+/** Strip SSML / XML-like tags (e.g. <break>, <prosody>) for plain display. */
+function stripSsml(raw: string): string {
+  return raw.replace(/<[^>]+>/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function speakerName(
+  role: ConversationMessage["role"],
+  userName?: string,
+  patientName?: string
+): string {
+  if (role === "user") return userName ?? "간호학생";
+  if (role === "patient") return patientName ?? "가상 환자";
+  return "AI 동료";
+}
+
 export type ConversationLogProps = {
   pbl: ConversationMessage[];
   simulation: ConversationMessage[];
@@ -20,6 +35,8 @@ export type ConversationLogProps = {
   /** Display name for the "patient" role (defaults to "가상 환자"). */
   patientName?: string;
   initialVisible?: number;
+  /** Render without the card chrome (border/shadow/padding) as a flat section. */
+  flat?: boolean;
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -33,6 +50,7 @@ export function ConversationLog({
   userName,
   patientName,
   initialVisible = 4,
+  flat,
 }: ConversationLogProps) {
   const [tab, setTab] = useState<Tab>("simulation");
   const [expanded, setExpanded] = useState(false);
@@ -48,8 +66,10 @@ export function ConversationLog({
     setExpanded(false);
   };
 
+  const Wrapper = flat ? "section" : Card;
+
   return (
-    <Card className="flex flex-col gap-3.5">
+    <Wrapper className="flex flex-col gap-3.5">
       <header className="flex items-center gap-2">
         <h2 className="text-body-lg font-semibold text-foreground">
           대화 기록
@@ -57,7 +77,7 @@ export function ConversationLog({
         <div
           role="tablist"
           aria-label="대화 종류"
-          className="flex gap-1.5"
+          className="flex gap-0.5 rounded-md bg-surface-muted p-0.5"
         >
           {(Object.keys(TAB_LABEL) as Tab[]).map((key) => {
             const active = key === tab;
@@ -69,11 +89,11 @@ export function ConversationLog({
                 aria-selected={active}
                 onClick={() => switchTab(key)}
                 className={cn(
-                  "px-2.5 py-0.5 rounded-full text-label-sm font-medium leading-[18px] tracking-normal whitespace-nowrap",
+                  "px-3 py-1 rounded text-label-sm font-medium leading-[18px] tracking-normal whitespace-nowrap",
                   "transition-colors duration-150",
                   active
-                    ? "bg-accent/[0.08] text-accent"
-                    : "bg-surface-muted text-fg-muted hover:text-foreground"
+                    ? "bg-primary text-on-primary"
+                    : "text-fg-muted hover:text-foreground"
                 )}
               >
                 {TAB_LABEL[key]}
@@ -93,10 +113,31 @@ export function ConversationLog({
           {TAB_LABEL[tab]} 기록이 없어요
         </p>
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {visible.map((m, i) => (
-            <ChatBubble key={`${tab}-${i}`} role={m.role} text={m.text} userName={userName} patientName={patientName} />
-          ))}
+        <div className="flex flex-col">
+          {visible.map((m, i) => {
+            const isUser = m.role === "user";
+            return (
+              <div
+                key={`${tab}-${i}`}
+                className={cn(
+                  "flex gap-3 rounded-md px-3 py-2.5",
+                  !isUser && "bg-surface"
+                )}
+              >
+                <span
+                  className={cn(
+                    "w-16 shrink-0 text-label-sm font-medium tracking-normal",
+                    isUser ? "text-navy-700" : "text-fg-muted"
+                  )}
+                >
+                  {speakerName(m.role, userName, patientName)}
+                </span>
+                <p className="min-w-0 flex-1 text-[13px] text-foreground leading-[20px] whitespace-pre-wrap">
+                  {isUser ? m.text : stripSsml(m.text)}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -112,6 +153,6 @@ export function ConversationLog({
           </button>
         </>
       )}
-    </Card>
+    </Wrapper>
   );
 }

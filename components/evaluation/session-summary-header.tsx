@@ -1,5 +1,4 @@
 import { Clock, MessagesSquare } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 import { cn } from "@/lib/utils/cn";
 
@@ -53,7 +52,7 @@ export function SessionSummaryHeader({
   const band = scoreBand(scorePercent);
 
   return (
-    <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5">
+    <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:gap-5">
       <PatientAvatar name={patientName ?? diseaseName} size={56} rounded src={photoSrc} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
@@ -90,7 +89,7 @@ export function SessionSummaryHeader({
           {band.label}
         </span>
       </div>
-    </Card>
+    </div>
   );
 }
 

@@ -21,6 +21,8 @@ export type CommentCardProps = {
   /** Display name of the logged-in educator. */
   currentEducatorName?: string;
   title?: string;
+  /** Render without the card chrome (border/shadow/padding) as a flat section. */
+  flat?: boolean;
 };
 
 export function CommentCard({
@@ -29,6 +31,7 @@ export function CommentCard({
   currentEducatorId,
   currentEducatorName,
   title = readOnly ? "교수자 코멘트" : "코멘트",
+  flat,
 }: CommentCardProps) {
   const queryClient = useQueryClient();
 
@@ -57,8 +60,10 @@ export function CommentCard({
 
   const comments = commentsQuery.data ?? [];
 
+  const Wrapper = flat ? "section" : Card;
+
   return (
-    <Card className="flex flex-col gap-3.5">
+    <Wrapper className="flex flex-col gap-3.5">
       <div className="flex items-center gap-1.5">
         <MessageSquare className="h-4 w-4 shrink-0 text-navy-700" aria-hidden />
         <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
@@ -125,6 +130,6 @@ export function CommentCard({
           )}
         </>
       )}
-    </Card>
+    </Wrapper>
   );
 }

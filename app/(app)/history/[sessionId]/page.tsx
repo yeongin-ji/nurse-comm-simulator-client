@@ -155,30 +155,27 @@ export default function HistorySessionPage() {
           turns={meta.turns}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {evaluations.map((evaluation) => (
-                <EvaluationSummaryCard
-                  key={evaluation.toolId}
-                  evaluation={evaluation}
-                  detailHrefBase={`/history/${sessionId}/tools`}
-                  highlighted={evaluation.toolId === topId}
-                />
-              ))}
-            </div>
-
-            <ConversationLog
-              pbl={toMessages(messagesQuery.data?.pbl)}
-              simulation={toMessages(messagesQuery.data?.simulation)}
-              userName={userName}
-              patientName={patientName}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {evaluations.map((evaluation) => (
+            <EvaluationSummaryCard
+              key={evaluation.toolId}
+              evaluation={evaluation}
+              detailHrefBase={`/history/${sessionId}/tools`}
+              highlighted={evaluation.toolId === topId}
             />
-          </div>
+          ))}
+        </div>
 
-          <aside className="flex flex-col gap-3">
-            <CommentCard sessionId={numericSessionId} readOnly />
-          </aside>
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+          <ConversationLog
+            flat
+            pbl={toMessages(messagesQuery.data?.pbl)}
+            simulation={toMessages(messagesQuery.data?.simulation)}
+            userName={userName}
+            patientName={patientName}
+          />
+
+          <CommentCard sessionId={numericSessionId} readOnly flat />
         </div>
       </PageShell>
     </main>

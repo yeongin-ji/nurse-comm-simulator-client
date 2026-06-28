@@ -84,3 +84,47 @@ export function getToolById(id: number | undefined): EvaluationTool | undefined 
 export function getToolName(id: number | undefined) {
   return getToolByIdFrom(_cache, id)?.name ?? "—";
 }
+
+// ── Display helpers (derive abbreviation / short copy from server fields) ──
+// The server exposes a single `tool_name` ("Full Name (ABBR)") and a verbose
+// `tool_description` ("…를 평가하는 Full Name (ABBR)"). Until the API provides
+// dedicated short_name / short_description fields, we parse them on the client.
+
+/** Trailing-parens abbreviation, e.g. "KCC-24". Falls back to the full name. */
+export function toolShortName(
+  tool: EvaluationTool | undefined,
+  fallback = "—",
+): string {
+  if (!tool) return fallback;
+  const m = tool.name.match(/\(([^)]+)\)\s*$/);
+  return m ? m[1].trim() : tool.name;
+}
+
+/** Tool name without the trailing parenthesised abbreviation. */
+export function toolFullName(tool: EvaluationTool | undefined): string {
+  if (!tool) return "";
+  return tool.name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+/**
+ * The expanded (usually English) proper name the abbreviation stands for.
+ * Lives at the tail of the description ("…를 평가하는 <Proper Name> (ABBR)").
+ * Falls back to the name-derived full name when the pattern is absent.
+ */
+export function toolExpandedName(tool: EvaluationTool | undefined): string {
+  if (!tool) return "";
+  const marker = "평가하는";
+  const i = tool.description?.indexOf(marker) ?? -1;
+  const tail =
+    tool.description && i >= 0
+      ? tool.description.slice(i + marker.length)
+      : toolFullName(tool);
+  return tail.replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+/** Condensed one-liner: "…를 평가하는 X" → "…를 평가해요". */
+export function toolShortDescription(tool: EvaluationTool | undefined): string {
+  if (!tool?.description) return "";
+  const i = tool.description.indexOf("평가하는");
+  return i >= 0 ? `${tool.description.slice(0, i)}평가해요` : tool.description;
+}

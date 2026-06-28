@@ -2,7 +2,12 @@ import Link from "next/link";
 import { ChevronRight, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { getToolById } from "@/lib/tools";
+import {
+  getToolById,
+  toolExpandedName,
+  toolShortDescription,
+  toolShortName,
+} from "@/lib/tools";
 import type { EvaluationItem, ProjectedEvaluation } from "@/lib/api/evaluation";
 import { cn } from "@/lib/utils/cn";
 
@@ -26,6 +31,9 @@ export function EvaluationSummaryCard({
   highlighted,
 }: EvaluationSummaryCardProps) {
   const tool = getToolById(evaluation.toolId);
+  const shortName = toolShortName(tool, `평가 도구 #${evaluation.toolId}`);
+  const fullName = toolExpandedName(tool);
+  const shortDescription = toolShortDescription(tool);
   const previewLine = (evaluation.debriefing.split(/\n+/)[0] ?? "")
     .replace(/[*_#>`~\[\]]/g, "");
 
@@ -40,7 +48,7 @@ export function EvaluationSummaryCard({
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-[15px] font-semibold text-foreground truncate">
-              {tool?.name ?? `평가 도구 #${evaluation.toolId}`}
+              {shortName}
             </h3>
             <Badge variant="navy">항목 {evaluation.items.length}</Badge>
             {highlighted && (
@@ -50,9 +58,14 @@ export function EvaluationSummaryCard({
               </span>
             )}
           </div>
-          {tool?.description && (
+          {fullName && fullName !== shortName && (
+            <p className="text-label-sm font-normal text-fg-subtle leading-[16px] tracking-normal truncate">
+              {fullName}
+            </p>
+          )}
+          {shortDescription && (
             <p className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal">
-              {tool.description}
+              {shortDescription}
             </p>
           )}
         </div>
