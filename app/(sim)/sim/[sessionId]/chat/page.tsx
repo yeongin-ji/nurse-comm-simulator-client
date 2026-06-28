@@ -18,7 +18,6 @@ import {
   type Psychological,
   type VitalSign,
 } from "@/components/sim/patient-state-panel";
-import { ScenarioTooltip } from "@/components/sim/scenario-tooltip";
 import { Timer } from "@/components/sim/timer";
 import { evaluationApi, evaluationKeys } from "@/lib/api/evaluation";
 import { projectPatientState, simulationApi } from "@/lib/api/simulation";
@@ -274,11 +273,11 @@ export default function ChatPage() {
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
         <PatientStatePanel
-          className="overflow-y-auto min-h-0"
           vitalSigns={vitalSigns}
           otherSigns={otherSigns}
           psychological={psychological}
           pblSummary={pblSummary}
+          scenarioText={scenario?.scenario_text}
           onEnd={() => setEndOpen(true)}
         />
 
@@ -299,7 +298,6 @@ export default function ChatPage() {
                   {patientName !== "환자" ? patientName : "가상 환자"}
                 </span>
                 <Badge>{patientMeta}</Badge>
-                <ScenarioTooltip description={scenario?.scenario_text ?? ""} />
                 <span className="flex-1" />
                 <button
                   type="button"

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ClipboardList } from "lucide-react";
+import { ChevronDown, ClipboardList, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Collapse } from "@/components/ui/collapse";
+import { QuotedText } from "@/components/ui/quoted-text";
 import { cn } from "@/lib/utils/cn";
 import type { PblSummaryCategory } from "@/lib/api/pbl";
 
@@ -21,6 +22,8 @@ export type PatientStatePanelProps = {
   psychological: Psychological[];
   /** PBL 요약 — 있으면 사이드바에 접이식 참고 카드로 노출 */
   pblSummary?: PblSummaryCategory[];
+  /** 시나리오 본문 — 있으면 사이드바 최하단에 접이식 참고 카드로 노출 */
+  scenarioText?: string;
   onEnd?: () => void;
   className?: string;
 };
@@ -36,17 +39,12 @@ export function PatientStatePanel({
   otherSigns,
   psychological,
   pblSummary,
+  scenarioText,
   onEnd,
   className,
 }: PatientStatePanelProps) {
-  return (
-    <aside
-      className={cn(
-        "w-[250px] shrink-0 flex flex-col gap-2.5",
-        className
-      )}
-    >
-      <Card className="flex flex-col gap-3 p-4">
+  const stateCard = (
+      <Card className="flex flex-col gap-3 p-4 shrink-0">
         <SectionLabel>환자 현재 상태</SectionLabel>
 
         <div className="flex flex-col gap-1 px-2.5 py-2 bg-surface-muted rounded">
@@ -113,19 +111,46 @@ export function PatientStatePanel({
           </span>
         </div>
       </Card>
+  );
 
+  const extraCards = (
+    <>
       {pblSummary && pblSummary.length > 0 && (
         <PblSummaryCard categories={pblSummary} />
       )}
+      {scenarioText && <ScenarioCard text={scenarioText} />}
+    </>
+  );
 
-      {onEnd && (
+  // 독립 사이드바(대화 시뮬레이션)일 때: 내부 스크롤 영역 + 하단 고정 버튼.
+  // PBL 화면 사이드바와 동일한 구조로, 카드를 펼쳐도 영역 안에서만 스크롤된다.
+  if (onEnd) {
+    return (
+      <aside
+        className={cn(
+          "w-[250px] shrink-0 flex flex-col gap-2.5 min-h-0",
+          className
+        )}
+      >
+        <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-2.5">
+          {stateCard}
+          {extraCards}
+        </div>
         <button
           onClick={onEnd}
-          className="self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
+          className="shrink-0 self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
         >
           대화 종료
         </button>
-      )}
+      </aside>
+    );
+  }
+
+  // 다른 화면(시나리오 상세/PBL)에 하위 요소로 임베드될 때: 높이 제약 없는 평면 렌더.
+  return (
+    <aside className={cn("w-[250px] shrink-0 flex flex-col gap-2.5", className)}>
+      {stateCard}
+      {extraCards}
     </aside>
   );
 }
@@ -141,7 +166,7 @@ function stripEmoji(text: string): string {
 function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50">
+    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50 shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -182,6 +207,39 @@ function PblSummaryCard({ categories }: { categories: PblSummaryCategory[] }) {
           <span className="text-[10px] text-navy-500">
             참고용이에요. 환자 반응에 따라 유연하게 대응하세요.
           </span>
+        </div>
+      </Collapse>
+    </Card>
+  );
+}
+
+function ScenarioCard({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="p-0 overflow-hidden border-navy-200 bg-navy-50 shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-navy-100"
+      >
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-navy-900 tracking-normal">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
+          시나리오
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-navy-500 transition-transform duration-200",
+            open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </button>
+      <Collapse open={open}>
+        <div className="border-t border-navy-100 px-4 py-3">
+          <p className="text-[11px] leading-[18px] text-fg-muted">
+            <QuotedText>{text}</QuotedText>
+          </p>
         </div>
       </Collapse>
     </Card>
