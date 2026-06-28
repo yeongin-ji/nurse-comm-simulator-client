@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Hash, Image as ImageIcon, Lock, Mail, Mic, User } from "lucide-react";
+import { Image as ImageIcon, Lock, Mic } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
 import { learnerKeys, learnersApi } from "@/lib/api/learners";
 import { useSettingsStore } from "@/lib/stores/settings";
+import { cn } from "@/lib/utils/cn";
 
 // TODO(D-?): replace with auth store user.id once /auth/me wires up.
 const MOCK_USER_ID = 1;
@@ -83,41 +84,39 @@ export default function ProfilePage() {
           </p>
         </header>
 
-        <Card className="flex flex-col gap-5">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3.5 border-b border-border pb-6">
+          <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy-50 text-[20px] font-semibold text-navy-800">
+            {(learner?.name?.trim()[0] ?? "?").toUpperCase()}
+          </span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-title-lg font-semibold text-foreground">
+                {learner?.name ?? "—"}
+              </span>
+              <Badge variant="navy">{isLearner ? "학습자" : "교육자"}</Badge>
+            </div>
+            <span className="text-[13px] text-fg-muted">
+              {learner?.email ?? "—"}
+            </span>
+          </div>
+        </div>
+
+        <section className="flex flex-col">
+          <div className="mb-1.5 flex items-center gap-2">
             <h2 className="text-body-lg font-semibold text-foreground">
               개인정보
             </h2>
-            <Badge>비밀번호만 수정할 수 있어요</Badge>
+            <span className="text-[13px] text-fg-subtle">· 읽기 전용</span>
           </div>
-          <div className="h-px bg-border" />
+          <InfoRow label="이름" value={learner?.name ?? "—"} />
+          <InfoRow
+            label={isLearner ? "학번" : "교번"}
+            value={learner?.student_number ?? "—"}
+          />
+          <InfoRow label="이메일" value={learner?.email ?? "—"} last />
+        </section>
 
-          <div className="flex flex-col gap-3.5">
-            <Input
-              label="이름"
-              defaultValue={learner?.name ?? ""}
-              readOnly
-              icon={<User className="h-4 w-4 text-fg-subtle" />}
-              suffix="읽기 전용"
-            />
-            <Input
-              label={isLearner ? "학번" : "교번"}
-              defaultValue={learner?.student_number ?? ""}
-              readOnly
-              icon={<Hash className="h-4 w-4 text-fg-subtle" />}
-              suffix="읽기 전용"
-            />
-            <Input
-              label="이메일"
-              defaultValue={learner?.email ?? ""}
-              readOnly
-              icon={<Mail className="h-4 w-4 text-fg-subtle" />}
-              suffix="읽기 전용"
-            />
-          </div>
-
-          <div className="h-px bg-border" />
-
+        <Card className="flex flex-col gap-3.5">
           <form onSubmit={onSubmit} className="flex flex-col gap-3.5" noValidate>
             <h3 className="text-body-md font-medium text-foreground">
               비밀번호 변경
@@ -212,6 +211,28 @@ export default function ProfilePage() {
         </Card>
       </PageShell>
     </main>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  last,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 py-2.5",
+        !last && "border-b border-border"
+      )}
+    >
+      <span className="text-[13px] text-fg-muted">{label}</span>
+      <span className="text-body-md text-foreground">{value}</span>
+    </div>
   );
 }
 
