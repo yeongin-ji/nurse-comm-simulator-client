@@ -5,8 +5,8 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Metric } from "@/components/ui/metric";
 import { Spinner } from "@/components/ui/spinner";
-import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
@@ -21,7 +21,7 @@ import {
   learnersApi,
 } from "@/lib/api/learners";
 
-const COLUMN_WIDTHS = [undefined, "150px", "80px", "80px", "80px", "96px"];
+const COLUMN_WIDTHS = [undefined, "150px", "80px", "120px", "80px", "96px"];
 
 export default function StudentHistoryPage() {
   const { learnerId } = useParams<{ learnerId: string }>();
@@ -66,12 +66,16 @@ export default function StudentHistoryPage() {
   const learner = learnerQuery.data;
   const allSessions = sessionsQuery.data ?? [];
   const sessions = showAll ? allSessions : allSessions.filter(isDoneSession);
-  const scored = sessions.filter((s) => s.total_score != null);
-  const avgScore =
+  const scored = sessions.filter(
+    (s) => s.total_score != null && (s.total_max_score ?? 0) > 0,
+  );
+  const avgPercent =
     scored.length > 0
       ? Math.round(
-          scored.reduce((acc, s) => acc + (s.total_score ?? 0), 0) /
-            scored.length,
+          scored.reduce(
+            (acc, s) => acc + (s.total_score! / s.total_max_score!) * 100,
+            0,
+          ) / scored.length,
         )
       : null;
   const myComments = sessions.reduce(
@@ -98,21 +102,20 @@ export default function StudentHistoryPage() {
           </p>
         </header>
 
-        <div className="flex gap-3">
-          <StatCard label="총 세션" value={`${sessions.length}회`} />
-          <StatCard label="평균 점수" value={avgScore != null ? `${avgScore}점` : "—"} />
-          <StatCard label="내 코멘트" value={`${myComments}건`} />
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border pb-4">
+          <Metric value={`${sessions.length}`} unit="총 세션" />
+          <Metric value={avgPercent != null ? `${avgPercent}%` : "—"} unit="평균 점수" />
+          <Metric value={`${myComments}`} unit="내 코멘트" />
+          <label className="ml-auto inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="accent-accent h-3.5 w-3.5"
+            />
+            미완료 세션 포함
+          </label>
         </div>
-
-        <label className="inline-flex items-center gap-2 text-[13px] text-fg-muted cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={showAll}
-            onChange={(e) => setShowAll(e.target.checked)}
-            className="accent-accent h-3.5 w-3.5"
-          />
-          미완료 세션 포함
-        </label>
 
         <Card className="p-0 overflow-hidden">
           {sessionsQuery.isLoading ? (
@@ -136,16 +139,23 @@ export default function StudentHistoryPage() {
                   { content: "", width: COLUMN_WIDTHS[5] },
                 ]}
               />
-              {sessions.map((s) => (
+              {sessions.map((s) => {
+                const percent =
+                  s.total_score != null && (s.total_max_score ?? 0) > 0
+                    ? Math.round((s.total_score / s.total_max_score!) * 100)
+                    : null;
+                return (
                 <TableRow
                   key={s.id}
+                  className="transition-colors hover:bg-surface"
                   cells={[
-                    { content: s.disease ?? "—" },
+                    { content: s.disease ?? "—", className: "font-medium" },
                     {
                       content: s.start_time
                         ? formatSessionDate(s.start_time)
                         : "—",
                       width: COLUMN_WIDTHS[1],
+                      className: "text-fg-muted",
                     },
                     {
                       content: (
@@ -157,12 +167,19 @@ export default function StudentHistoryPage() {
                     },
                     {
                       content:
-                        s.total_score != null
-                          ? `${s.total_score}/${s.total_max_score ?? "?"}`
-                          : "—",
+                        percent != null ? (
+                          <span className="tabular-nums">
+                            <span className="font-medium text-navy-800">
+                              {percent}%
+                            </span>{" "}
+                            <span className="text-fg-subtle">
+                              {s.total_score}/{s.total_max_score}
+                            </span>
+                          </span>
+                        ) : (
+                          "—"
+                        ),
                       width: COLUMN_WIDTHS[3],
-                      className:
-                        s.total_score != null ? "font-medium" : undefined,
                     },
                     {
                       content:
@@ -186,7 +203,8 @@ export default function StudentHistoryPage() {
                     },
                   ]}
                 />
-              ))}
+                );
+              })}
               {sessions.length === 0 && (
                 <div className="px-4 py-6 text-center text-body-md text-fg-muted">
                   아직 수행한 세션이 없어요

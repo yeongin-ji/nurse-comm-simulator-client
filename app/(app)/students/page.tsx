@@ -6,8 +6,8 @@ import { AlertCircle, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Metric } from "@/components/ui/metric";
 import { Spinner } from "@/components/ui/spinner";
-import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableRow } from "@/components/ui/table";
 import { PageShell } from "@/components/layout/page-shell";
 import { formatSessionDate, learnerKeys, learnersApi } from "@/lib/api/learners";
@@ -58,29 +58,19 @@ export default function StudentsPage() {
           </p>
         </header>
 
-        <div className="flex gap-3">
-          <StatCard label="전체 학생" value={`${totalCount}명`} />
-          <StatCard
-            label="활동 학생"
-            value={`${activeCount}명`}
-            sub="완료 세션 1회 이상"
-          />
-          <StatCard
-            label="피드백 필요"
-            value={`${feedbackNeededTotal}건`}
-            sub="코멘트 미작성"
-            emphasis
-          />
-        </div>
-
-        <div className="max-w-[320px]">
-          <Input
-            placeholder="이름 또는 학번으로 검색..."
-            icon={<Search className="h-4 w-4 text-fg-subtle" />}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="학생 검색"
-          />
+        <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border pb-4">
+          <Metric value={`${totalCount}`} unit="전체 학생" />
+          <Metric value={`${activeCount}`} unit="활동 학생" />
+          <Metric value={`${feedbackNeededTotal}`} unit="피드백 필요" emphasis />
+          <div className="ml-auto w-full max-w-[280px]">
+            <Input
+              placeholder="이름 또는 학번으로 검색..."
+              icon={<Search className="h-4 w-4 text-fg-subtle" />}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="학생 검색"
+            />
+          </div>
         </div>
 
         <Card className="p-0 overflow-hidden">
@@ -109,14 +99,15 @@ export default function StudentsPage() {
               {filtered.map((s) => (
                 <TableRow
                   key={s.id}
+                  className="transition-colors hover:bg-surface"
                   cells={[
-                    { content: s.student_number ?? "—", width: COLUMN_WIDTHS[0] },
+                    { content: s.student_number ?? "—", width: COLUMN_WIDTHS[0], className: "text-fg-muted tabular-nums" },
                     {
                       content: s.name ?? "—",
                       width: COLUMN_WIDTHS[1],
                       className: "font-medium",
                     },
-                    { content: s.email ?? "—" },
+                    { content: s.email ?? "—", className: "text-fg-muted" },
                     {
                       content: `${s.session_count ?? 0}회`,
                       width: COLUMN_WIDTHS[3],
@@ -126,6 +117,7 @@ export default function StudentsPage() {
                         ? formatSessionDate(s.last_session_at)
                         : "—",
                       width: COLUMN_WIDTHS[4],
+                      className: "text-fg-muted",
                     },
                     {
                       content:

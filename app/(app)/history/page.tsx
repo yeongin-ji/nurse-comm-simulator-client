@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Metric } from "@/components/ui/metric";
 import { Spinner } from "@/components/ui/spinner";
 import { Table, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -172,16 +173,5 @@ export default function HistoryPage() {
         )}
       </PageShell>
     </main>
-  );
-}
-
-function Metric({ value, unit }: { value: string; unit: string }) {
-  return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="text-[20px] font-semibold tracking-[-0.02em] text-foreground tabular-nums">
-        {value}
-      </span>
-      <span className="text-[13px] text-fg-muted">{unit}</span>
-    </span>
   );
 }

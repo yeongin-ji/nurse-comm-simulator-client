@@ -12,11 +12,10 @@ import { Toggle } from "@/components/ui/toggle";
 import { LoadingScreen } from "@/components/feedback/loading-screen";
 import { PageShell } from "@/components/layout/page-shell";
 import { learnerKeys, learnersApi } from "@/lib/api/learners";
+import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
 import { cn } from "@/lib/utils/cn";
 
-// TODO(D-?): replace with auth store user.id once /auth/me wires up.
-const MOCK_USER_ID = 1;
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 type PasswordForm = {
@@ -26,9 +25,14 @@ type PasswordForm = {
 };
 
 export default function ProfilePage() {
+  const user = useAuthStore((s) => s.user);
+  const isLearner = user?.role !== "educator";
+
+  // 학번/교번은 인증 스토어에 없어 학습자 상세에서 보충한다(교육자용 엔드포인트는 없음).
   const learnerQuery = useQuery({
-    queryKey: learnerKeys.detail(MOCK_USER_ID),
-    queryFn: () => learnersApi.detail(MOCK_USER_ID),
+    queryKey: learnerKeys.detail(user?.id ?? 0),
+    queryFn: () => learnersApi.detail(user!.id),
+    enabled: !!user?.id && isLearner,
   });
 
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled);
@@ -65,12 +69,15 @@ export default function ProfilePage() {
 
   const onSubmit = handleSubmit(() => passwordMutation.mutate());
 
-  if (learnerQuery.isLoading) {
+  if (isLearner && learnerQuery.isLoading) {
     return <LoadingScreen title="프로필을 불러오고 있어요" />;
   }
 
   const learner = learnerQuery.data;
-  const isLearner = true; // role inference comes from auth store later
+  // 로그인 사용자 값을 우선 사용하고, 학번은 학습자 상세에서 보충한다.
+  const displayName = user?.name ?? learner?.name ?? "—";
+  const displayEmail = user?.email ?? learner?.email ?? "—";
+  const studentNumber = learner?.student_number ?? "—";
 
   return (
     <main className="flex-1 bg-background">
@@ -86,17 +93,17 @@ export default function ProfilePage() {
 
         <div className="flex items-center gap-3.5 border-b border-border pb-6">
           <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy-50 text-[20px] font-semibold text-navy-800">
-            {(learner?.name?.trim()[0] ?? "?").toUpperCase()}
+            {(displayName.trim()[0] ?? "?").toUpperCase()}
           </span>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="text-title-lg font-semibold text-foreground">
-                {learner?.name ?? "—"}
+                {displayName}
               </span>
               <Badge variant="navy">{isLearner ? "학습자" : "교육자"}</Badge>
             </div>
             <span className="text-[13px] text-fg-muted">
-              {learner?.email ?? "—"}
+              {displayEmail}
             </span>
           </div>
         </div>
@@ -108,12 +115,12 @@ export default function ProfilePage() {
             </h2>
             <span className="text-[13px] text-fg-subtle">· 읽기 전용</span>
           </div>
-          <InfoRow label="이름" value={learner?.name ?? "—"} />
+          <InfoRow label="이름" value={displayName} />
           <InfoRow
             label={isLearner ? "학번" : "교번"}
-            value={learner?.student_number ?? "—"}
+            value={studentNumber}
           />
-          <InfoRow label="이메일" value={learner?.email ?? "—"} last />
+          <InfoRow label="이메일" value={displayEmail} last />
         </section>
 
         <Card className="flex flex-col gap-3.5">
