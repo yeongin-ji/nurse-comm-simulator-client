@@ -31,7 +31,7 @@ import {
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { pblApi, pblKeys, projectCategories } from "@/lib/api/pbl";
 import { fetchTts, playAudioBlob } from "@/lib/api/tts";
-import { Volume2, VolumeOff } from "lucide-react";
+import { ClipboardCheck, LogOut, Volume2, VolumeOff } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useSettingsStore } from "@/lib/stores/settings";
@@ -145,6 +145,7 @@ export default function ChatPage() {
 
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const [redirectingToResult, setRedirectingToResult] = useState(false);
   const [startedAt] = useState(() => Date.now());
 
@@ -271,7 +272,8 @@ export default function ChatPage() {
           psychological={psychological}
           pblSummary={pblSummary}
           scenarioText={scenario?.scenario_text}
-          onEnd={() => setEndOpen(true)}
+          scrollable
+          onExit={() => setExitOpen(true)}
         />
 
         <section className="flex-1 flex flex-col gap-2.5 min-w-0 min-h-0">
@@ -291,28 +293,34 @@ export default function ChatPage() {
                   {patientName !== "환자" ? patientName : "가상 환자"}
                 </span>
                 <Badge>{patientMeta}</Badge>
+                <Timer
+                  className="ml-1.5"
+                  startedAt={startedAt}
+                  totalSeconds={TOTAL_SECONDS}
+                  onTimeout={onTimeout}
+                />
                 <span className="flex-1" />
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5">
                   {ttsEnabled ? (
                     <Volume2 className="h-4 w-4 text-primary" aria-hidden />
                   ) : (
                     <VolumeOff className="h-4 w-4 text-fg-subtle" aria-hidden />
                   )}
-                  <span className="text-[12px] font-medium text-fg-muted">
-                    음성
-                  </span>
                   <Toggle
                     on={ttsEnabled}
                     onChange={setTtsEnabled}
                     label={ttsEnabled ? "음성 끄기" : "음성 켜기"}
                   />
                 </div>
-                <Timer
-                  className="ml-4"
-                  startedAt={startedAt}
-                  totalSeconds={TOTAL_SECONDS}
-                  onTimeout={onTimeout}
-                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="ml-3"
+                  onClick={() => setEndOpen(true)}
+                  icon={<ClipboardCheck className="h-3.5 w-3.5" aria-hidden />}
+                >
+                  완료 및 평가하기
+                </Button>
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
@@ -359,21 +367,50 @@ export default function ChatPage() {
       <Modal
         open={endOpen}
         onOpenChange={setEndOpen}
-        title="대화를 종료할까요?"
-        description="지금까지의 대화를 바탕으로 평가가 시작돼요"
+        title="대화를 완료하고 평가할까요?"
+        description="지금까지의 대화를 바탕으로 평가를 시작해요"
         footer={
           <>
             <Button variant="ghost" onClick={() => setEndOpen(false)}>
-              취소
+              계속하기
             </Button>
-            <Button variant="danger" onClick={goEvaluate}>
-              평가 시작하기
+            <Button
+              variant="primary"
+              icon={<ClipboardCheck className="h-3.5 w-3.5" aria-hidden />}
+              onClick={goEvaluate}
+            >
+              완료 및 평가하기
             </Button>
           </>
         }
       >
         <p className="text-body-md text-fg-muted leading-[22px]">
-          평가가 시작되면 더 이상 대화를 이어갈 수 없어요. 정말 종료할까요?
+          평가가 시작되면 더 이상 대화를 이어갈 수 없어요. 대화를 완료할까요?
+        </p>
+      </Modal>
+
+      <Modal
+        open={exitOpen}
+        onOpenChange={setExitOpen}
+        title="정말 종료할까요?"
+        description="평가 없이 시뮬레이션을 중단하고 나가요"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setExitOpen(false)}>
+              계속하기
+            </Button>
+            <Button
+              variant="accent"
+              icon={<LogOut className="h-3.5 w-3.5" aria-hidden />}
+              onClick={() => router.push("/scenarios")}
+            >
+              종료
+            </Button>
+          </>
+        }
+      >
+        <p className="text-body-md text-fg-muted leading-[22px]">
+          지금 종료하면 이 대화는 평가되지 않고, 진행 내용도 복구할 수 없어요.
         </p>
       </Modal>
     </>

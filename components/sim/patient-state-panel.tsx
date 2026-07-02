@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, ChevronDown, ClipboardList, FileText } from "lucide-react";
+import { Activity, ChevronDown, ClipboardList, FileText, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapse } from "@/components/ui/collapse";
 import { QuotedText } from "@/components/ui/quoted-text";
@@ -26,7 +27,10 @@ export type PatientStatePanelProps = {
   pblSummary?: PblSummaryCategory[];
   /** 시나리오 본문 — 있으면 사이드바 최하단에 접이식 참고 카드로 노출 */
   scenarioText?: string;
-  onEnd?: () => void;
+  /** 독립 사이드바로 쓸 때(대화 시뮬레이션): 높이를 부모에 맞추고 카드 영역만 내부 스크롤. */
+  scrollable?: boolean;
+  /** 있으면 사이드바 최하단에 강제 종료 버튼을 노출(평가 없이 세션 폐기). scrollable일 때만 유효. */
+  onExit?: () => void;
   className?: string;
 };
 
@@ -43,7 +47,8 @@ export function PatientStatePanel({
   realtime = true,
   pblSummary,
   scenarioText,
-  onEnd,
+  scrollable,
+  onExit,
   className,
 }: PatientStatePanelProps) {
   const stateCard = (
@@ -88,11 +93,11 @@ export function PatientStatePanel({
               <SectionLabel as="span" small>
                 기타 징후
               </SectionLabel>
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex flex-col gap-0.5 pl-3.5">
                 {otherSigns.map((sign, i) => (
                   <li
                     key={i}
-                    className="text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal"
+                    className="list-disc text-label-sm font-normal text-fg-muted leading-[18px] tracking-normal"
                   >
                     {sign}
                   </li>
@@ -147,13 +152,14 @@ export function PatientStatePanel({
     </>
   );
 
-  // 독립 사이드바(대화 시뮬레이션)일 때: 내부 스크롤 영역 + 하단 고정 버튼.
+  // 독립 사이드바(대화 시뮬레이션)일 때: 카드 영역만 내부 스크롤.
   // PBL 화면 사이드바와 동일한 구조로, 카드를 펼쳐도 영역 안에서만 스크롤된다.
-  if (onEnd) {
+  // (종료 액션은 채팅 헤더의 "완료 및 평가하기" 버튼으로 이동했다.)
+  if (scrollable) {
     return (
       <aside
         className={cn(
-          "w-[250px] shrink-0 flex flex-col gap-2.5 min-h-0",
+          "w-[250px] lg:w-[400px] shrink-0 flex flex-col gap-2.5 min-h-0",
           className
         )}
       >
@@ -161,12 +167,18 @@ export function PatientStatePanel({
           {stateCard}
           {extraCards}
         </div>
-        <button
-          onClick={onEnd}
-          className="shrink-0 self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
-        >
-          대화 종료
-        </button>
+        {onExit && (
+          <Button
+            variant="accent"
+            size="sm"
+            full
+            className="shrink-0"
+            onClick={onExit}
+            icon={<LogOut className="h-3.5 w-3.5" aria-hidden />}
+          >
+            종료
+          </Button>
+        )}
       </aside>
     );
   }

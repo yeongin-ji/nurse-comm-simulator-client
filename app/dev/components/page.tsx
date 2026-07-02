@@ -389,7 +389,6 @@ export default function ComponentsCatalog() {
               { label: "분노", value: 55, tone: "warning" },
               { label: "우울", value: 20, tone: "subtle" },
             ]}
-            onEnd={() => {}}
           />
         </Section>
 

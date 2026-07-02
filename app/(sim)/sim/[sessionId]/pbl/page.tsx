@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, FileText } from "lucide-react";
+import { ChevronDown, FileText, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,6 +58,7 @@ export default function PblPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const [openingLoading, setOpeningLoading] = useState(true);
 
   // 페이지 진입 시 빈 메시지로 오프닝 요청
@@ -119,7 +119,7 @@ export default function PblPage() {
   return (
     <>
       <main className="flex flex-1 mx-auto w-full max-w-[1120px] px-6 py-4 gap-4 overflow-hidden">
-        <aside className="w-[250px] shrink-0 flex flex-col gap-2.5 min-h-0">
+        <aside className="w-[250px] lg:w-[400px] shrink-0 flex flex-col gap-2.5 min-h-0">
           <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-2.5">
             {initial && (
               <PatientStatePanel
@@ -139,12 +139,16 @@ export default function PblPage() {
             <NursingEthicsCard defaultOpen={false} className="shrink-0" />
           </div>
 
-          <Link
-            href="/scenarios"
-            className="shrink-0 self-center rounded-md px-3 py-1 text-[12px] font-medium text-danger transition-colors hover:bg-danger/10"
+          <Button
+            variant="accent"
+            size="sm"
+            full
+            className="shrink-0"
+            onClick={() => setExitOpen(true)}
+            icon={<LogOut className="h-3.5 w-3.5" aria-hidden />}
           >
-            나가기
-          </Link>
+            종료
+          </Button>
         </aside>
 
         <section className="flex-1 flex flex-col gap-2.5 min-w-0 min-h-0">
@@ -219,6 +223,31 @@ export default function PblPage() {
       >
         <p className="text-body-md text-fg-muted leading-[22px]">
           요약 화면으로 이동하면 PBL 대화는 더 이상 이어갈 수 없어요.
+        </p>
+      </Modal>
+
+      <Modal
+        open={exitOpen}
+        onOpenChange={setExitOpen}
+        title="정말 종료할까요?"
+        description="지금 종료하면 이 세션은 폐기되고 진행 내용이 사라져요"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setExitOpen(false)}>
+              계속하기
+            </Button>
+            <Button
+              variant="accent"
+              icon={<LogOut className="h-3.5 w-3.5" aria-hidden />}
+              onClick={() => router.push("/scenarios")}
+            >
+              종료
+            </Button>
+          </>
+        }
+      >
+        <p className="text-body-md text-fg-muted leading-[22px]">
+          시뮬레이션은 다시 시작할 수 있지만, 지금까지의 PBL 대화는 복구할 수 없어요.
         </p>
       </Modal>
     </>
