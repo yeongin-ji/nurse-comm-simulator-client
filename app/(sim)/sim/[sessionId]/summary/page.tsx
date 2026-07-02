@@ -49,8 +49,8 @@ export default function PblSummaryPage() {
   const categories = projectCategories(summaryQuery.data);
 
   return (
-    <main className="flex flex-1 items-center justify-center p-8">
-      <div className="w-[560px] flex flex-col gap-[18px]">
+    <main className="flex flex-1 justify-center overflow-y-auto p-8">
+      <div className="w-[560px] flex flex-col gap-[18px] my-auto">
         <header className="text-center flex flex-col gap-1.5">
           <h1 className="text-title-lg font-semibold text-foreground">
             의사소통 방향 요약
