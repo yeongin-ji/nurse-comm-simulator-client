@@ -94,7 +94,7 @@ export default function SignupPage() {
           className="w-[340px] flex flex-col gap-6"
           noValidate
         >
-          <header className="flex flex-col gap-2.5">
+          <header className="flex flex-col items-center gap-2.5 text-center">
             <Logo size={40} />
             <p className="text-body-md text-fg-muted">
               Nurse Communication Simulator
