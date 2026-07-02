@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { QueryProvider } from "@/lib/query/provider";
 import { MockProvider } from "@/lib/mocks/init";
 import { Toaster } from "@/components/ui/toaster";
 
-// Pretendard (UI sans) is loaded via @font-face in globals.css.
+// Pretendard (UI sans) — self-hosted variable font via next/font/local.
+// Served from our own domain (no runtime CDN dependency), auto-preloaded.
+// wght axis covers Pretendard's full 45–920 range; we use 400–700.
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
+  variable: "--font-pretendard",
+  display: "swap",
+  weight: "45 920",
+});
+
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
@@ -23,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${jetbrainsMono.variable} h-full`}>
+    <html lang="ko" className={`${pretendard.variable} ${jetbrainsMono.variable} h-full`}>
       {/* App-wide proportional scale-up (~+2pt on base text): zoom enlarges
           type, spacing, and icons together. Set inline so Tailwind v4's
           Lightning CSS doesn't strip the non-standard `zoom` property.
