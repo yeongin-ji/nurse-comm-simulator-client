@@ -19,8 +19,15 @@ export type LoadingScreenProps = {
    * a timer as a placeholder.
    */
   currentStep?: number;
-  /** ms per step for the auto-advance placeholder (ignored when controlled). */
+  /**
+   * Base gap (ms) before the FIRST auto-advance. Subsequent gaps grow by
+   * `decelerateFactor`, so early steps flip quickly (feels responsive) and later
+   * ones hold longer — pushing the terminal step toward the real finish so users
+   * don't stall on the last line. Ignored when `currentStep` is controlled.
+   */
   stepIntervalMs?: number;
+  /** Growth factor applied to each successive auto-advance gap (>1 = decelerate). */
+  decelerateFactor?: number;
   /** Spinner diameter in px. */
   spinnerSize?: number;
   /**
@@ -40,7 +47,8 @@ export function LoadingScreen({
   subtitle,
   steps,
   currentStep,
-  stepIntervalMs = 5000,
+  stepIntervalMs = 2600,
+  decelerateFactor = 1.4,
   spinnerSize = 60,
   tips,
   tipIntervalMs = 4500,
@@ -69,6 +77,7 @@ export function LoadingScreen({
           steps={list}
           currentStep={currentStep}
           intervalMs={stepIntervalMs}
+          decelerateFactor={decelerateFactor}
         />
         {tips && tips.length > 0 && (
           <TipCard tips={tips} intervalMs={tipIntervalMs} label={tipsLabel} />
@@ -133,10 +142,12 @@ function StepProgress({
   steps,
   currentStep,
   intervalMs,
+  decelerateFactor,
 }: {
   steps: string[];
   currentStep?: number;
   intervalMs: number;
+  decelerateFactor: number;
 }) {
   const controlled = currentStep != null;
   const stepCount = steps.length;
@@ -146,12 +157,19 @@ function StepProgress({
     if (controlled || stepCount <= 1) return;
     // Async timers (not a synchronous set-state in effect) advance the
     // placeholder through the steps; replaced by `currentStep` once wired.
+    // Gaps grow geometrically (decelerate), so the last step is reached late
+    // — closer to the real finish — instead of stalling there early.
     const timers: ReturnType<typeof setTimeout>[] = [];
+    let elapsed = 0;
+    let gap = intervalMs;
     for (let i = 1; i < stepCount; i++) {
-      timers.push(setTimeout(() => setAutoCur(i), intervalMs * i));
+      elapsed += gap;
+      const at = elapsed;
+      timers.push(setTimeout(() => setAutoCur(i), at));
+      gap *= decelerateFactor;
     }
     return () => timers.forEach(clearTimeout);
-  }, [controlled, stepCount, intervalMs]);
+  }, [controlled, stepCount, intervalMs, decelerateFactor]);
 
   const cur = controlled
     ? Math.min(Math.max(currentStep, 0), stepCount - 1)
