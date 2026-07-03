@@ -5,12 +5,35 @@ import Markdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Gauge } from "@/components/ui/gauge";
-import { ScoreDistribution } from "@/components/evaluation/score-distribution";
-import { type ProjectedEvaluation } from "@/lib/api/evaluation";
+import {
+  ScoreDistribution,
+  scoreBand,
+} from "@/components/evaluation/score-distribution";
+import {
+  type EvaluationItem,
+  type ProjectedEvaluation,
+} from "@/lib/api/evaluation";
 import { getToolById, toolShortDescription } from "@/lib/tools";
 import { cn } from "@/lib/utils/cn";
 
 type DetailTab = "debrief" | "items";
+
+/** "improve" groups the partial + zero bands — the items worth reading first. */
+type ItemFilter = "all" | "improve" | "full" | "na";
+
+const FILTER_ORDER: { key: ItemFilter; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "improve", label: "개선 필요" },
+  { key: "full", label: "만점" },
+  { key: "na", label: "해당 없음" },
+];
+
+function matchesFilter(item: EvaluationItem, filter: ItemFilter) {
+  if (filter === "all") return true;
+  const band = scoreBand(item);
+  if (filter === "improve") return band === "partial" || band === "zero";
+  return band === filter;
+}
 
 export type EvaluationDetailViewProps = {
   evaluation: ProjectedEvaluation;
@@ -21,7 +44,20 @@ export type EvaluationDetailViewProps = {
  */
 export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) {
   const [tab, setTab] = useState<DetailTab>("debrief");
+  // null = not touched yet → fall back to the derived default below.
+  const [filterChoice, setFilterChoice] = useState<ItemFilter | null>(null);
   const tool = getToolById(evaluation.toolId);
+
+  const filterCounts = FILTER_ORDER.map(({ key }) => ({
+    key,
+    count: evaluation.items.filter((item) => matchesFilter(item, key)).length,
+  }));
+  const improveCount =
+    filterCounts.find((f) => f.key === "improve")?.count ?? 0;
+  const filter = filterChoice ?? (improveCount > 0 ? "improve" : "all");
+  const visibleItems = evaluation.items.filter((item) =>
+    matchesFilter(item, filter),
+  );
   const percent =
     evaluation.totalMaxScore > 0
       ? Math.round((evaluation.totalScore / evaluation.totalMaxScore) * 100)
@@ -97,16 +133,57 @@ export function EvaluationDetailView({ evaluation }: EvaluationDetailViewProps) 
             <Markdown>{evaluation.debriefing}</Markdown>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-            {evaluation.items.map((item) => (
-              <Gauge
-                key={item.label}
-                label={item.label}
-                subtitle={item.criteria}
-                value={item.value}
-                maxValue={item.maxScore}
-              />
-            ))}
+          <div className="flex flex-col gap-4">
+            <div
+              role="group"
+              aria-label="항목 필터"
+              className="flex flex-wrap gap-1.5"
+            >
+              {FILTER_ORDER.map(({ key, label }) => {
+                const count =
+                  filterCounts.find((f) => f.key === key)?.count ?? 0;
+                const active = key === filter;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setFilterChoice(key)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-0.5 text-label-sm font-medium tracking-normal whitespace-nowrap transition-colors duration-150 tabular-nums",
+                      active
+                        ? "border-primary bg-primary text-on-primary"
+                        : "border-border text-fg-muted hover:border-border-strong hover:text-foreground"
+                    )}
+                  >
+                    {label} {count}
+                  </button>
+                );
+              })}
+            </div>
+            {visibleItems.length === 0 ? (
+              <p className="px-2 text-body-md text-fg-subtle">
+                해당하는 항목이 없어요.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5 px-2">
+                {visibleItems.map((item) => (
+                  <div key={item.label} className="flex flex-col gap-1.5">
+                    <Gauge
+                      label={item.label}
+                      subtitle={item.criteria}
+                      value={item.value}
+                      maxValue={item.maxScore}
+                    />
+                    {item.reason && (
+                      <p className="text-[12px] leading-[18px] text-fg-muted">
+                        {item.reason}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>

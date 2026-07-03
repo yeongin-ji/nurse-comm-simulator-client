@@ -31,6 +31,8 @@ export type EvaluationItem = {
   maxScore: number;
   /** Criteria description from the evaluation tool definition */
   criteria?: string;
+  /** Per-item AI rationale from the server (`item_scores.items[].reason`) */
+  reason?: string;
 };
 
 export type ProjectedEvaluation = {
@@ -47,7 +49,7 @@ export type ProjectedEvaluation = {
 
 type RawScores = {
   /** value is `null` for N/A items, an integer otherwise (0 = not done). */
-  items?: { label: string; value: number | null }[];
+  items?: { label: string; value: number | null; reason?: string | null }[];
   total?: number;
   duration_seconds?: number;
   turns?: number;
@@ -70,6 +72,7 @@ export function projectEvaluation(
       value: item.value,
       maxScore,
       criteria: detail?.criteria,
+      reason: item.reason ?? undefined,
     };
   });
 

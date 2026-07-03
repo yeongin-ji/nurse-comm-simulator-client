@@ -1,7 +1,17 @@
 import { type EvaluationItem } from "@/lib/api/evaluation";
 import { cn } from "@/lib/utils/cn";
 
-type DistKey = "full" | "partial" | "zero" | "na";
+export type ScoreBand = "full" | "partial" | "zero" | "na";
+
+type DistKey = ScoreBand;
+
+/** Classifies an item into a scoring band (만점/부분/미수행/해당없음). */
+export function scoreBand(item: EvaluationItem): ScoreBand {
+  if (item.value === null) return "na";
+  if (item.maxScore > 0 && item.value >= item.maxScore) return "full";
+  if (item.value <= 0) return "zero";
+  return "partial";
+}
 
 const DIST_META: Record<DistKey, { label: string; bar: string; dot: string }> = {
   full: { label: "만점", bar: "bg-navy-700", dot: "bg-navy-700" },
@@ -16,10 +26,7 @@ const DIST_ORDER: DistKey[] = ["full", "partial", "zero", "na"];
 function itemDistribution(items: EvaluationItem[]): Record<DistKey, number> {
   const counts: Record<DistKey, number> = { full: 0, partial: 0, zero: 0, na: 0 };
   for (const item of items) {
-    if (item.value === null) counts.na += 1;
-    else if (item.maxScore > 0 && item.value >= item.maxScore) counts.full += 1;
-    else if (item.value <= 0) counts.zero += 1;
-    else counts.partial += 1;
+    counts[scoreBand(item)] += 1;
   }
   return counts;
 }

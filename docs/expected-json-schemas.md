@@ -25,8 +25,9 @@
 ```json
 {
   "items": [
-    { "label": "환자 맞이 및 자기소개", "value": 82 },
-    { "label": "개방형 질문 사용", "value": 71 },
+    { "label": "환자 맞이 및 자기소개", "value": 1, "reason": "첫 인사를 건넸으나 자기소개는 없었음" },
+    { "label": "개방형 질문 사용", "value": 0, "reason": "..." },
+    { "label": "쉬운 언어로 설명", "value": null, "reason": "해당 단계까지 대화가 진행되지 않음" },
     ...
   ],
   "total": 78,
@@ -39,14 +40,14 @@
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
-| `items` | `Array<{ label: string, value: number }>` | 평가 항목별 점수. `label`은 항목 이름, `value`는 점수 (0-100 스케일) |
+| `items` | `Array<{ label: string, value: number \| null, reason?: string \| null }>` | 평가 항목별 점수. `label`은 항목 이름, `value`는 도구 스케일 내 점수 (`null` = 해당 없음, `0` = 미수행), `reason`은 항목별 평가 사유 |
 | `total` | `number` | 전체 평균 점수 |
 | `duration_seconds` | `number` | 시뮬레이션 소요 시간 (초) |
 | `turns` | `number` | 총 대화 턴 수 |
 
 ### 차이점
-- 서버: 배열 직접 반환, `item_name`/`score` 키 사용, `reason` 포함
-- 클라이언트: 객체로 감싸서 `items` 배열 + 메타(`total`, `duration_seconds`, `turns`) 포함, `label`/`value` 키 사용
+- 서버: 초기에는 배열 직접 반환(`item_id`/`item_name`/`score`/`reason`)이었으나, 현재는 클라이언트 기대 구조(`{items, total, duration_seconds, turns}`)로 반영됨. `items[].reason`도 서버에서 포함해 내려줌 (2026-07 반영)
+- 클라이언트: `reason`은 옵셔널로 파싱하므로 `reason`이 없는 과거 세션 데이터도 정상 렌더링됨 (사유 텍스트만 생략)
 
 ---
 

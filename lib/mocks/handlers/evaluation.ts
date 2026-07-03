@@ -19,6 +19,16 @@ const DEBRIEFING_BY_TOOL: Record<number, string> = {
 협력적 의사결정 단계에서 선택지를 더 명확히 제시하면 환자 자율성이 한층 강화될 거예요.`,
 };
 
+function buildReason(label: string, value: number | null, maxScore: number) {
+  if (value === null)
+    return "대화가 해당 단계까지 진행되지 않아 평가할 수 없어요.";
+  if (value <= 0)
+    return `'${label}'에 해당하는 발화나 행동이 대화에서 관찰되지 않았어요.`;
+  if (value >= maxScore)
+    return `'${label}'을(를) 적절한 시점에 충실히 수행했어요.`;
+  return `'${label}'을(를) 시도했지만 일부 요소가 빠져 부분 점수로 평가했어요.`;
+}
+
 function buildItemScores(toolId: number, items: string[], maxScore: number) {
   // Deterministic per-tool/per-item score within the tool's scale.
   // Scale now starts at 0: value is 0..maxScore (0 = 미수행, a real score).
@@ -26,9 +36,11 @@ function buildItemScores(toolId: number, items: string[], maxScore: number) {
   return items.map((label, idx) => {
     const seed = toolId * 3 + idx * 2;
     const isNA = idx !== 0 && seed % 5 === 0;
+    const value = isNA ? null : seed % (maxScore + 1); // null = N/A, else 0..maxScore
     return {
       label,
-      value: isNA ? null : seed % (maxScore + 1), // null = N/A, else 0..maxScore
+      value,
+      reason: buildReason(label, value, maxScore),
     };
   });
 }
