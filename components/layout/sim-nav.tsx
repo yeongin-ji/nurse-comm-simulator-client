@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 import { Fragment } from "react";
 import { Logo } from "@/components/layout/logo";
 import { NavTexture } from "@/components/layout/nav-texture";
+import { VersionChip } from "@/components/layout/version-chip";
 import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,8 +21,9 @@ export function SimNav({ current, userName }: SimNavProps) {
   return (
     <header className="h-[52px] bg-[linear-gradient(285deg,var(--color-navy-700),var(--color-navy-900)_48%,var(--color-navy-950))] border-b border-navy-950 flex items-center justify-between px-6 relative">
       <NavTexture />
-      <span className="relative">
+      <span className="relative flex items-center gap-3">
         <Logo onDark />
+        <VersionChip onDark />
       </span>
 
       <div className="relative flex items-center gap-1.5">

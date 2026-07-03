@@ -6,6 +6,7 @@ import { LogOut, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/layout/logo";
 import { NavTexture } from "@/components/layout/nav-texture";
+import { VersionChip } from "@/components/layout/version-chip";
 import { useAuthStore } from "@/lib/stores/auth";
 import { cn } from "@/lib/utils/cn";
 
@@ -45,6 +46,7 @@ export function Nav({ role, userName }: NavProps) {
         <Link href={role === "learner" ? "/scenarios" : "/students"}>
           <Logo onDark />
         </Link>
+        <VersionChip onDark className="-ml-2" />
         <span className="block w-px h-5 bg-white/15" aria-hidden />
         {links.map((link) => {
           const active =

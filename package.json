@@ -1,6 +1,6 @@
 {
-  "name": "nurse-comm-simulator-client",
-  "version": "0.1.0",
+  "name": "nurcosim-client",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, Hash, Lock, Mail, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Logo } from "@/components/layout/logo";
+import { VersionChip } from "@/components/layout/version-chip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -95,7 +96,10 @@ export default function SignupPage() {
           noValidate
         >
           <header className="flex flex-col items-center gap-2.5 text-center">
-            <Logo size={40} />
+            <span className="flex items-center gap-2.5">
+              <Logo size={40} />
+              <VersionChip />
+            </span>
             <p className="text-body-md text-fg-muted">
               Nurse Communication Simulator
             </p>
