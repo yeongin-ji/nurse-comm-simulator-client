@@ -15,6 +15,7 @@ import { TypingBubble } from "@/components/chat/typing-bubble";
 import { PatientAvatar } from "@/components/sim/patient-avatar";
 import {
   PatientStatePanel,
+  type PatientStateChanges,
   type Psychological,
   type VitalSign,
 } from "@/components/sim/patient-state-panel";
@@ -122,6 +123,12 @@ export default function ChatPage() {
   const [vitalSigns, setVitalSigns] = useState<VitalSign[]>([]);
   const [otherSigns, setOtherSigns] = useState<string[] | undefined>(undefined);
   const [psychological, setPsychological] = useState<Psychological[]>([]);
+  // 이번 턴에 바뀐 값 — 플래시/델타 배지용. 매 턴 통째로 교체해 이전 턴 표시를 지운다.
+  const [stateChanges, setStateChanges] = useState<PatientStateChanges>({
+    turn: 0,
+    vitals: {},
+    psych: {},
+  });
 
   // Set initial patient state from scenario data once loaded
   const initialApplied = useRef(false);
@@ -168,10 +175,31 @@ export default function ChatPage() {
       ]);
       const projected = projectPatientState(res.current_state);
       if (projected) {
-        if (projected.vitalSigns.length > 0) setVitalSigns(projected.vitalSigns);
+        // 직전 턴 값과 비교해 바뀐 항목을 기록한다. 입력이 응답 대기 중엔
+        // 비활성화되므로 closure의 state가 곧 직전 턴 값이다.
+        const changedVitals: Record<string, boolean> = {};
+        const psychDeltas: Record<string, number> = {};
+        if (projected.vitalSigns.length > 0) {
+          for (const v of projected.vitalSigns) {
+            const prev = vitalSigns.find((p) => p.label === v.label);
+            if (prev && prev.value !== v.value) changedVitals[v.label] = true;
+          }
+          setVitalSigns(projected.vitalSigns);
+        }
         if (projected.otherSigns?.length) setOtherSigns(projected.otherSigns);
-        if (projected.psychological.length > 0)
+        if (projected.psychological.length > 0) {
+          for (const g of projected.psychological) {
+            const prev = psychological.find((p) => p.label === g.label);
+            if (prev && prev.value !== g.value)
+              psychDeltas[g.label] = g.value - prev.value;
+          }
           setPsychological(projected.psychological);
+        }
+        setStateChanges((s) => ({
+          turn: s.turn + 1,
+          vitals: changedVitals,
+          psych: psychDeltas,
+        }));
       }
       // TTS: play patient voice if enabled
       if (wantTts) {
@@ -272,6 +300,7 @@ export default function ChatPage() {
           vitalSigns={vitalSigns}
           otherSigns={otherSigns}
           psychological={psychological}
+          changes={stateChanges}
           pblSummary={pblSummary}
           scenarioText={scenario?.scenario_text}
           scrollable

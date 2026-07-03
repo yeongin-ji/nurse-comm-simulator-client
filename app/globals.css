@@ -218,6 +218,16 @@ body {
   }
 }
 
+/* 환자 상태 플래시 — 이번 턴에 바뀐 값 위로 warning 틴트가 스몄다 사라진다 */
+@keyframes state-flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-warning) 22%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;

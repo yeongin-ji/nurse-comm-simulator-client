@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, ChevronDown, ClipboardList, FileText, LogOut } from "lucide-react";
+import {
+  Activity,
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ClipboardList,
+  FileText,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapse } from "@/components/ui/collapse";
@@ -17,10 +25,22 @@ export type Psychological = {
   tone: "danger" | "warning" | "subtle";
 };
 
+/** 이번 턴에 바뀐 상태 값 — 플래시와 델타 배지는 다음 턴까지 유지된다. */
+export type PatientStateChanges = {
+  /** 턴마다 증가 — 플래시 애니메이션을 재시작하는 key로 쓴다. */
+  turn: number;
+  /** 활력징후 label → 이번 턴에 값이 바뀌었는지 (문자열이라 방향 없이 플래시만) */
+  vitals: Record<string, boolean>;
+  /** 심리 상태 label → 이번 턴 변화량 (%p) */
+  psych: Record<string, number>;
+};
+
 export type PatientStatePanelProps = {
   vitalSigns: VitalSign[];
   otherSigns?: string[];
   psychological: Psychological[];
+  /** 이번 턴의 변경 사항 — 있으면 바뀐 값에 플래시 + 델타 배지를 표시 */
+  changes?: PatientStateChanges;
   /** 심리 상태가 턴마다 갱신되는 화면인지(=실시간 갱신 안내 노출 여부). 기본 true. */
   realtime?: boolean;
   /** PBL 요약 — 있으면 사이드바에 접이식 참고 카드로 노출 */
@@ -40,10 +60,45 @@ const toneClass: Record<Psychological["tone"], string> = {
   subtle: "bg-fg-subtle",
 };
 
+/** 플래시 오버레이 — 부모(relative) 위에 warning 틴트가 스몄다 사라진다. */
+function FlashOverlay({ turn, rounded }: { turn: number; rounded: string }) {
+  return (
+    <span
+      key={turn}
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute inset-0",
+        "motion-safe:animate-[state-flash_1.4s_ease-out_both]",
+        rounded
+      )}
+    />
+  );
+}
+
+/** 심리 상태 델타 배지 — 상승(악화)=danger, 하락(완화)=success. */
+function DeltaBadge({ delta }: { delta: number }) {
+  const Icon = delta > 0 ? ArrowUp : ArrowDown;
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center text-[10px] font-medium tabular-nums leading-none",
+        delta > 0 ? "text-danger" : "text-success"
+      )}
+    >
+      <Icon className="h-2.5 w-2.5" aria-hidden />
+      {Math.abs(delta)}
+      <span className="sr-only">
+        {delta > 0 ? "포인트 상승" : "포인트 하락"}
+      </span>
+    </span>
+  );
+}
+
 export function PatientStatePanel({
   vitalSigns,
   otherSigns,
   psychological,
+  changes,
   realtime = true,
   pblSummary,
   scenarioText,
@@ -68,11 +123,15 @@ export function PatientStatePanel({
             <div className="grid grid-cols-2 gap-1.5">
               {vitalSigns.map((v) => {
                 const { num, unit } = splitUnit(v.value);
+                const changed = changes?.vitals[v.label];
                 return (
                   <div
                     key={v.label}
-                    className="rounded-lg bg-surface-muted px-2.5 py-2"
+                    className="relative rounded-lg bg-surface-muted px-2.5 py-2"
                   >
+                    {changed && (
+                      <FlashOverlay turn={changes.turn} rounded="rounded-lg" />
+                    )}
                     <div className="text-[10px] text-fg-subtle mb-0.5">
                       {v.label}
                     </div>
@@ -112,27 +171,40 @@ export function PatientStatePanel({
             <SectionLabel as="span" small>
               심리적 상태
             </SectionLabel>
-            {psychological.map((g) => (
-              <div key={g.label} className="flex items-center gap-1.5">
-                <span className="w-[26px] shrink-0 text-[11px] text-fg-muted">
-                  {g.label}
-                </span>
-                <div className="flex-1 h-1 bg-surface-muted rounded-full overflow-hidden">
-                  <div
-                    style={{ width: `${Math.max(0, Math.min(100, g.value))}%` }}
-                    className={cn(
-                      "h-full rounded-full",
-                      "transition-[width] duration-500 ease-out",
-                      "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
-                      toneClass[g.tone]
+            {psychological.map((g) => {
+              const delta = changes?.psych[g.label];
+              return (
+                <div key={g.label} className="flex items-center gap-1.5">
+                  <span className="w-[26px] shrink-0 text-[11px] text-fg-muted">
+                    {g.label}
+                  </span>
+                  <div className="flex-1 h-1 bg-surface-muted rounded-full overflow-hidden">
+                    <div
+                      style={{ width: `${Math.max(0, Math.min(100, g.value))}%` }}
+                      className={cn(
+                        "h-full rounded-full",
+                        "transition-[width] duration-500 ease-out",
+                        "animate-[gauge-fill_700ms_cubic-bezier(0.22,1,0.36,1)]",
+                        toneClass[g.tone]
+                      )}
+                    />
+                  </div>
+                  <span className="relative w-[30px] shrink-0 rounded text-right text-[11px] font-medium text-foreground tabular-nums">
+                    {delta != null && (
+                      <FlashOverlay turn={changes!.turn} rounded="rounded" />
                     )}
-                  />
+                    {g.value}%
+                  </span>
+                  {/* 배지 유무로 게이지 바 길이가 행마다 달라지지 않도록 슬롯을 상시 확보.
+                      flex + leading-none: 배지가 나타나도 행 높이가 커지지 않게 라인 박스를 만들지 않는다 */}
+                  {changes && (
+                    <span className="flex h-[11px] w-[24px] shrink-0 items-center leading-none">
+                      {delta != null && <DeltaBadge delta={delta} />}
+                    </span>
+                  )}
                 </div>
-                <span className="w-[30px] shrink-0 text-right text-[11px] font-medium text-foreground tabular-nums">
-                  {g.value}%
-                </span>
-              </div>
-            ))}
+              );
+            })}
             {realtime && (
               <span className="text-[10px] text-fg-subtle">
                 대화에 따라 실시간 갱신돼요
