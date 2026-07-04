@@ -369,7 +369,7 @@ export default function ChatPage() {
 
           <ChatInput
             onSubmit={onSend}
-            disabled={waiting}
+            disabled={waiting || timeoutOpen}
             disabledHint="환자가 응답하고 있어요..."
           />
         </section>

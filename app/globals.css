@@ -282,6 +282,27 @@ body {
   }
 }
 
+/* Push-to-talk — 녹음 중 마이크 버튼 펄스 링 + 음성 레벨 바 (장식용) */
+@keyframes ptt-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 35%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@keyframes ptt-bar {
+  0%,
+  100% {
+    height: 6px;
+  }
+  50% {
+    height: 16px;
+  }
+}
+
 @keyframes ncs-tip-in {
   from {
     transform: translateY(8px);

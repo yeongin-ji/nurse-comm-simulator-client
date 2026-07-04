@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Image as ImageIcon, Lock, Mic } from "lucide-react";
+import { Image as ImageIcon, Lock, Mic, Volume2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ export default function ProfilePage() {
   const setProfileImageEnabled = useSettingsStore(
     (s) => s.setProfileImageEnabled
   );
+  const sttAutoSend = useSettingsStore((s) => s.sttAutoSend);
+  const setSttAutoSend = useSettingsStore((s) => s.setSttAutoSend);
 
   const {
     register,
@@ -201,11 +203,19 @@ export default function ProfilePage() {
           <h2 className="text-body-lg font-semibold text-foreground">설정</h2>
           <div className="h-px bg-border" />
           <SettingRow
-            icon={<Mic className="h-[18px] w-[18px] text-fg-muted" />}
+            icon={<Volume2 className="h-[18px] w-[18px] text-fg-muted" />}
             title="TTS 음성 합성"
             description="환자의 응답을 음성으로 읽어줘요"
             on={ttsEnabled}
             onChange={setTtsEnabled}
+            divider
+          />
+          <SettingRow
+            icon={<Mic className="h-[18px] w-[18px] text-fg-muted" />}
+            title="음성 입력 바로 전송"
+            description="말을 마치면 변환된 문장을 바로 전송해요. 끄면 입력창에 먼저 담아줘요"
+            on={sttAutoSend}
+            onChange={setSttAutoSend}
             divider
           />
           <SettingRow
