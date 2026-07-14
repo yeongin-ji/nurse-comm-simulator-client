@@ -31,7 +31,8 @@ import {
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { pblApi, pblKeys, projectCategories } from "@/lib/api/pbl";
-import { fetchTts, playAudioBlob } from "@/lib/api/tts";
+import { fetchTts } from "@/lib/api/tts";
+import { ttsPlayer } from "@/lib/stores/tts-player";
 import { ClipboardCheck, LogOut, Volume2, VolumeOff } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -150,6 +151,17 @@ export default function ChatPage() {
       .catch(() => {});
   }, [numericSessionId]);
 
+  // 화면을 떠나면(평가 이동, 종료, 뒤로 가기 등) 재생 중인 TTS를 멈추고,
+  // 도착이 늦은 TTS 응답이 뒤늦게 재생을 시작하지 않도록 마운트 여부를 추적한다.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      ttsPlayer.stop();
+    };
+  }, []);
+
   const [timeoutOpen, setTimeoutOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
@@ -210,7 +222,11 @@ export default function ChatPage() {
           patient_gender: patientGenderRef.current,
         })
           .then((blob) => {
-            const audioUrl = playAudioBlob(blob);
+            const audioUrl = URL.createObjectURL(blob);
+            // 응답을 기다리는 사이 화면을 떠났거나 TTS를 껐다면 재생하지 않는다.
+            if (mountedRef.current && useSettingsStore.getState().ttsEnabled) {
+              ttsPlayer.play(audioUrl);
+            }
             setMessages((prev) =>
               prev.map((m, i) =>
                 i === prev.length - 1 && m.role === "patient"
@@ -266,6 +282,7 @@ export default function ChatPage() {
     // Close both modals immediately so the LoadingScreen takes over the page.
     setTimeoutOpen(false);
     setEndOpen(false);
+    ttsPlayer.stop();
     evaluateMutation.mutate();
   };
 
@@ -339,7 +356,10 @@ export default function ChatPage() {
                   )}
                   <Toggle
                     on={ttsEnabled}
-                    onChange={setTtsEnabled}
+                    onChange={(v) => {
+                      if (!v) ttsPlayer.stop();
+                      setTtsEnabled(v);
+                    }}
                     label={ttsEnabled ? "음성 끄기" : "음성 켜기"}
                   />
                 </div>

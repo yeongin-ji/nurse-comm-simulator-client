@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchStt } from "@/lib/api/stt";
+import { ttsPlayer } from "@/lib/stores/tts-player";
 
 export type PttStatus = "idle" | "ready" | "recording" | "transcribing";
 export type PttErrorKind = "permission" | "stt" | "empty";
@@ -133,6 +134,9 @@ export function usePushToTalk({
     if (statusRef.current !== "ready" || disabledRef.current) return;
     const stream = streamRef.current;
     if (!stream) return;
+
+    // 재생 중인 TTS가 녹음에 섞이지 않도록 멈춘다.
+    ttsPlayer.stop();
 
     let recorder: MediaRecorder;
     try {

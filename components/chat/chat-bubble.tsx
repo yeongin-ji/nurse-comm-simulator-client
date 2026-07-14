@@ -1,6 +1,8 @@
-import { Loader, Volume2 } from "lucide-react";
+"use client";
+
+import { Loader, Square, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { replayAudio } from "@/lib/api/tts";
+import { useTtsPlayer } from "@/lib/stores/tts-player";
 
 export type ChatRole = "user" | "patient" | "ai-peer";
 
@@ -32,6 +34,11 @@ export type ChatBubbleProps = {
 };
 
 export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, streaming, className }: ChatBubbleProps) {
+  const isPlaying = useTtsPlayer(
+    (s) => audioUrl != null && s.playingUrl === audioUrl
+  );
+  const playAudio = useTtsPlayer((s) => s.play);
+  const stopAudio = useTtsPlayer((s) => s.stop);
   const isUser = role === "user";
   let label = ROLE_LABEL[role];
   if (isUser && userName) label = userName;
@@ -74,12 +81,26 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoa
       {!ttsLoading && audioUrl && (
         <button
           type="button"
-          onClick={() => replayAudio(audioUrl)}
-          className="inline-flex items-center gap-1 text-[11px] text-fg-subtle hover:text-accent transition-colors"
-          aria-label="음성 다시 듣기"
+          onClick={() => (isPlaying ? stopAudio() : playAudio(audioUrl))}
+          className={cn(
+            "inline-flex items-center gap-1 text-[11px] transition-colors",
+            isPlaying
+              ? "text-accent hover:text-danger"
+              : "text-fg-subtle hover:text-accent"
+          )}
+          aria-label={isPlaying ? "음성 멈추기" : "음성 다시 듣기"}
         >
-          <Volume2 className="h-3 w-3" />
-          다시 듣기
+          {isPlaying ? (
+            <>
+              <Square className="h-3 w-3 fill-current" />
+              멈추기
+            </>
+          ) : (
+            <>
+              <Volume2 className="h-3 w-3" />
+              다시 듣기
+            </>
+          )}
         </button>
       )}
     </div>

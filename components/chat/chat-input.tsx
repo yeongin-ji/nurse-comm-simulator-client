@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { usePushToTalk } from "@/lib/hooks/use-push-to-talk";
 import { useSettingsStore } from "@/lib/stores/settings";
+import { ttsPlayer } from "@/lib/stores/tts-player";
 import { useToast } from "@/lib/stores/toast";
 import { cn } from "@/lib/utils/cn";
 
@@ -97,6 +98,7 @@ export function ChatInput({
   const submit = (e?: FormEvent) => {
     e?.preventDefault();
     if (!canSubmit) return;
+    ttsPlayer.stop();
     onSubmit(trimmed);
     setValue("");
     inputRef.current?.focus();
@@ -108,6 +110,7 @@ export function ChatInput({
 
   const onMicPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
+    ttsPlayer.stop();
     if (ptt.status === "idle") setShowVoiceHint(true);
     ptt.pressStart();
   };
@@ -149,7 +152,11 @@ export function ChatInput({
             ref={inputRef}
             rows={1}
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              // 타이핑을 시작하면 재생 중인 TTS를 멈춘다.
+              ttsPlayer.stop();
+              setValue(e.target.value);
+            }}
             onKeyDown={onKeyDown}
             placeholder={disabled && disabledHint ? disabledHint : placeholder}
             disabled={disabled}

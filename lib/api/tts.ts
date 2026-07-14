@@ -39,21 +39,3 @@ export async function fetchTts(body: TtsRequest): Promise<Blob> {
 
   return res.blob();
 }
-
-/**
- * Play a Blob of audio (WAV) and return the object URL for replay.
- */
-export function playAudioBlob(blob: Blob): string {
-  const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-  audio.play().catch(() => {});
-  return url;
-}
-
-/**
- * Replay audio from an existing object URL.
- */
-export function replayAudio(url: string) {
-  const audio = new Audio(url);
-  audio.play().catch(() => {});
-}
