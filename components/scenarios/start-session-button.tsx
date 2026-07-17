@@ -10,9 +10,17 @@ import { useAuthStore } from "@/lib/stores/auth";
 
 export type StartSessionButtonProps = {
   scenarioId: number;
+  /** 버튼 라벨 (기본: "시뮬레이션 시작하기") */
+  label?: string;
+  /** 버튼을 컨테이너 너비로 채울지 여부 (기본: true) */
+  full?: boolean;
 };
 
-export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
+export function StartSessionButton({
+  scenarioId,
+  label = "시뮬레이션 시작하기",
+  full = true,
+}: StartSessionButtonProps) {
   const router = useRouter();
   const learnerId = useAuthStore((s) => s.user?.id);
   const mutation = useMutation({
@@ -30,7 +38,7 @@ export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
     <div className="flex flex-col gap-2">
       <Button
         variant="primary"
-        full
+        full={full}
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
         icon={mutation.isPending ? <Spinner size={14} /> : undefined}
@@ -38,7 +46,7 @@ export function StartSessionButton({ scenarioId }: StartSessionButtonProps) {
           mutation.isPending ? undefined : <ArrowRight className="h-4 w-4" />
         }
       >
-        {mutation.isPending ? "세션 만드는 중..." : "시뮬레이션 시작하기"}
+        {mutation.isPending ? "세션 만드는 중..." : label}
       </Button>
       {mutation.isError && (
         <p className="text-label-sm font-normal text-danger tracking-normal">

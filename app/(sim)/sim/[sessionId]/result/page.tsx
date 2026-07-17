@@ -32,6 +32,7 @@ import {
   type ConversationMessage,
 } from "@/components/educator/conversation-log";
 import { useAuthStore } from "@/lib/stores/auth";
+import { StartSessionButton } from "@/components/scenarios/start-session-button";
 
 function toMessages(raw?: SessionMessage[] | null): ConversationMessage[] {
   if (!raw) return [];
@@ -139,9 +140,17 @@ export default function SimResultPage() {
             <Link href="/scenarios">
               <Button variant="secondary">시나리오 목록으로</Button>
             </Link>
-            <Link href="/scenarios">
-              <Button variant="primary">같은 시나리오 다시 도전</Button>
-            </Link>
+            {scenarioId != null ? (
+              <StartSessionButton
+                scenarioId={scenarioId}
+                label="같은 시나리오 다시 도전"
+                full={false}
+              />
+            ) : (
+              <Button variant="primary" disabled>
+                같은 시나리오 다시 도전
+              </Button>
+            )}
           </div>
         </header>
 
