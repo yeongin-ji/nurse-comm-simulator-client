@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
   rewrites: async () => [
     {
       source: "/api/:path*",
-      destination: "http://34.64.243.12/api/:path*",
+      // 로컬 백엔드로 프록시하려면 API_PROXY_TARGET=http://localhost:8080 등으로 실행
+      destination: `${process.env.API_PROXY_TARGET ?? "http://34.64.243.12"}/api/:path*`,
     },
   ],
 };

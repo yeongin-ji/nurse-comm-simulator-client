@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "dev-local-api",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "API_PROXY_TARGET=http://localhost:8091 npm run dev"],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader, Square, Volume2 } from "lucide-react";
+import { Loader, Square, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useTtsPlayer } from "@/lib/stores/tts-player";
 
@@ -28,14 +28,20 @@ export type ChatBubbleProps = {
   audioUrl?: string;
   /** Whether TTS audio is currently being generated. */
   ttsLoading?: boolean;
+  /** 스트리밍 재생 진행 중인 세션 id (재생 표시·중단용, patient 전용). */
+  streamId?: string;
+  /** 음성 스트리밍이 실패했는지 여부 (작은 안내 표시). */
+  ttsError?: boolean;
   /** Render partial text with a live blinking caret while tokens stream in. */
   streaming?: boolean;
   className?: string;
 };
 
-export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, streaming, className }: ChatBubbleProps) {
+export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoading, streamId, ttsError, streaming, className }: ChatBubbleProps) {
   const isPlaying = useTtsPlayer(
-    (s) => audioUrl != null && s.playingUrl === audioUrl
+    (s) =>
+      (audioUrl != null && s.playingUrl === audioUrl) ||
+      (streamId != null && s.streamingId === streamId)
   );
   const playAudio = useTtsPlayer((s) => s.play);
   const stopAudio = useTtsPlayer((s) => s.stop);
@@ -78,10 +84,19 @@ export function ChatBubble({ role, text, userName, patientName, audioUrl, ttsLoa
           음성 생성 중
         </span>
       )}
-      {!ttsLoading && audioUrl && (
+      {!ttsLoading && !audioUrl && ttsError && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle">
+          <VolumeX className="h-3 w-3" />
+          음성 재생 실패
+        </span>
+      )}
+      {!ttsLoading && (audioUrl || isPlaying) && (
         <button
           type="button"
-          onClick={() => (isPlaying ? stopAudio() : playAudio(audioUrl))}
+          onClick={() => {
+            if (isPlaying) stopAudio();
+            else if (audioUrl) playAudio(audioUrl);
+          }}
           className={cn(
             "inline-flex items-center gap-1 text-[11px] transition-colors",
             isPlaying

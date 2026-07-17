@@ -96,6 +96,28 @@ export const simulateHandlers = [
     });
   }),
 
+  // TTS streaming mock: 무음 raw PCM(24kHz mono 16-bit)을 청크 3개로 나눠 전송
+  http.post("/api/v1/tts/stream", async () => {
+    const chunk = new Uint8Array(24000 * 2 * 0.3); // 0.3초 무음
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        for (let i = 0; i < 3; i++) {
+          await new Promise((r) => setTimeout(r, 150));
+          controller.enqueue(chunk);
+        }
+        controller.close();
+      },
+    });
+    return new HttpResponse(stream, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-Audio-Sample-Rate": "24000",
+        "X-Audio-Channels": "1",
+        "X-Audio-Bits": "16",
+      },
+    });
+  }),
+
   http.post("/api/v1/sessions/:id/simulate", async ({ params, request }) => {
     const id = Number(params.id);
     await request.json();

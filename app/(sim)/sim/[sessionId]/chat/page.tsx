@@ -31,7 +31,7 @@ import {
 } from "@/lib/api/scenarios";
 import { documentKeys, documentsApi } from "@/lib/api/documents";
 import { pblApi, pblKeys, projectCategories } from "@/lib/api/pbl";
-import { fetchTts } from "@/lib/api/tts";
+import { streamTts } from "@/lib/api/tts";
 import { ttsPlayer } from "@/lib/stores/tts-player";
 import { ClipboardCheck, LogOut, Volume2, VolumeOff } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
@@ -45,6 +45,10 @@ type Message = {
   text: string;
   audioUrl?: string;
   ttsLoading?: boolean;
+  /** 스트리밍 재생 진행 중인 세션 id (재생 표시·중단 버튼용) */
+  streamId?: string;
+  /** 음성 스트리밍 실패 여부 (사용자에게 작게 표시) */
+  ttsError?: boolean;
 };
 
 const TOTAL_SECONDS = 900;
@@ -213,37 +217,56 @@ export default function ChatPage() {
           psych: psychDeltas,
         }));
       }
-      // TTS: play patient voice if enabled
-      if (wantTts) {
-        fetchTts({
-          text: reply,
-          speech_direction: res.speech_direction ?? undefined,
-          patient_age: patientAgeRef.current,
-          patient_gender: patientGenderRef.current,
-        })
+      // TTS: 스트리밍 재생 — 첫 오디오 청크가 도착하는 즉시 재생을 시작한다.
+      // 응답을 기다리는 사이 화면을 떠났거나 TTS를 껐다면 시작하지 않는다.
+      if (wantTts && mountedRef.current && useSettingsStore.getState().ttsEnabled) {
+        const streamId = crypto.randomUUID();
+        const patchPatientMessage = (patch: Partial<Message>) =>
+          setMessages((prev) =>
+            prev.map((m, i) =>
+              i === prev.length - 1 && m.role === "patient"
+                ? { ...m, ...patch }
+                : m
+            )
+          );
+
+        const handle = streamTts(
+          {
+            text: reply,
+            speech_direction: res.speech_direction ?? undefined,
+            patient_age: patientAgeRef.current,
+            patient_gender: patientGenderRef.current,
+          },
+          {
+            onFirstChunk: () =>
+              patchPatientMessage({ ttsLoading: false, streamId }),
+          }
+        );
+        // 스토어에 등록해 토글 오프·화면 이탈·새 재생 시작 시 함께 중단되게 한다.
+        ttsPlayer.beginStream(streamId, handle.abort);
+
+        handle.done
           .then((blob) => {
-            const audioUrl = URL.createObjectURL(blob);
-            // 응답을 기다리는 사이 화면을 떠났거나 TTS를 껐다면 재생하지 않는다.
-            if (mountedRef.current && useSettingsStore.getState().ttsEnabled) {
-              ttsPlayer.play(audioUrl);
+            ttsPlayer.endStream(streamId);
+            if (!blob) {
+              // 사용자가 중단한 경우 — 다시듣기 없이 조용히 정리
+              patchPatientMessage({ ttsLoading: false, streamId: undefined });
+              return;
             }
-            setMessages((prev) =>
-              prev.map((m, i) =>
-                i === prev.length - 1 && m.role === "patient"
-                  ? { ...m, audioUrl, ttsLoading: false }
-                  : m
-              )
-            );
+            const audioUrl = URL.createObjectURL(blob);
+            patchPatientMessage({
+              audioUrl,
+              ttsLoading: false,
+              streamId: undefined,
+            });
           })
           .catch(() => {
-            // TTS failure — clear loading state silently
-            setMessages((prev) =>
-              prev.map((m, i) =>
-                i === prev.length - 1 && m.role === "patient"
-                  ? { ...m, ttsLoading: false }
-                  : m
-              )
-            );
+            ttsPlayer.endStream(streamId);
+            patchPatientMessage({
+              ttsLoading: false,
+              streamId: undefined,
+              ttsError: true,
+            });
           });
       }
     },
@@ -375,7 +398,7 @@ export default function ChatPage() {
               </header>
               <div className="flex flex-col gap-3 p-5">
                 {messages.map((m, i) => (
-                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} audioUrl={m.audioUrl} ttsLoading={m.ttsLoading} />
+                  <ChatBubble key={i} role={m.role} text={m.text} userName={userName} patientName={patientName} audioUrl={m.audioUrl} ttsLoading={m.ttsLoading} streamId={m.streamId} ttsError={m.ttsError} />
                 ))}
                 {waiting && <TypingBubble role="patient" />}
                 {turnMutation.isError && (
